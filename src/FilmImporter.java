@@ -1,8 +1,5 @@
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.net.ftp.FTPClient;
-import org.apache.commons.net.ftp.FTPClientConfig;
-import org.apache.commons.net.ftp.FTPFile;
-import org.apache.commons.net.ftp.FTPReply;
+import org.apache.commons.net.ftp.*;
 
 import java.io.*;
 import java.math.BigDecimal;
@@ -19,7 +16,7 @@ public class FilmImporter
         File ratingsFile = new File("ratings.list.gz");
         File ratingsFileUnzipped = new File("ratings.list");
 
-        if (!ratingsFile.exists()) getRatingsFile();
+        if (!ratingsFile.exists()) getRatingsFile(ratingsFile);
         if (!ratingsFileUnzipped.exists()) getUnzippedRatingsFile(ratingsFile, ratingsFileUnzipped);
 
         List<Film> films = new ArrayList<>();
@@ -39,10 +36,10 @@ public class FilmImporter
             if (enteredRatings && foundHeader)
             {
                 if (line.length() == 0) break;
-                if (line.substring(0,6).contains("*")) System.out.println(line);
+
                 // 0-5 star
-                String star = line.substring(0, 5).trim();
                 // 6-15 rating distribution
+                String star = line.substring(0, 5).trim();
                 String ratingDistribution = line.substring(6, 16);
 
                 String variableWidthPortion = line.substring(16);
@@ -84,7 +81,7 @@ public class FilmImporter
         unzippedOutputStream.write(unzippedData.toByteArray());
     }
 
-    private static void getRatingsFile()
+    private static void getRatingsFile(File ratingsFile)
     {
         String host = "ftp.fu-berlin.de";
 
@@ -114,19 +111,16 @@ public class FilmImporter
             ftp.changeWorkingDirectory("pub/misc/movies/database/");
             System.out.println("Current directory is " + ftp.printWorkingDirectory());
 
-            FTPFile[] ftpFiles = ftp.listFiles();
-            for (FTPFile ftpFile : ftpFiles)
-                if (ftpFile.getName().equals("ratings.list.gz"))
-                {
-                    InputStream inputStream = ftp.retrieveFileStream(ftpFile.getName());
-                    FileOutputStream fileOutputStream = new FileOutputStream(ftpFile.getName());
-                    //Using org.apache.commons.io.IOUtils
-                    IOUtils.copy(inputStream, fileOutputStream);
-                    fileOutputStream.flush();
-                    IOUtils.closeQuietly(fileOutputStream);
-                    IOUtils.closeQuietly(inputStream);
-                }
+            ftp.setFileType(FTPClient.BINARY_FILE_TYPE);
+            ftp.setFileTransferMode(FTP.COMPRESSED_TRANSFER_MODE);
 
+            InputStream inputStream = ftp.retrieveFileStream("ratings.list.gz");
+            FileOutputStream fileOutputStream = new FileOutputStream(ratingsFile.getName());
+            //Using org.apache.commons.io.IOUtils
+            IOUtils.copy(inputStream, fileOutputStream);
+            fileOutputStream.flush();
+            IOUtils.closeQuietly(fileOutputStream);
+            IOUtils.closeQuietly(inputStream);
 
             ftp.logout();
             ftp.disconnect();
