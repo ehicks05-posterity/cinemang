@@ -41,6 +41,8 @@ public class FilmsHandler
                 filteredFilms.add(film);
         }
 
+        if (filteredFilms.size() > 10000) filteredFilms = filteredFilms.subList(0, 10000);
+
         request.getSession().setAttribute("films", filteredFilms);
 
         response.sendRedirect("view?action=index&minimumVotes=" + minimumVotes + "&minimumRating=" + minimumRating);
