@@ -1,3 +1,5 @@
+package com.hicks;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.net.ftp.*;
 
@@ -11,19 +13,41 @@ import java.util.zip.GZIPInputStream;
 
 public class FilmImporter
 {
-    public static void main(String[] args) throws Exception
+    private static List<Film> films = new ArrayList<>();
+
+    public static List<Film> getFilms()
     {
-        File ratingsFile = new File("ratings.list.gz");
-        File ratingsFileUnzipped = new File("ratings.list");
+        return films;
+    }
+
+    public static void performImport()
+    {
+        String temp = System.getProperty("java.io.tmpdir");
+        File ratingsFile = new File(temp + File.separator + "ratings.list.gz");
+        File ratingsFileUnzipped = new File(temp + File.separator + "ratings.list");
 
         if (!ratingsFile.exists()) getRatingsFile(ratingsFile);
         if (!ratingsFileUnzipped.exists()) getUnzippedRatingsFile(ratingsFile, ratingsFileUnzipped);
 
-        List<Film> films = new ArrayList<>();
+        films = getFilmsFromFile(ratingsFileUnzipped);
+    }
 
+    private static List<Film> getFilmsFromFile(File ratingsFileUnzipped)
+    {
+        List<String> lines = new ArrayList<>();
+
+        try
+        {
+            lines = Files.readAllLines(ratingsFileUnzipped.toPath(), Charset.forName("ISO-8859-1"));
+        }
+        catch (IOException e)
+        {
+            System.out.println(e.getMessage());
+        }
+
+        List<Film> films = new ArrayList<>();
         boolean enteredRatings = false;
         boolean foundHeader = false;
-        List<String> lines = Files.readAllLines(ratingsFileUnzipped.toPath(), Charset.forName("ISO-8859-1"));
         for (String line : lines)
         {
             if (line.equals("MOVIE RATINGS REPORT")) enteredRatings = true;
@@ -54,31 +78,37 @@ public class FilmImporter
                 BigDecimal rating = new BigDecimal(tokens.get(1));
                 String name = tokens.get(2);
 
-                if (votes > 10_000) films.add(new Film(name, rating, votes));
+//                if (votes > 10_000)
+                    films.add(new Film(name, rating, votes));
             }
         }
-
-        for (Film film : films) System.out.println(film);
-        System.out.println("# of films: " + films.size());
+        return films;
     }
 
-    private static void getUnzippedRatingsFile(File ratingsFile, File ratingsFileUnzipped) throws IOException
+    private static void getUnzippedRatingsFile(File ratingsFile, File ratingsFileUnzipped)
     {
-        FileInputStream fileInputStream = new FileInputStream(ratingsFile);
-        GZIPInputStream gzipInputStream = new GZIPInputStream(fileInputStream);
-
-        ByteArrayOutputStream unzippedData = new ByteArrayOutputStream();
-
-        int bytesRead;
-        byte[] buffer = new byte[1024];
-
-        while ((bytesRead = gzipInputStream.read(buffer)) > 0)
+        try
         {
-            unzippedData.write(buffer, 0, bytesRead);
-        }
+            FileInputStream fileInputStream = new FileInputStream(ratingsFile);
+            GZIPInputStream gzipInputStream = new GZIPInputStream(fileInputStream);
 
-        FileOutputStream unzippedOutputStream = new FileOutputStream(ratingsFileUnzipped);
-        unzippedOutputStream.write(unzippedData.toByteArray());
+            ByteArrayOutputStream unzippedData = new ByteArrayOutputStream();
+
+            int bytesRead;
+            byte[] buffer = new byte[1024];
+
+            while ((bytesRead = gzipInputStream.read(buffer)) > 0)
+            {
+                unzippedData.write(buffer, 0, bytesRead);
+            }
+
+            FileOutputStream unzippedOutputStream = new FileOutputStream(ratingsFileUnzipped);
+            unzippedOutputStream.write(unzippedData.toByteArray());
+        }
+        catch (IOException e)
+        {
+            System.out.println(e.getMessage());
+        }
     }
 
     private static void getRatingsFile(File ratingsFile)
@@ -115,7 +145,7 @@ public class FilmImporter
             ftp.setFileTransferMode(FTP.COMPRESSED_TRANSFER_MODE);
 
             InputStream inputStream = ftp.retrieveFileStream("ratings.list.gz");
-            FileOutputStream fileOutputStream = new FileOutputStream(ratingsFile.getName());
+            FileOutputStream fileOutputStream = new FileOutputStream(ratingsFile);
             //Using org.apache.commons.io.IOUtils
             IOUtils.copy(inputStream, fileOutputStream);
             fileOutputStream.flush();

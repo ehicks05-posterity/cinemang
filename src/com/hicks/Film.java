@@ -1,3 +1,5 @@
+package com.hicks;
+
 import java.math.BigDecimal;
 
 public class Film
