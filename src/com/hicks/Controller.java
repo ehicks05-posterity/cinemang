@@ -38,6 +38,11 @@ public class Controller extends HttpServlet
             FilmsHandler.filterFilms(request, response);
             return;
         }
+        if (action.equals("sortFilms"))
+        {
+            FilmsHandler.sortFilms(request, response);
+            return;
+        }
 
         String viewJsp = getAction(tab1, action);
         RequestDispatcher dispatcher = request.getRequestDispatcher(viewJsp);
