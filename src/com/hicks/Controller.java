@@ -16,7 +16,7 @@ public class Controller extends HttpServlet
     @Override
     public void init() throws ServletException
     {
-        FilmImporter.performImport();
+        FilmImporter.importFilmData();
     }
 
     @Override

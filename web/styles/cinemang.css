@@ -4,6 +4,6 @@
 .list {border-collapse: collapse; border: 1px solid lightgray}
 .list td {border: 1px solid lightgray; padding: 2px 6px}
 .listheading {background-color: lightgray; font-weight: bold}
-
+.listheading td {white-space: nowrap}
 .listrowodd { background-color: white}
 .listroweven {background-color: lavender}

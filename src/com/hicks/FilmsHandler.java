@@ -13,19 +13,46 @@ public class FilmsHandler
 {
     public static void showFilms(HttpServletRequest request, HttpServletResponse response)
     {
+
         List<Film> films = (List<Film>) request.getSession().getAttribute("films");
-        if (films == null) films = new ArrayList<>();
-        request.getSession().setAttribute("films", films);
+        if (films == null) performSearch(request, "", "", "");
+        films = (List<Film>) request.getSession().getAttribute("films");
+        int pages = 1 + ((films.size() - 1) / 100);
+
+        List<Film> filmsOnPage = new ArrayList<>();
+        String pageParam = request.getParameter("page");
+        if (pageParam == null || Integer.valueOf(pageParam) > pages) pageParam = "1";
+
+        int pageNumber = Integer.valueOf(pageParam);
+
+        int from = (pageNumber - 1) * 100;
+        int filmsAfterFrom = films.size() - from;
+        int to = filmsAfterFrom < 100 ? from + filmsAfterFrom : from + 100;
+
+        filmsOnPage.addAll(films.subList(from, to));
+
+        request.setAttribute("pages", pages);
+        request.setAttribute("page", pageParam);
+        request.setAttribute("hasNext", pages > pageNumber);
+        request.setAttribute("hasPrevious", pageNumber > 1);
+        request.setAttribute("filmsOnPage", filmsOnPage);
     }
 
     public static void filterFilms(HttpServletRequest request, HttpServletResponse response) throws IOException
     {
         String titleParam = request.getParameter("title");
-
         String minimumVotesParam = request.getParameter("minimumVotes");
+        String ratingParam = request.getParameter("fldRating");
+
+        performSearch(request, titleParam, minimumVotesParam, ratingParam);
+
+        response.sendRedirect("view?action=index");
+    }
+
+    private static void performSearch(HttpServletRequest request, String titleParam, String minimumVotesParam, String ratingParam)
+    {
         int minimumVotes = minimumVotesParam.length() > 0 ? Integer.valueOf(minimumVotesParam) : 0;
 
-        String ratingParam = request.getParameter("fldRating");
         String[] ratingRange = ratingParam.split("-");
         BigDecimal minimumRating = BigDecimal.ZERO;
         BigDecimal maximumRating = new BigDecimal("10");
@@ -52,14 +79,10 @@ public class FilmsHandler
                 filteredFilms.add(film);
         }
 
-        if (filteredFilms.size() > 1000) filteredFilms = filteredFilms.subList(0, 1000);
-
         request.getSession().setAttribute("minimumVotes", minimumVotesParam);
         request.getSession().setAttribute("title", titleParam);
         request.getSession().setAttribute("rating", ratingParam);
         request.getSession().setAttribute("films", filteredFilms);
-
-        response.sendRedirect("view?action=index");
     }
 
     public static void sortFilms(HttpServletRequest request, HttpServletResponse response) throws IOException
@@ -74,8 +97,6 @@ public class FilmsHandler
         sortFilms(sortedFilms, column);
         if (direction.equals("desc")) Collections.reverse(sortedFilms);
 
-        if (sortedFilms.size() > 1000) sortedFilms = sortedFilms.subList(0, 1000);
-
         request.getSession().setAttribute("films", sortedFilms);
 
         response.sendRedirect("view?action=index&column=" + column + "&direction=" + direction);
@@ -89,6 +110,8 @@ public class FilmsHandler
             public int compare(Film o1, Film o2)
             {
                 if (column.equals("title")) return o1.getTitle().compareToIgnoreCase(o2.getTitle());
+                if (column.equals("year")) return ((Integer)o1.getYear()).compareTo(o2.getYear());
+                if (column.equals("releaseDate")) return o1.getReleaseDate().compareTo(o2.getReleaseDate());
                 if (column.equals("votes")) return ((Integer)o1.getVotes()).compareTo(o2.getVotes());
                 if (column.equals("rating")) return (o1.getRating()).compareTo(o2.getRating());
 
