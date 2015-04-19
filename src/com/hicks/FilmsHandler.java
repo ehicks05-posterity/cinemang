@@ -15,7 +15,7 @@ public class FilmsHandler
 
     public static void showFilms(HttpServletRequest request, HttpServletResponse response) throws ParseException
     {
-        if (searchResults.size() == 0)
+        if (searchResults.size() == 0 && request.getParameterMap().size() == 0)
         {
             // set some defaults
             String minimumVotes = "1000";
