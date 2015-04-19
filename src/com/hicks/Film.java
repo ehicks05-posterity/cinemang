@@ -1,20 +1,23 @@
 package com.hicks;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
-public class Film
+public class Film implements Serializable
 {
     private String title = "";
-    private int year;
     private Date releaseDate;
     private BigDecimal rating;
     private int votes;
+    private String language = "";
+    private List<String> genres = new ArrayList<>();
 
-    public Film(String title, int year, BigDecimal rating, int votes)
+    public Film(String title, BigDecimal rating, int votes)
     {
         this.title = title;
-        this.year = year;
         this.rating = rating;
         this.votes = votes;
     }
@@ -23,6 +26,18 @@ public class Film
     {
         this.title = title;
         this.releaseDate = releaseDate;
+    }
+
+    public Film(String title, String language)
+    {
+        this.title = title;
+        this.language = language;
+    }
+
+    public Film(String title, List<String> genres)
+    {
+        this.title = title;
+        this.genres = genres;
     }
 
     @Override
@@ -35,9 +50,22 @@ public class Film
 
     public String toString()
     {
-        return title + year + " - " + " - " + rating + " - " + votes;
+        return title;
     }
 
+    // ------------------
+    public String getGenresAsString()
+    {
+        StringBuilder sb = new StringBuilder();
+        for (String genre : genres)
+        {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(genre);
+        }
+        return sb.toString();
+    }
+
+    // ------------------
     public String getTitle()
     {
         return title;
@@ -46,16 +74,6 @@ public class Film
     public void setTitle(String title)
     {
         this.title = title;
-    }
-
-    public int getYear()
-    {
-        return year;
-    }
-
-    public void setYear(int year)
-    {
-        this.year = year;
     }
 
     public Date getReleaseDate()
@@ -86,5 +104,25 @@ public class Film
     public void setVotes(int votes)
     {
         this.votes = votes;
+    }
+
+    public String getLanguage()
+    {
+        return language;
+    }
+
+    public void setLanguage(String language)
+    {
+        this.language = language;
+    }
+
+    public List<String> getGenres()
+    {
+        return genres;
+    }
+
+    public void setGenres(List<String> genres)
+    {
+        this.genres = genres;
     }
 }

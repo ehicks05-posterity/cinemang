@@ -4,19 +4,21 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.text.DecimalFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class FilmsHandler
 {
-    public static void showFilms(HttpServletRequest request, HttpServletResponse response)
+    private static List<Film> searchResults = new ArrayList<>();
+
+    public static void showFilms(HttpServletRequest request, HttpServletResponse response) throws ParseException
     {
 
-        List<Film> films = (List<Film>) request.getSession().getAttribute("films");
-        if (films == null) performSearch(request, "", "", "");
-        films = (List<Film>) request.getSession().getAttribute("films");
+        List<Film> films = searchResults;
+        if (films.size() == 0) performSearch(request, "", "", "", "", "", "English");
+        films = searchResults;
         int pages = 1 + ((films.size() - 1) / 100);
 
         List<Film> filmsOnPage = new ArrayList<>();
@@ -31,6 +33,7 @@ public class FilmsHandler
 
         filmsOnPage.addAll(films.subList(from, to));
 
+        request.setAttribute("uniqueLanguages", FilmImporter.getUniqueLanguages());
         request.setAttribute("pages", pages);
         request.setAttribute("page", pageParam);
         request.setAttribute("hasNext", pages > pageNumber);
@@ -38,18 +41,21 @@ public class FilmsHandler
         request.setAttribute("filmsOnPage", filmsOnPage);
     }
 
-    public static void filterFilms(HttpServletRequest request, HttpServletResponse response) throws IOException
+    public static void filterFilms(HttpServletRequest request, HttpServletResponse response) throws IOException, ParseException
     {
         String titleParam = request.getParameter("title");
         String minimumVotesParam = request.getParameter("minimumVotes");
         String ratingParam = request.getParameter("fldRating");
+        String fromReleaseDate = request.getParameter("fromReleaseDateDatepicker");
+        String toReleaseDate = request.getParameter("toReleaseDateDatepicker");
+        String language = request.getParameter("language");
 
-        performSearch(request, titleParam, minimumVotesParam, ratingParam);
+        performSearch(request, titleParam, minimumVotesParam, ratingParam, fromReleaseDate, toReleaseDate, language);
 
         response.sendRedirect("view?action=index");
     }
 
-    private static void performSearch(HttpServletRequest request, String titleParam, String minimumVotesParam, String ratingParam)
+    private static void performSearch(HttpServletRequest request, String titleParam, String minimumVotesParam, String ratingParam, String fromReleaseDate, String toReleaseDate, String language) throws ParseException
     {
         int minimumVotes = minimumVotesParam.length() > 0 ? Integer.valueOf(minimumVotesParam) : 0;
 
@@ -66,6 +72,19 @@ public class FilmsHandler
 
         }
 
+        Date fromDate = null;
+        Date toDate = null;
+
+        try
+        {
+            if (fromReleaseDate.length() > 0) fromDate = new SimpleDateFormat("mm/dd/YYYY").parse(fromReleaseDate);
+            if (toReleaseDate.length() > 0) toDate = new SimpleDateFormat("mm/dd/YYYY").parse(toReleaseDate);
+        }
+        catch (ParseException e)
+        {
+            System.out.println(e.getMessage());
+        }
+
         List<Film> filteredFilms = new ArrayList<>();
         for (Film film : FilmImporter.getFilms())
         {
@@ -73,16 +92,29 @@ public class FilmsHandler
 
             boolean enoughVotes = film.getVotes() >= minimumVotes;
 
+            boolean matchesLanguage = language.length() == 0 || film.getLanguage().equals(language);
+
+            Date releaseDate = film.getReleaseDate();
+            boolean afterOrEqualsFromDate = fromDate == null || releaseDate.after(fromDate) || releaseDate.equals(fromDate);
+            boolean beforeOrEqualsToDate = toDate == null || releaseDate.before(toDate) || releaseDate.equals(toDate);
+            boolean releaseDateInRange = afterOrEqualsFromDate && beforeOrEqualsToDate;
+
             BigDecimal rating = film.getRating();
             boolean validRating = rating.compareTo(minimumRating) >= 0 && rating.compareTo(maximumRating) <= 0;
-            if (matchesTitle && enoughVotes && validRating)
+            if (matchesTitle && enoughVotes && validRating && releaseDateInRange && matchesLanguage)
                 filteredFilms.add(film);
         }
+
+        String filmsCount = new DecimalFormat("#,###").format(filteredFilms.size());
 
         request.getSession().setAttribute("minimumVotes", minimumVotesParam);
         request.getSession().setAttribute("title", titleParam);
         request.getSession().setAttribute("rating", ratingParam);
-        request.getSession().setAttribute("films", filteredFilms);
+        request.getSession().setAttribute("fromReleaseDate", fromReleaseDate);
+        request.getSession().setAttribute("toReleaseDate", toReleaseDate);
+        request.getSession().setAttribute("language", language);
+        request.getSession().setAttribute("filmsCount", filmsCount);
+        searchResults = filteredFilms;
     }
 
     public static void sortFilms(HttpServletRequest request, HttpServletResponse response) throws IOException
@@ -91,13 +123,13 @@ public class FilmsHandler
         String direction = request.getParameter("direction");
         if (direction == null) direction = "asc";
 
-        List<Film> films = (List<Film>) request.getSession().getAttribute("films");
+        List<Film> films = searchResults;
         List<Film> sortedFilms = new ArrayList<>(films);
 
         sortFilms(sortedFilms, column);
         if (direction.equals("desc")) Collections.reverse(sortedFilms);
 
-        request.getSession().setAttribute("films", sortedFilms);
+        searchResults = sortedFilms;
 
         response.sendRedirect("view?action=index&column=" + column + "&direction=" + direction);
     }
@@ -110,10 +142,10 @@ public class FilmsHandler
             public int compare(Film o1, Film o2)
             {
                 if (column.equals("title")) return o1.getTitle().compareToIgnoreCase(o2.getTitle());
-                if (column.equals("year")) return ((Integer)o1.getYear()).compareTo(o2.getYear());
                 if (column.equals("releaseDate")) return o1.getReleaseDate().compareTo(o2.getReleaseDate());
                 if (column.equals("votes")) return ((Integer)o1.getVotes()).compareTo(o2.getVotes());
                 if (column.equals("rating")) return (o1.getRating()).compareTo(o2.getRating());
+                if (column.equals("language")) return (o1.getLanguage()).compareTo(o2.getLanguage());
 
                 return 0;
             }

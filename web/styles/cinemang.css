@@ -7,3 +7,9 @@
 .listheading td {white-space: nowrap}
 .listrowodd { background-color: white}
 .listroweven {background-color: lavender}
+
+/* JQuery */
+
+.ui-datepicker {z-index: 4 !important;}
+
+.sortableHeader {cursor: pointer}

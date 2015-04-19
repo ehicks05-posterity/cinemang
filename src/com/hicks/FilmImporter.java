@@ -1,8 +1,5 @@
 package com.hicks;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.net.ftp.*;
-
 import java.io.*;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
@@ -10,13 +7,14 @@ import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.zip.GZIPInputStream;
 
 public class FilmImporter
 {
+    private static final boolean MEMORY_CONSTRAINED = false;
     private static List<Film> films = new ArrayList<>();
+    private static final List<String> MONTHS = Arrays.asList("January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December");
+    private static List<String> uniqueLanguages = new ArrayList<>();
 
     public static List<Film> getFilms()
     {
@@ -27,11 +25,49 @@ public class FilmImporter
     {
         try
         {
+            File mergedFilmData = new File(System.getProperty("java.io.tmpdir") + File.separator + "mergedFilmData.dmp");
+            if (mergedFilmData.exists())
+            {
+                films = IOUtil.readFilmDataFromDisk(mergedFilmData);
+                return;
+            }
+
             File ratingsFile = getFtpFile("ratings.list.gz");
             File releaseDatesFile = getFtpFile("release-dates.list.gz");
+            File languagesFile = getFtpFile("language.list.gz");
+            File genresFile = getFtpFile("genres.list.gz");
+            System.out.println("Done getting data files");
+
+            System.out.println("Parsing " + ratingsFile.getCanonicalPath());
             List<Film> ratingsFileFilms = parseRatingsFile(ratingsFile);
+
+            File filmsFromRatingsFile = new File(System.getProperty("java.io.tmpdir") + File.separator + "ratings.dmp");
+            if (MEMORY_CONSTRAINED)
+                IOUtil.writeFilmDataToDisk(ratingsFileFilms, filmsFromRatingsFile);
+
+            System.out.println("Parsing " + releaseDatesFile.getCanonicalPath());
             List<Film> releaseDatesFileFilms = parseReleaseDatesFile(releaseDatesFile);
-            films = mergeFilmLists(ratingsFileFilms, releaseDatesFileFilms);
+
+            File filmsFromReleaseDatesFile = new File(System.getProperty("java.io.tmpdir") + File.separator + "releaseDates.dmp");
+            if (MEMORY_CONSTRAINED)
+                IOUtil.writeFilmDataToDisk(releaseDatesFileFilms, filmsFromReleaseDatesFile);
+
+            System.out.println("Parsing " + languagesFile.getCanonicalPath());
+            List<Film> languagesFileFilms = parseLanguagesFile(languagesFile);
+
+            File filmsFromLanguagesFile = new File(System.getProperty("java.io.tmpdir") + File.separator + "languages.dmp");
+            if (MEMORY_CONSTRAINED)
+                IOUtil.writeFilmDataToDisk(languagesFileFilms, filmsFromLanguagesFile);
+
+            System.out.println("Parsing " + genresFile.getCanonicalPath());
+            List<Film> genresFileFilms = parseGenresFile(genresFile);
+
+            File filmsFromGenresFile = new File(System.getProperty("java.io.tmpdir") + File.separator + "genres.dmp");
+            if (MEMORY_CONSTRAINED)
+                IOUtil.writeFilmDataToDisk(genresFileFilms, filmsFromGenresFile);
+
+            if (!MEMORY_CONSTRAINED) films = mergeFilmLists(ratingsFileFilms, releaseDatesFileFilms, languagesFileFilms, genresFileFilms);
+            if (MEMORY_CONSTRAINED) films = mergeFilmLists(filmsFromRatingsFile, filmsFromReleaseDatesFile, filmsFromLanguagesFile, filmsFromGenresFile);
         }
         catch (Exception e)
         {
@@ -39,24 +75,67 @@ public class FilmImporter
         }
     }
 
-    private static List<Film> mergeFilmLists(List<Film> ratingsFileFilms, List<Film> releaseDatesFileFilms)
+    private static List<Film> mergeFilmLists(List<Film> ratingsFileFilms, List<Film> releaseDatesFileFilms, List<Film> languagesFileFilms, List<Film> genresFileFilms)
     {
+        System.out.println("Merging film data from each file");
+
         Map<String, Film> titleMap = new HashMap<>();
+
         for (Film film : ratingsFileFilms)
             titleMap.put(film.getTitle(), film);
 
-        for (Film releaseDatesFileFilm : releaseDatesFileFilms)
-        {
-            if (titleMap.containsKey(releaseDatesFileFilm.getTitle()))
-                titleMap.get(releaseDatesFileFilm.getTitle()).setReleaseDate(releaseDatesFileFilm.getReleaseDate());
-        }
+        for (Film film : releaseDatesFileFilms)
+            if (titleMap.containsKey(film.getTitle()))
+                titleMap.get(film.getTitle()).setReleaseDate(film.getReleaseDate());
+
+        for (Film film : languagesFileFilms)
+            if (titleMap.containsKey(film.getTitle()))
+                titleMap.get(film.getTitle()).setLanguage(film.getLanguage());
+
+        for (Film film : genresFileFilms)
+            if (titleMap.containsKey(film.getTitle()))
+                titleMap.get(film.getTitle()).setGenres(film.getGenres());
 
         List<Film> mergedFilms = new ArrayList<>(titleMap.values());
         for (Iterator<Film> i = mergedFilms.iterator(); i.hasNext();)
         {
             Film film = i.next();
-            if (film.getReleaseDate() == null) i.remove();
+            if (film.getReleaseDate() == null || film.getLanguage().length() == 0) i.remove();
         }
+
+        IOUtil.writeFilmDataToDisk(mergedFilms, new File(System.getProperty("java.io.tmpdir") + File.separator + "mergedFilmData.dmp"));
+
+        return mergedFilms;
+    }
+
+    private static List<Film> mergeFilmLists(File ratings, File releaseDates, File languages, File genres)
+    {
+        System.out.println("Merging film data from each file");
+
+        Map<String, Film> titleMap = new HashMap<>();
+        for (Film film : IOUtil.readFilmDataFromDisk(ratings))
+            titleMap.put(film.getTitle(), film);
+
+        for (Film film : IOUtil.readFilmDataFromDisk(releaseDates))
+            if (titleMap.containsKey(film.getTitle()))
+                titleMap.get(film.getTitle()).setReleaseDate(film.getReleaseDate());
+
+        for (Film film : IOUtil.readFilmDataFromDisk(languages))
+            if (titleMap.containsKey(film.getTitle()))
+                titleMap.get(film.getTitle()).setLanguage(film.getLanguage());
+
+        for (Film film : IOUtil.readFilmDataFromDisk(genres))
+            if (titleMap.containsKey(film.getTitle()))
+                titleMap.get(film.getTitle()).setGenres(film.getGenres());
+
+        List<Film> mergedFilms = new ArrayList<>(titleMap.values());
+        for (Iterator<Film> i = mergedFilms.iterator(); i.hasNext();)
+        {
+            Film film = i.next();
+            if (film.getReleaseDate() == null || film.getLanguage().length() == 0) i.remove();
+        }
+
+        IOUtil.writeFilmDataToDisk(mergedFilms, new File(System.getProperty("java.io.tmpdir") + File.separator + "mergedFilmData.dmp"));
 
         return mergedFilms;
     }
@@ -94,7 +173,13 @@ public class FilmImporter
                 Date release = null;
                 try
                 {
-                    release = new SimpleDateFormat("d MMM yyyy").parse(releaseDate);
+                    if (releaseDate.length() == 4)
+                        release = new SimpleDateFormat("yyyy").parse(releaseDate);
+                    if (release == null)
+                        for (String month : MONTHS)
+                            if (releaseDate.startsWith(month)) release = new SimpleDateFormat("MMM yyyy").parse(releaseDate);
+                    if (release == null)
+                        release = new SimpleDateFormat("d MMM yyyy").parse(releaseDate);
                 }
                 catch (ParseException e)
                 {
@@ -111,6 +196,101 @@ public class FilmImporter
                         Film filmFromMap = filmMap.get(title);
                         if (release.compareTo(filmFromMap.getReleaseDate()) < 0)
                             filmFromMap.setReleaseDate(release);
+                    }
+                }
+            }
+        }
+        return new ArrayList<>(filmMap.values());
+    }
+
+    private static List<Film> parseGenresFile(File file) throws ParseException, IOException
+    {
+        List<String> lines = Files.readAllLines(file.toPath(), Charset.forName("ISO-8859-1"));
+
+        List<Film> films = new ArrayList<>();
+        Map<String, List<String>> genreMap = new HashMap<>();
+
+        boolean enteredSection = false;
+        boolean foundBlankLineBeforeData = false;
+        for (String line : lines)
+        {
+            if (line.equals("8: THE GENRES LIST"))
+            {
+                enteredSection = true;
+                continue;
+            }
+            if (enteredSection && line.length() == 0)
+            {
+                foundBlankLineBeforeData = true;
+                continue;
+            }
+
+            if (enteredSection && foundBlankLineBeforeData)
+            {
+                if (line.length() == 0) break;
+
+                // File Format:
+                // Title\tGenre
+                String[] tokens = line.split("\\t+");
+
+                String title = tokens[0];
+                String genre = tokens[1];
+
+                List<String> genres = genreMap.get(title);
+                if (genres == null)
+                {
+                    genres = new ArrayList<>(Arrays.asList(genre));
+                    genreMap.put(title, genres);
+                }
+                else genres.add(genre);
+
+                films.add(new Film(title, genres));
+            }
+        }
+        return films;
+    }
+
+    private static List<Film> parseLanguagesFile(File file) throws ParseException, IOException
+    {
+        Map<String, Film> filmMap = new HashMap<>();
+
+        List<String> lines = Files.readAllLines(file.toPath(), Charset.forName("ISO-8859-1"));
+
+        boolean enteredDataTable = false;
+        for (String line : lines)
+        {
+            if (line.equals("============="))
+            {
+                enteredDataTable = true;
+                continue;
+            }
+
+            if (enteredDataTable)
+            {
+                if (line.equals("--------------------------------------------------------------------------------")) break;
+
+                // FILE FORMAT:
+                // Title (year)\tLanguage (subtitle info)
+                String[] tokens = line.split("\\t+");
+                String title = tokens[0];
+                String languageAndSubtitleInfo = tokens[1];
+                int indexOfOpenParen = languageAndSubtitleInfo.indexOf("(");
+                String language;
+                if (indexOfOpenParen > 0)
+                    language = languageAndSubtitleInfo.substring(0, indexOfOpenParen);
+                else
+                    language = languageAndSubtitleInfo;
+
+                if (language != null)
+                {
+                    Film film = filmMap.get(title);
+                    if (film == null)
+                        filmMap.put(title, new Film(title, language));
+                    else
+                    {
+                        Film filmFromMap = filmMap.get(title);
+                        if (!filmFromMap.getLanguage().equals("English"))
+                            filmFromMap.setLanguage(language);
                     }
                 }
             }
@@ -144,8 +324,8 @@ public class FilmImporter
 
                 // 0-5 star
                 // 6-15 rating distribution
-                String star = line.substring(0, 5).trim();
-                String ratingDistribution = line.substring(6, 16);
+//                String star = line.substring(0, 5).trim();
+//                String ratingDistribution = line.substring(6, 16);
 
                 String variableWidthPortion = line.substring(16);
                 String[] rawTokens = variableWidthPortion.split("  ");
@@ -157,116 +337,64 @@ public class FilmImporter
 
                 int votes = Integer.parseInt(tokens.get(0));
                 BigDecimal rating = new BigDecimal(tokens.get(1));
-                String nameWithYear = tokens.get(2);
+                String title = tokens.get(2);
 
-                String yearWithParens = "";
-                Pattern pattern = Pattern.compile("\\(\\d{4}\\)");
-                Matcher matcher = pattern.matcher(nameWithYear);
-                if (matcher.find())
-                {
-                    yearWithParens = matcher.group(0);
-                    if (yearWithParens.length() != 6) continue;
-                }
-                else
-                    continue;
-                int year = Integer.parseInt(yearWithParens.substring(1, 5));
-                String name = nameWithYear.replace(yearWithParens, "").trim();
-
-                films.add(new Film(nameWithYear, year, rating, votes));
+                films.add(new Film(title, rating, votes));
             }
         }
         return films;
     }
 
-    private static File getFtpFile(String remoteFilename)
+    private static File getFtpFile(String remoteFilename) throws IOException
     {
         String host = "ftp.fu-berlin.de";
         String dir = "pub/misc/movies/database/";
         String login = "anonymous";
 
-        File zippedFile = downloadFile(host, dir, login, remoteFilename);
-        return unzipFile(zippedFile);
+        File zippedFile = IOUtil.downloadFile(host, dir, login, remoteFilename);
+        return IOUtil.unzipFile(zippedFile);
     }
 
-    private static File downloadFile(String host, String dir, String login, String remoteFilename)
+    public static List<String> getUniqueLanguages()
     {
-        File zippedFile = new File(System.getProperty("java.io.tmpdir") + File.separator + remoteFilename);
-        if (zippedFile.exists()) return zippedFile;
-
-        FTPClient ftp = new FTPClient();
-        FTPClientConfig config = new FTPClientConfig();
-        ftp.configure(config);
-        try
-        {
-            int reply;
-            ftp.connect(host);
-            System.out.println("Connected to " + host + ".");
-            System.out.print(ftp.getReplyString());
-
-            // After connection attempt, you should check the reply code to verify success.
-            reply = ftp.getReplyCode();
-            if (!FTPReply.isPositiveCompletion(reply))
-            {
-                ftp.disconnect();
-                System.err.println("FTP server refused connection.");
-                System.exit(1);
-            }
-
-            ftp.login(login, "");
-            // transfer files
-            ftp.enterLocalPassiveMode();
-            ftp.changeWorkingDirectory(dir);
-
-            ftp.setFileType(FTPClient.BINARY_FILE_TYPE);
-            ftp.setFileTransferMode(FTP.COMPRESSED_TRANSFER_MODE);
-
-            InputStream inputStream = ftp.retrieveFileStream(remoteFilename);
-            FileOutputStream fileOutputStream = new FileOutputStream(zippedFile);
-            System.out.println("Downloading " + host + "/" + dir + remoteFilename);
-            IOUtils.copy(inputStream, fileOutputStream);
-            fileOutputStream.flush();
-            IOUtils.closeQuietly(fileOutputStream);
-            IOUtils.closeQuietly(inputStream);
-
-            ftp.logout();
-            ftp.disconnect();
-
-            return zippedFile;
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-
-        return null;
+        if (uniqueLanguages.size() == 0) uniqueLanguages = identifyUniqueLanguages(films);
+        return uniqueLanguages;
     }
 
-    private static File unzipFile(File input)
+    public static List<String> identifyUniqueLanguages(List<Film> films)
     {
-        File unzippedFile = new File(System.getProperty("java.io.tmpdir") + File.separator + input.getName().replace(".gz", ""));
-        if (unzippedFile.exists()) return unzippedFile;
-
-        try
+        System.out.println("Identifying unique film languages");
+        Map<String, FilmLanguage> languagesMap = new HashMap<>();
+        for (Film film : films)
         {
-            GZIPInputStream gzipInputStream = new GZIPInputStream(new FileInputStream(input));
-            ByteArrayOutputStream unzippedData = new ByteArrayOutputStream();
-
-            int bytesRead;
-            byte[] buffer = new byte[1024];
-
-            while ((bytesRead = gzipInputStream.read(buffer)) > 0)
+            String language = film.getLanguage();
+            if (languagesMap.get(language) == null)
+                languagesMap.put(language, new FilmLanguage(language, 1));
+            else
             {
-                unzippedData.write(buffer, 0, bytesRead);
+                FilmLanguage filmLanguage = languagesMap.get(language);
+                int occurrences = filmLanguage.getOccurrences();
+                filmLanguage.setOccurrences(occurrences + 1);
             }
-
-            FileOutputStream unzippedOutputStream = new FileOutputStream(unzippedFile);
-            unzippedOutputStream.write(unzippedData.toByteArray());
         }
-        catch (IOException e)
+
+        List<FilmLanguage> filmLanguages = new ArrayList<>(languagesMap.values());
+        filmLanguages.sort(new Comparator<FilmLanguage>()
         {
-            System.out.println(e.getMessage());
-        }
+            @Override
+            public int compare(FilmLanguage o1, FilmLanguage o2)
+            {
+                Integer o1Occurrences = o1.getOccurrences();
+                Integer o2Occurrences = o2.getOccurrences();
+                return o1Occurrences.compareTo(o2Occurrences);
+            }
+        });
+        Collections.reverse(filmLanguages);
 
-        return unzippedFile;
+        List<String> languageNames = new ArrayList<>();
+        for (FilmLanguage filmLanguage : filmLanguages)
+            languageNames.add(filmLanguage.getName());
+
+        return languageNames;
     }
 }
