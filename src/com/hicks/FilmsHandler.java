@@ -15,10 +15,20 @@ public class FilmsHandler
 
     public static void showFilms(HttpServletRequest request, HttpServletResponse response) throws ParseException
     {
+        if (searchResults.size() == 0)
+        {
+            // set some defaults
+            String minimumVotes = "1000";
+            String rating = "0-10";
+            String language = "English";
 
+            performSearch(request, "", minimumVotes, rating, "", "", language);
+
+            request.getSession().setAttribute("minimumVotes", minimumVotes);
+            request.getSession().setAttribute("rating", rating);
+            request.getSession().setAttribute("language", language);
+        }
         List<Film> films = searchResults;
-        if (films.size() == 0) performSearch(request, "", "", "", "", "", "English");
-        films = searchResults;
         int pages = 1 + ((films.size() - 1) / 100);
 
         List<Film> filmsOnPage = new ArrayList<>();
@@ -32,6 +42,9 @@ public class FilmsHandler
         int to = filmsAfterFrom < 100 ? from + filmsAfterFrom : from + 100;
 
         filmsOnPage.addAll(films.subList(from, to));
+
+        String filmsCount = new DecimalFormat("#,###").format(films.size());
+        request.setAttribute("filmsCount", filmsCount);
 
         request.setAttribute("uniqueLanguages", FilmImporter.getUniqueLanguages());
         request.setAttribute("pages", pages);
@@ -51,6 +64,8 @@ public class FilmsHandler
         String language = request.getParameter("language");
 
         performSearch(request, titleParam, minimumVotesParam, ratingParam, fromReleaseDate, toReleaseDate, language);
+
+        sortFilms(request);
 
         response.sendRedirect("view?action=index");
     }
@@ -105,38 +120,24 @@ public class FilmsHandler
                 filteredFilms.add(film);
         }
 
-        String filmsCount = new DecimalFormat("#,###").format(filteredFilms.size());
-
         request.getSession().setAttribute("minimumVotes", minimumVotesParam);
         request.getSession().setAttribute("title", titleParam);
         request.getSession().setAttribute("rating", ratingParam);
         request.getSession().setAttribute("fromReleaseDate", fromReleaseDate);
         request.getSession().setAttribute("toReleaseDate", toReleaseDate);
         request.getSession().setAttribute("language", language);
-        request.getSession().setAttribute("filmsCount", filmsCount);
         searchResults = filteredFilms;
     }
 
-    public static void sortFilms(HttpServletRequest request, HttpServletResponse response) throws IOException
+    private static void sortFilms(HttpServletRequest request) throws IOException
     {
-        String column = request.getParameter("column");
-        String direction = request.getParameter("direction");
+        final String column = request.getParameter("sortColumn") == null ? "title" : request.getParameter("sortColumn");
+        String direction = request.getParameter("sortDirection");
         if (direction == null) direction = "asc";
 
-        List<Film> films = searchResults;
-        List<Film> sortedFilms = new ArrayList<>(films);
+        List<Film> sortedFilms = new ArrayList<>(searchResults);
 
-        sortFilms(sortedFilms, column);
-        if (direction.equals("desc")) Collections.reverse(sortedFilms);
-
-        searchResults = sortedFilms;
-
-        response.sendRedirect("view?action=index&column=" + column + "&direction=" + direction);
-    }
-
-    private static void sortFilms(List<Film> films, final String column)
-    {
-        films.sort(new Comparator<Film>()
+        sortedFilms.sort(new Comparator<Film>()
         {
             @Override
             public int compare(Film o1, Film o2)
@@ -150,5 +151,12 @@ public class FilmsHandler
                 return 0;
             }
         });
+
+        if (direction.equals("desc")) Collections.reverse(sortedFilms);
+
+        searchResults = sortedFilms;
+
+        request.getSession().setAttribute("sortColumn", column);
+        request.getSession().setAttribute("sortDirection", direction);
     }
 }

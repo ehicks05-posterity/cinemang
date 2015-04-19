@@ -66,15 +66,18 @@
 
         function sortFilms(column)
         {
-            var previousColumn = '${param.column}';
-            var previousDirection = '${param.direction}';
+            var previousColumn = '${sessionScope.sortColumn}';
+            var previousDirection = '${sessionScope.sortDirection}';
             var direction = 'asc';
             if (column === previousColumn)
             {
                 if (previousDirection === 'asc') direction = 'desc';
                 if (previousDirection === 'desc') direction = 'asc';
             }
-            document.location.href = '?tab1=home&action=sortFilms&column=' + column + '&direction=' + direction;
+            $('#sortColumn').val(column);
+            $('#sortDirection').val(direction);
+
+            document.getElementById("frmFilter").submit();
         }
 
     </script>
@@ -83,8 +86,10 @@
 <body onload="initHeader();">
 <h1 style="text-align: center">Welcome to Cinemang</h1>
 
-<form name="frmFilter" method="post" action="?tab1=home&action=filterFilms">
+<form name="frmFilter" id="frmFilter" method="post" action="?tab1=home&action=filterFilms">
     <input type="hidden" id="fldRating" name="fldRating">
+    <input type="hidden" name="sortColumn" id="sortColumn" value="${sessionScope.sortColumn}"/>
+    <input type="hidden" name="sortDirection" id="sortDirection" value="${sessionScope.sortDirection}"/>
 
     <table style="margin: 0 auto" class="list">
         <tr>
@@ -154,12 +159,12 @@
         </td>
     </tr>
     <tr class="listheading">
-        <td>${sessionScope.filmsCount}<br>Results</td>
-        <td class="sortableHeader" onclick="sortFilms('title')">Title <c:if test="${param.column eq 'title' and param.direction eq 'asc'}">&#9650;</c:if><c:if test="${param.column eq 'title' and param.direction eq 'desc'}">&#9660;</c:if></td>
-        <td class="sortableHeader alignright" onclick="sortFilms('releaseDate')">Release Date <c:if test="${param.column eq 'releaseDate' and param.direction eq 'asc'}">&#9650;</c:if><c:if test="${param.column eq 'releaseDate' and param.direction eq 'desc'}">&#9660;</c:if></td>
-        <td class="sortableHeader alignright" onclick="sortFilms('rating')">Rating <c:if test="${param.column eq 'rating' and param.direction eq 'asc'}">&#9650;</c:if><c:if test="${param.column eq 'rating' and param.direction eq 'desc'}">&#9660;</c:if></td>
-        <td class="sortableHeader alignright" onclick="sortFilms('votes')">Votes <c:if test="${param.column eq 'votes' and param.direction eq 'asc'}">&#9650;</c:if><c:if test="${param.column eq 'votes' and param.direction eq 'desc'}">&#9660;</c:if></td>
-        <td class="sortableHeader" onclick="sortFilms('language')">Language <c:if test="${param.column eq 'language' and param.direction eq 'asc'}">&#9650;</c:if><c:if test="${param.column eq 'language' and param.direction eq 'desc'}">&#9660;</c:if></td>
+        <td>${filmsCount}<br>Results</td>
+        <td class="sortableHeader" onclick="sortFilms('title')">Title <c:if test="${sessionScope.sortColumn eq 'title' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if><c:if test="${sessionScope.sortColumn eq 'title' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if></td>
+        <td class="sortableHeader alignright" onclick="sortFilms('releaseDate')">Release Date <c:if test="${sessionScope.sortColumn eq 'releaseDate' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if><c:if test="${sessionScope.sortColumn eq 'releaseDate' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if></td>
+        <td class="sortableHeader alignright" onclick="sortFilms('rating')">Rating <c:if test="${sessionScope.sortColumn eq 'rating' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if><c:if test="${sessionScope.sortColumn eq 'rating' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if></td>
+        <td class="sortableHeader alignright" onclick="sortFilms('votes')">Votes <c:if test="${sessionScope.sortColumn eq 'votes' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if><c:if test="${sessionScope.sortColumn eq 'votes' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if></td>
+        <td class="sortableHeader" onclick="sortFilms('language')">Language <c:if test="${sessionScope.sortColumn eq 'language' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if><c:if test="${sessionScope.sortColumn eq 'language' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if></td>
         <td>Genres</td>
     </tr>
 

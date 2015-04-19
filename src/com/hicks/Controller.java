@@ -6,34 +6,27 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.swing.text.NumberFormatter;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @WebServlet("/view")
 public class Controller extends HttpServlet
 {
+    private static final boolean DEBUG = false;
+
     @Override
     public void init() throws ServletException
     {
-//        Runtime runtime = Runtime.getRuntime();
-//        DecimalFormat df = new DecimalFormat("#,###");
-//        System.out.println("Available Processors: " + df.format(runtime.availableProcessors()));
-//        System.out.println("Free Memory: " + df.format(runtime.freeMemory()));
-//        System.out.println("Total Memory: " + df.format(runtime.totalMemory()));
-//        System.out.println("Max Memory: " + df.format(runtime.maxMemory()));
-//
-//        RuntimeMXBean bean = ManagementFactory.getRuntimeMXBean();
-//        List<String> inputArguments = bean.getInputArguments();
-//
-//        for (String argument : inputArguments)
-//            System.out.println(argument);
+        if (DEBUG)
+        {
+            System.out.println("Max Memory: " + new DecimalFormat("#,###").format(Runtime.getRuntime().maxMemory()));
+            for (String argument : ManagementFactory.getRuntimeMXBean().getInputArguments())
+                System.out.println(argument);
+        }
 
         FilmImporter.importFilmData();
     }
@@ -52,15 +45,10 @@ public class Controller extends HttpServlet
 
         try
         {
-            if (action.equals("index"))       FilmsHandler.showFilms(request, response);
+            if (action.equals("index")) FilmsHandler.showFilms(request, response);
             if (action.equals("filterFilms"))
             {
                 FilmsHandler.filterFilms(request, response);
-                return;
-            }
-            if (action.equals("sortFilms"))
-            {
-                FilmsHandler.sortFilms(request, response);
                 return;
             }
         }
@@ -82,17 +70,14 @@ public class Controller extends HttpServlet
 
     private static Map<String, String> getActionMap(String tab1)
     {
-        if (tab1.equals("home")) return getHomeActionMap();
+        if (tab1.equals("home"))
+        {
+            Map<String, String> actionMap = new HashMap<>();
+            actionMap.put("index", "webroot/filmsList.jsp");
+
+            return actionMap;
+        }
 
         return null;
-    }
-
-    private static Map<String, String> getHomeActionMap()
-    {
-        Map<String, String> actionMap = new HashMap<>();
-        actionMap.put("index",                  "webroot/filmsList.jsp");
-//        actionMap.put("filterFilms",            "webroot/filmsList.jsp");
-
-        return actionMap;
     }
 }
