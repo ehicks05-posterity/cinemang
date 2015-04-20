@@ -339,6 +339,8 @@ public class FilmImporter
                 BigDecimal rating = new BigDecimal(tokens.get(1));
                 String title = tokens.get(2);
 
+                if (title.startsWith("\"") || title.contains("(V)") || title.contains("VG") || title.contains("(TV)")) continue;
+
                 films.add(new Film(title, rating, votes));
             }
         }

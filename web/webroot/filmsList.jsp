@@ -141,25 +141,28 @@
             </td>
         </tr>
         <tr><td colspan="4" style="text-align: center"><input type="submit" value="Search"/></td></tr>
+        <tr><td colspan="4" style="text-align: center"><span>${filmsCount} Results</span></td></tr>
     </table>
 </form>
 
 <table style="margin: 0 auto" class="list">
     <tr>
-        <td colspan="7" style="text-align: right;">
-            <c:if test="${hasPrevious}">
-                <a href="?tab1=home&action=index&page=1"><</a>
-                <a style="text-decoration: none" href="?tab1=home&action=index&page=${page - 1}"><</a>
-            </c:if>
-            &nbsp;${page}&nbsp;
-            <c:if test="${hasNext}">
-                <a style="text-decoration: none" href="?tab1=home&action=index&page=${page + 1}">> </a>
-                <a href="?tab1=home&action=index&page=${pages}">> </a>
-            </c:if>
+        <td colspan="7" style="text-align: center;">
+            <div>
+                <c:if test="${hasPrevious}">
+                    <a href="?tab1=home&action=index&page=1"><</a>
+                    <a style="text-decoration: none" href="?tab1=home&action=index&page=${page - 1}"><</a>
+                </c:if>
+                &nbsp;${page}&nbsp;
+                <c:if test="${hasNext}">
+                    <a style="text-decoration: none" href="?tab1=home&action=index&page=${page + 1}">> </a>
+                    <a href="?tab1=home&action=index&page=${pages}">> </a>
+                </c:if>
+            </div>
         </td>
     </tr>
     <tr class="listheading">
-        <td>${filmsCount}<br>Results</td>
+        <td></td>
         <td class="sortableHeader" onclick="sortFilms('title')">Title <c:if test="${sessionScope.sortColumn eq 'title' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if><c:if test="${sessionScope.sortColumn eq 'title' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if></td>
         <td class="sortableHeader alignright" onclick="sortFilms('releaseDate')">Release Date <c:if test="${sessionScope.sortColumn eq 'releaseDate' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if><c:if test="${sessionScope.sortColumn eq 'releaseDate' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if></td>
         <td class="sortableHeader alignright" onclick="sortFilms('rating')">Rating <c:if test="${sessionScope.sortColumn eq 'rating' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if><c:if test="${sessionScope.sortColumn eq 'rating' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if></td>
@@ -193,7 +196,7 @@
         <tr><td colspan="7">-</td></tr>
     </c:if>
     <tr>
-        <td colspan="7" style="text-align: right;">
+        <td colspan="7" style="text-align: center;">
             <c:if test="${hasPrevious}">
                 <a href="?tab1=home&action=index&page=1"><</a>
                 <a style="text-decoration: none" href="?tab1=home&action=index&page=${page - 1}"><</a>
