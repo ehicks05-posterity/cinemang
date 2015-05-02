@@ -28,7 +28,7 @@ public class Controller extends HttpServlet
                 System.out.println(argument);
         }
 
-        FilmImporter.importFilmData();
+        OmdbLoader.loadFilms();
     }
 
     @Override

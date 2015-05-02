@@ -18,11 +18,11 @@ public class FilmsHandler
         if (searchResults.size() == 0 && request.getParameterMap().size() == 0)
         {
             // set some defaults
-            String minimumVotes = "1000";
+            String minimumVotes = "0";
             String rating = "0-10";
-            String language = "English";
+            String language = "";
 
-            performSearch(request, "", minimumVotes, rating, "", "", language);
+            performSearch(request, "", minimumVotes, rating, "", "", language, "");
 
             request.getSession().setAttribute("minimumVotes", minimumVotes);
             request.getSession().setAttribute("rating", rating);
@@ -46,7 +46,8 @@ public class FilmsHandler
         String filmsCount = new DecimalFormat("#,###").format(films.size());
         request.setAttribute("filmsCount", filmsCount);
 
-        request.setAttribute("uniqueLanguages", FilmImporter.getUniqueLanguages());
+        request.setAttribute("uniqueLanguages", OmdbLoader.getUniqueLanguages());
+        request.setAttribute("uniqueGenres", OmdbLoader.getUniqueGenres());
         request.setAttribute("pages", pages);
         request.setAttribute("page", pageParam);
         request.setAttribute("hasNext", pages > pageNumber);
@@ -62,15 +63,17 @@ public class FilmsHandler
         String fromReleaseDate = request.getParameter("fromReleaseDateDatepicker");
         String toReleaseDate = request.getParameter("toReleaseDateDatepicker");
         String language = request.getParameter("language");
+        String genre = request.getParameter("fldGenre");
 
-        performSearch(request, titleParam, minimumVotesParam, ratingParam, fromReleaseDate, toReleaseDate, language);
+        performSearch(request, titleParam, minimumVotesParam, ratingParam, fromReleaseDate, toReleaseDate, language, genre);
 
         sortFilms(request);
 
         response.sendRedirect("view?action=index");
     }
 
-    private static void performSearch(HttpServletRequest request, String titleParam, String minimumVotesParam, String ratingParam, String fromReleaseDate, String toReleaseDate, String language) throws ParseException
+    private static void performSearch(HttpServletRequest request, String titleParam, String minimumVotesParam, String ratingParam,
+                                      String fromReleaseDate, String toReleaseDate, String language, String genre) throws ParseException
     {
         int minimumVotes = minimumVotesParam.length() > 0 ? Integer.valueOf(minimumVotesParam) : 0;
 
@@ -100,23 +103,25 @@ public class FilmsHandler
             System.out.println(e.getMessage());
         }
 
+        List<Film> films = OmdbLoader.getFilms();
         List<Film> filteredFilms = new ArrayList<>();
-        for (Film film : FilmImporter.getFilms())
+        for (Film film : films)
         {
             boolean matchesTitle = film.getTitle().toLowerCase().contains(titleParam.toLowerCase());
 
-            boolean enoughVotes = film.getVotes() >= minimumVotes;
+            boolean enoughVotes = Common.stringToInt(film.getImdbVotes()) >= minimumVotes;
 
             boolean matchesLanguage = language.length() == 0 || film.getLanguage().equals(language);
+            boolean matchesGenre = genre.length() == 0 || film.getGenre().contains(genre);
 
-            Date releaseDate = film.getReleaseDate();
-            boolean afterOrEqualsFromDate = fromDate == null || releaseDate.after(fromDate) || releaseDate.equals(fromDate);
-            boolean beforeOrEqualsToDate = toDate == null || releaseDate.before(toDate) || releaseDate.equals(toDate);
+            Date releaseDate = Common.stringToDate(film.getReleased());
+            boolean afterOrEqualsFromDate = releaseDate == null || fromDate == null || releaseDate.after(fromDate) || releaseDate.equals(fromDate);
+            boolean beforeOrEqualsToDate = releaseDate == null || toDate == null || releaseDate.before(toDate) || releaseDate.equals(toDate);
             boolean releaseDateInRange = afterOrEqualsFromDate && beforeOrEqualsToDate;
 
-            BigDecimal rating = film.getRating();
+            BigDecimal rating = Common.stringToBigDecimal(film.getImdbRating());
             boolean validRating = rating.compareTo(minimumRating) >= 0 && rating.compareTo(maximumRating) <= 0;
-            if (matchesTitle && enoughVotes && validRating && releaseDateInRange && matchesLanguage)
+            if (matchesTitle && enoughVotes && validRating && releaseDateInRange && matchesLanguage && matchesGenre)
                 filteredFilms.add(film);
         }
 
@@ -126,6 +131,7 @@ public class FilmsHandler
         request.getSession().setAttribute("fromReleaseDate", fromReleaseDate);
         request.getSession().setAttribute("toReleaseDate", toReleaseDate);
         request.getSession().setAttribute("language", language);
+        request.getSession().setAttribute("genre", genre);
         searchResults = filteredFilms;
     }
 
@@ -142,11 +148,58 @@ public class FilmsHandler
             @Override
             public int compare(Film o1, Film o2)
             {
-                if (column.equals("title")) return o1.getTitle().compareToIgnoreCase(o2.getTitle());
-                if (column.equals("releaseDate")) return o1.getReleaseDate().compareTo(o2.getReleaseDate());
-                if (column.equals("votes")) return ((Integer)o1.getVotes()).compareTo(o2.getVotes());
-                if (column.equals("rating")) return (o1.getRating()).compareTo(o2.getRating());
-                if (column.equals("language")) return (o1.getLanguage()).compareTo(o2.getLanguage());
+                Object value1 = null;
+                Object value2 = null;
+
+                if (column.equals("title"))
+                {
+                    value1 = o1.getTitle();
+                    value2 = o2.getTitle();
+                }
+                if (column.equals("language"))
+                {
+                    value1 = o1.getLanguage();
+                    value2 = o2.getLanguage();
+                }
+                if (column.equals("releaseDate"))
+                {
+                    value1 = Common.stringToDate(o1.getReleased());
+                    value2 = Common.stringToDate(o2.getReleased());
+                }
+                if (column.equals("metascore"))
+                {
+                    value1 = Common.stringToInt(o1.getMetascore());
+                    value2 = Common.stringToInt(o2.getMetascore());
+                }
+                if (column.equals("tomatoMeter"))
+                {
+                    value1 = Common.stringToInt(o1.getTomatoMeter());
+                    value2 = Common.stringToInt(o2.getTomatoMeter());
+                }
+                if (column.equals("tomatoUserMeter"))
+                {
+                    value1 = Common.stringToInt(o1.getTomatoUserMeter());
+                    value2 = Common.stringToInt(o2.getTomatoUserMeter());
+                }
+                if (column.equals("imdbVotes"))
+                {
+                    value1 = Common.stringToInt(o1.getImdbVotes());
+                    value2 = Common.stringToInt(o2.getImdbVotes());
+                }
+                if (column.equals("imdbRating"))
+                {
+                    value1 = Common.stringToBigDecimal(o1.getImdbRating());
+                    value2 = Common.stringToBigDecimal(o2.getImdbRating());
+                }
+
+                if (value1 == null && value2 == null) return 0;
+                if (value1 == null) return -1;
+                if (value2 == null) return 1;
+
+                if (value1 instanceof Integer) return ((Integer)value1).compareTo((Integer) value2);
+                if (value1 instanceof String) return ((String)value1).compareToIgnoreCase((String) value2);
+                if (value1 instanceof Date) return ((Date)value1).compareTo((Date) value2);
+                if (value1 instanceof BigDecimal) return  ((BigDecimal)value1).compareTo((BigDecimal) value2);
 
                 return 0;
             }

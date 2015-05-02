@@ -1,3 +1,6 @@
+body {margin: 0;}
+
+/* Tables */
 .alignleft {text-align: left}
 .alignright {text-align: right}
 
@@ -9,7 +12,29 @@
 .listroweven {background-color: lavender}
 
 /* JQuery */
-
 .ui-datepicker {z-index: 4 !important;}
+div.ui-datepicker{
+    font-size:10px;
+}
 
-.sortableHeader {cursor: pointer}
+.sortableHeader {cursor: pointer; color: navy}
+.sortableHeaderSelected {cursor: pointer; color: white;}
+
+/* Media */
+@media (min-width: 1200px)
+{
+}
+@media (min-width: 900px) and (max-width: 1199px)
+{
+    .lowPriority {display:none;}
+}
+@media (min-width: 700px) and (max-width: 899px)
+{
+    .mediumPriority {display:none;}
+    .lowPriority {display:none;}
+}
+@media (max-width: 699px)
+{
+    .mediumPriority {display:none;}
+    .lowPriority {display:none;}
+}

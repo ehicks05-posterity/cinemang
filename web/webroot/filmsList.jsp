@@ -3,6 +3,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <jsp:useBean id="filmsOnPage" type="java.util.List<com.hicks.Film>" scope="request"/>
 <jsp:useBean id="uniqueLanguages" type="java.util.List<java.lang.String>" scope="request"/>
+<jsp:useBean id="uniqueGenres" type="java.util.List<java.lang.String>" scope="request"/>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 
 <!DOCTYPE html>
@@ -10,12 +11,13 @@
 <head>
     <title>Cinemang</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" href="../styles/cinemang.css" media="screen" />
 
     <script src="../js/jquery-2.1.1.min.js"></script>
     <script src="../js/jquery-ui.min.js"></script>
     <script src="../js/jquery.ui.touch-punch.min.js"></script>
     <link rel="stylesheet" href="../styles/jquery-ui.min.css" />
+
+    <link rel="stylesheet" type="text/css" href="../styles/cinemang.css" media="screen" />
 
     <style>#ratingSlider { margin: 10px; }	</style>
     <script>
@@ -68,7 +70,7 @@
         {
             var previousColumn = '${sessionScope.sortColumn}';
             var previousDirection = '${sessionScope.sortDirection}';
-            var direction = 'asc';
+            var direction = 'desc';
             if (column === previousColumn)
             {
                 if (previousDirection === 'asc') direction = 'desc';
@@ -84,7 +86,7 @@
 
 </head>
 <body onload="initHeader();">
-<h1 style="text-align: center">Welcome to Cinemang</h1>
+<h1 style="text-align: center;margin: 0;">Cinemang</h1>
 
 <form name="frmFilter" id="frmFilter" method="post" action="?tab1=home&action=filterFilms">
     <input type="hidden" id="fldRating" name="fldRating">
@@ -101,19 +103,19 @@
             <td>
                 <table style="border: none;">
                     <tr>
-                        <td style="border: none;">
+                        <td style="border: none;text-align: right">
                             From:
                         </td>
                         <td style="border: none;">
-                            <input type="text" id="fromReleaseDateDatepicker" name="fromReleaseDateDatepicker" size="10" maxlength="10" value="${sessionScope.fromReleaseDate}">
+                            <input type="text" id="fromReleaseDateDatepicker" name="fromReleaseDateDatepicker" size="6" maxlength="10" value="${sessionScope.fromReleaseDate}">
                         </td>
                     </tr>
                     <tr>
-                        <td style="border: none;">
+                        <td style="border: none;text-align: right">
                             <label for="toReleaseDateDatepicker">To:</label>
                         </td>
                         <td style="border: none;">
-                            <input type="text" id="toReleaseDateDatepicker" name="toReleaseDateDatepicker" size="10" maxlength="10" value="${sessionScope.toReleaseDate}">
+                            <input type="text" id="toReleaseDateDatepicker" name="toReleaseDateDatepicker" size="6" maxlength="10" value="${sessionScope.toReleaseDate}">
                         </td>
                     </tr>
                 </table>
@@ -124,7 +126,7 @@
             <td colspan="3"><input id="minimumVotes" name="minimumVotes" type="number" size="7" maxlength="7" value="${sessionScope.minimumVotes}"></td>
         </tr>
         <tr>
-            <td><label for="minimumRating">Rating: (<span id="ratingStart"></span>-<span id="ratingEnd"></span>)</label></td>
+            <td>IMDb Rating: (<span id="ratingStart"></span>-<span id="ratingEnd"></span>)</td>
             <td colspan="3">
                 <div id="ratingSlider" style="width: 80%;margin-left: auto;margin-right: auto"></div>
             </td>
@@ -140,14 +142,25 @@
                 </select>
             </td>
         </tr>
+        <tr>
+            <td><label for="fldGenre">Genre:</label></td>
+            <td colspan="3">
+                <select id="fldGenre" name="fldGenre">
+                    <option value="" ${genre == '' ? 'selected' : ''}>Any</option>
+                    <c:forEach var="uniqueGenre" items="${uniqueGenres}">
+                        <option value="${uniqueGenre}" ${genre == uniqueGenre ? 'selected' : ''}>${uniqueGenre}</option>
+                    </c:forEach>
+                </select>
+            </td>
+        </tr>
         <tr><td colspan="4" style="text-align: center"><input type="submit" value="Search"/></td></tr>
         <tr><td colspan="4" style="text-align: center"><span>${filmsCount} Results</span></td></tr>
     </table>
 </form>
-
+<br>
 <table style="margin: 0 auto" class="list">
     <tr>
-        <td colspan="7" style="text-align: center;">
+        <td colspan="100" style="text-align: center;">
             <div>
                 <c:if test="${hasPrevious}">
                     <a href="?tab1=home&action=index&page=1"><</a>
@@ -163,12 +176,43 @@
     </tr>
     <tr class="listheading">
         <td></td>
-        <td class="sortableHeader" onclick="sortFilms('title')">Title <c:if test="${sessionScope.sortColumn eq 'title' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if><c:if test="${sessionScope.sortColumn eq 'title' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if></td>
-        <td class="sortableHeader alignright" onclick="sortFilms('releaseDate')">Release Date <c:if test="${sessionScope.sortColumn eq 'releaseDate' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if><c:if test="${sessionScope.sortColumn eq 'releaseDate' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if></td>
-        <td class="sortableHeader alignright" onclick="sortFilms('rating')">Rating <c:if test="${sessionScope.sortColumn eq 'rating' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if><c:if test="${sessionScope.sortColumn eq 'rating' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if></td>
-        <td class="sortableHeader alignright" onclick="sortFilms('votes')">Votes <c:if test="${sessionScope.sortColumn eq 'votes' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if><c:if test="${sessionScope.sortColumn eq 'votes' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if></td>
-        <td class="sortableHeader" onclick="sortFilms('language')">Language <c:if test="${sessionScope.sortColumn eq 'language' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if><c:if test="${sessionScope.sortColumn eq 'language' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if></td>
-        <td>Genres</td>
+        <td class="sortableHeader" onclick="sortFilms('title')">Title
+            <c:if test="${sessionScope.sortColumn eq 'title' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if>
+            <c:if test="${sessionScope.sortColumn eq 'title' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>
+        </td>
+        <td class="sortableHeader alignright" onclick="sortFilms('tomatoMeter')">
+            <img src="../images/rottenTomatoes_logo.png" title="Tomato Meter" style="height:24px;vertical-align: middle"/>
+            <c:if test="${sessionScope.sortColumn eq 'tomatoMeter' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if>
+            <c:if test="${sessionScope.sortColumn eq 'tomatoMeter' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>
+        </td>
+        <td class="sortableHeader alignright" onclick="sortFilms('tomatoUserMeter')">
+            <img src="../images/rottenTomatoes_user_logo.png" title="Tomato User Meter" style="height:24px;vertical-align: middle"/>
+            <c:if test="${sessionScope.sortColumn eq 'tomatoUserMeter' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if>
+            <c:if test="${sessionScope.sortColumn eq 'tomatoUserMeter' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>
+        </td>
+        <td class="sortableHeader alignright" onclick="sortFilms('imdbRating')">
+            <img src="../images/imdb_logo.png" title="IMDb Rating" style="height:24px;vertical-align: middle"/>
+            <c:if test="${sessionScope.sortColumn eq 'imdbRating' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if>
+            <c:if test="${sessionScope.sortColumn eq 'imdbRating' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>
+        </td>
+        <td class="sortableHeader mediumPriority alignright" onclick="sortFilms('metascore')">
+            <img src="../images/metacritic_logo.png" title="Metascore" style="height:24px;vertical-align: middle"/>
+            <c:if test="${sessionScope.sortColumn eq 'metascore' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if>
+            <c:if test="${sessionScope.sortColumn eq 'metascore' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>
+        </td>
+        <td class="sortableHeader mediumPriority alignright" onclick="sortFilms('releaseDate')">Release Date
+            <c:if test="${sessionScope.sortColumn eq 'releaseDate' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if>
+            <c:if test="${sessionScope.sortColumn eq 'releaseDate' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>
+        </td>
+        <td class="sortableHeader lowPriority alignright" onclick="sortFilms('imdbVotes')">IMDb Votes
+            <c:if test="${sessionScope.sortColumn eq 'imdbVotes' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if>
+            <c:if test="${sessionScope.sortColumn eq 'imdbVotes' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>
+        </td>
+        <td class="sortableHeader lowPriority" onclick="sortFilms('language')">Language
+            <c:if test="${sessionScope.sortColumn eq 'language' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if>
+            <c:if test="${sessionScope.sortColumn eq 'language' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>
+        </td>
+        <td class="lowPriority">Genres</td>
     </tr>
 
     <c:set var="count" value="${1 + ((page - 1) * 100)}"/>
@@ -178,13 +222,21 @@
 
         <tr class="${rowStyle}">
             <td class="alignright"><fmt:formatNumber value="${count}" pattern="#,###"/></td>
-            <td>${film.title}</td>
-            <%--<td>${film.year}</td>--%>
-            <td class="alignright"><fmt:formatDate value="${film.releaseDate}" pattern="MMMM d, yyyy"/></td>
-            <td class="alignright">${film.rating}</td>
-            <td class="alignright"><fmt:formatNumber value="${film.votes}" pattern="#,###"/></td>
-            <td>${film.language}</td>
-            <td>${film.genresAsString}</td>
+            <td>
+                <a href="http://www.imdb.com/title/${film.imdbID}" title="${film.title}" target="_blank">
+                    <c:set var="filmTitle" value="${film.title}"/>
+                    <c:if test="${fn:length(film.title) > 50}"><c:set var="filmTitle" value="${fn:substring(film.title, 0, 50)}..."/></c:if>
+                    ${filmTitle}
+                </a>
+            </td>
+            <td class="alignright">${film.tomatoMeter}</td>
+            <td class="alignright">${film.tomatoUserMeter}</td>
+            <td class="alignright">${film.imdbRating}</td>
+            <td class="mediumPriority alignright">${film.metascore}</td>
+            <td class="mediumPriority alignright">${film.released}</td>
+            <td class="alignright lowPriority">${film.imdbVotes}</td>
+            <td class="lowPriority">${film.language}</td>
+            <td class="lowPriority">${film.genre}</td>
         </tr>
 
         <c:if test="${rowToggle}"><c:set var="rowStyle" value="listroweven"/></c:if>
@@ -193,10 +245,10 @@
         <c:set var="count" value="${count + 1}"/>
     </c:forEach>
     <c:if test="${empty filmsOnPage}">
-        <tr><td colspan="7">-</td></tr>
+        <tr><td colspan="100">-</td></tr>
     </c:if>
     <tr>
-        <td colspan="7" style="text-align: center;">
+        <td colspan="100" style="text-align: center;">
             <c:if test="${hasPrevious}">
                 <a href="?tab1=home&action=index&page=1"><</a>
                 <a style="text-decoration: none" href="?tab1=home&action=index&page=${page - 1}"><</a>
