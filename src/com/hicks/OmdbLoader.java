@@ -27,12 +27,20 @@ public class OmdbLoader
     {
         DecimalFormat df = new DecimalFormat("#,###");
 
-        String path = System.getProperty("java.io.tmpdir") + File.separator + "omdbData";
-        for (int i = 0; i < 16; i++)
+//        String path = System.getProperty("java.io.tmpdir") + File.separator + "omdbData";
+//        for (int i = 0; i < 16; i++)
+//        {
+//            List<Film> films = readDataFile(path + i + ".txt");
+//            System.out.println("Movies loaded from file " + i + ": " + df.format(films.size()));
+//            OmdbLoader.films.addAll(films);
+//        }
+        try
         {
-            List<Film> films = readDataFile(path + i + ".txt");
-            System.out.println("Movies loaded from file " + i + ": " + df.format(films.size()));
-            OmdbLoader.films.addAll(films);
+            OmdbLoader.films = IOUtil.streamFtpFile("***REMOVED***", "", "***REMOVED***", "omdb.zip");
+        }
+        catch (Exception e)
+        {
+
         }
         System.out.println("Total Movies Loaded: " + df.format(OmdbLoader.films.size()));
         System.out.println("Successful Reads: " + df.format(goodReads));
@@ -48,25 +56,10 @@ public class OmdbLoader
         {
             BufferedReader in = new BufferedReader(new FileReader(path));
             String line;
-            Film film;
-            Genson genson = new Genson();
 
             while ((line = in.readLine()) != null)
             {
-                try
-                {
-                    film = genson.deserialize(line, Film.class);
-                    String[] languages = film.getLanguage().split(",");
-                    if (languages.length > 1)
-                        film.setLanguage(languages[0]);
-                    if (!film.getImdbRating().equals("N/A") && !film.getTomatoMeter().equals("N/A") && !film.getReleased().equals("N/A") && !film.getLanguage().equals("N/A"))
-                        films.add(film);
-                    goodReads++;
-                }
-                catch (Exception e)
-                {
-                    badReads++;
-                }
+                parseLine(films, line);
             }
         }
         catch (IOException e)
@@ -75,6 +68,24 @@ public class OmdbLoader
         }
 
         return films;
+    }
+
+    static void parseLine(List<Film> films, String line)
+    {
+        try
+        {
+            Film film = new Genson().deserialize(line, Film.class);
+            String[] languages = film.getLanguage().split(",");
+            if (languages.length > 1)
+                film.setLanguage(languages[0]);
+            if (!film.getImdbRating().equals("N/A") && !film.getTomatoMeter().equals("N/A") && !film.getReleased().equals("N/A") && !film.getLanguage().equals("N/A"))
+                films.add(film);
+            goodReads++;
+        }
+        catch (Exception e)
+        {
+            badReads++;
+        }
     }
 
     public static List<String> getUniqueLanguages()

@@ -86,7 +86,7 @@
 
 </head>
 <body onload="initHeader();">
-<h1 style="text-align: center;margin: 0;">Cinemang</h1>
+<h1 style="text-align: center;margin: 0;">Cinemang <img src="../images/spaceCat.png" style="height: 32px;vertical-align: middle"></h1>
 
 <form name="frmFilter" id="frmFilter" method="post" action="?tab1=home&action=filterFilms">
     <input type="hidden" id="fldRating" name="fldRating">
@@ -95,11 +95,11 @@
 
     <table style="margin: 0 auto" class="list">
         <tr>
-            <td><label for="title">Title:</label></td>
+            <td class="alignright"><label for="title">Title:</label></td>
             <td colspan="3"><input id="title" name="title" type="text" size="20" maxlength="32" value="${sessionScope.title}"></td>
         </tr>
         <tr>
-            <td><label for="fromReleaseDateDatepicker">Release Date:</label></td>
+            <td class="alignright"><label for="fromReleaseDateDatepicker">Release Date:</label></td>
             <td>
                 <table style="border: none;">
                     <tr>
@@ -122,17 +122,17 @@
             </td>
         </tr>
         <tr>
-            <td><label for="minimumVotes">Minimum Votes:</label></td>
+            <td class="alignright"><label for="minimumVotes">Minimum Votes:</label></td>
             <td colspan="3"><input id="minimumVotes" name="minimumVotes" type="number" size="7" maxlength="7" value="${sessionScope.minimumVotes}"></td>
         </tr>
         <tr>
-            <td>IMDb Rating: (<span id="ratingStart"></span>-<span id="ratingEnd"></span>)</td>
+            <td class="alignright">IMDb Rating: (<span id="ratingStart"></span>-<span id="ratingEnd"></span>)</td>
             <td colspan="3">
                 <div id="ratingSlider" style="width: 80%;margin-left: auto;margin-right: auto"></div>
             </td>
         </tr>
         <tr>
-            <td><label for="language">Language:</label></td>
+            <td class="alignright"><label for="language">Language:</label></td>
             <td colspan="3">
                 <select id="language" name="language">
                     <option value="" ${language == '' ? 'selected' : ''}>Any</option>
@@ -143,7 +143,7 @@
             </td>
         </tr>
         <tr>
-            <td><label for="fldGenre">Genre:</label></td>
+            <td class="alignright"><label for="fldGenre">Genre:</label></td>
             <td colspan="3">
                 <select id="fldGenre" name="fldGenre">
                     <option value="" ${genre == '' ? 'selected' : ''}>Any</option>
