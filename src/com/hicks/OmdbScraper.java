@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class OmdbScannerDaemon
+public class OmdbScraper
 {
     public static void main(String[] args) throws IOException
     {
