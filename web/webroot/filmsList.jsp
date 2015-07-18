@@ -227,6 +227,7 @@
                     <c:set var="filmTitle" value="${film.title}"/>
                     <c:if test="${fn:length(film.title) > 50}"><c:set var="filmTitle" value="${fn:substring(film.title, 0, 50)}..."/></c:if>
                     ${filmTitle}
+                    <c:if test="${film.tomatoImage=='fresh'}"><img src="../images/certified_logo.png" style="vertical-align: middle" height="16px"/></c:if>
                 </a>
             </td>
             <td class="alignright">${film.tomatoMeter}</td>
@@ -234,7 +235,7 @@
             <td class="alignright">${film.imdbRating}</td>
             <td class="mediumPriority alignright">${film.metascore}</td>
             <td class="mediumPriority alignright">${film.released}</td>
-            <td class="alignright lowPriority">${film.imdbVotes}</td>
+            <td class="alignright lowPriority"><fmt:formatNumber value="${film.imdbVotes}" pattern="#,###"/></td>
             <td class="lowPriority">${film.language}</td>
             <td class="lowPriority">${film.genre}</td>
         </tr>
