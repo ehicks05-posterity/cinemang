@@ -1,59 +1,32 @@
 package com.hicks;
 
-import com.owlike.genson.annotation.JsonProperty;
-
 import java.io.Serializable;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.Date;
-import java.util.Locale;
 
 public class Film implements Serializable
 {
-    @JsonProperty("Title")
     private String title = "";
-    @JsonProperty("Year")
     private String year = "";
-    @JsonProperty("Rated")
     private String rated = "";
-    @JsonProperty("Released")
     private String released;
-    @JsonProperty("Runtime")
     private String runtime = "";
-    @JsonProperty("Genre")
     private String genre = "";
-    @JsonProperty("Director")
     private String director = "";
-    @JsonProperty("Writer")
     private String writer = "";
-    @JsonProperty("Actors")
     private String actors = "";
-    @JsonProperty("Plot")
     private String plot = "";
-    @JsonProperty("Language")
     private String language = "";
-    @JsonProperty("Country")
     private String country = "";
-    @JsonProperty("Awards")
     private String awards = "";
-    @JsonProperty("Poster")
     private String poster = "";
 
-    @JsonProperty("Metascore")
     private String metascore;
 
     private String imdbRating;
     private String imdbVotes;
     private String imdbID = "";
 
-    @JsonProperty("Type")
     private String type = "";
 
-    @JsonProperty("tomatoMeter")
     private String tomatoMeter;
     private String tomatoImage = "";
     private String tomatoRating;
@@ -65,13 +38,9 @@ public class Film implements Serializable
     private String tomatoUserRating;
     private String tomatoUserReviews;
 
-    @JsonProperty("DVD")
     private String dvd;
-    @JsonProperty("BoxOffice")
     private String boxOffice = "";
-    @JsonProperty("Production")
     private String production = "";
-    @JsonProperty("Website")
     private String website = "";
 
     @Override
@@ -87,108 +56,6 @@ public class Film implements Serializable
         return title;
     }
 
-    // -------- JSON Type Conversion ----------
-
-//    @JsonProperty("Released")
-//    public void setReleased(String released)
-//    {
-//        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH);
-//
-//        try
-//        {
-//            LocalDate date = LocalDate.parse(released, formatter);
-//            Instant instant = date.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant();
-//            this.released = Date.from(instant);
-//        }
-//        catch (DateTimeParseException e)
-//        {
-//            System.out.println(e.getMessage());
-//        }
-//    }
-//
-//    @JsonProperty("Metascore")
-//    public void setMetascore(String metascore)
-//    {
-//        this.metascore = Common.stringToInt(metascore);
-//    }
-//
-//    @JsonProperty("imdbRating")
-//    public void setImdbRating(String imdbRating)
-//    {
-//        this.imdbRating = Common.stringToBigDecimal(imdbRating);
-//    }
-//
-//    @JsonProperty("imdbVotes")
-//    public void setImdbVotes(String imdbVotes)
-//    {
-//        this.imdbVotes = Common.stringToInt(imdbVotes);
-//    }
-//
-//    @JsonProperty("tomatoMeter")
-//    public void setTomatoMeter(String tomatoMeter)
-//    {
-//        this.tomatoMeter = Common.stringToInt(tomatoMeter);
-//    }
-//
-//    @JsonProperty("tomatoRating")
-//    public void setTomatoRating(String tomatoRating)
-//    {
-//        this.tomatoRating = Common.stringToBigDecimal(tomatoRating);
-//    }
-//
-//    @JsonProperty("tomatoReviews")
-//    public void setTomatoReviews(String tomatoReviews)
-//    {
-//        this.tomatoReviews = Common.stringToInt(tomatoReviews);
-//    }
-//
-//    @JsonProperty("tomatoFresh")
-//    public void setTomatoFresh(String tomatoFresh)
-//    {
-//        this.tomatoFresh = Common.stringToInt(tomatoFresh);
-//    }
-//
-//    @JsonProperty("tomatoRotten")
-//    public void setTomatoRotten(String tomatoRotten)
-//    {
-//        this.tomatoRotten = Common.stringToInt(tomatoRotten);
-//    }
-//
-//    @JsonProperty("tomatoUserMeter")
-//    public void setTomatoUserMeter(String tomatoUserMeter)
-//    {
-//        this.tomatoUserMeter = Common.stringToInt(tomatoUserMeter);
-//    }
-//
-//    @JsonProperty("tomatoUserRating")
-//    public void setTomatoUserRating(String tomatoUserRating)
-//    {
-//        this.tomatoUserRating = Common.stringToBigDecimal(tomatoUserRating);
-//    }
-//
-//    @JsonProperty("tomatoUserReviews")
-//    public void setTomatoUserReviews(String tomatoUserReviews)
-//    {
-//        this.tomatoUserReviews = Common.stringToInt(tomatoUserReviews);
-//    }
-//
-//    @JsonProperty("DVD")
-//    public void setDvd(String dvd)
-//    {
-//        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH);
-//
-//        try
-//        {
-//            LocalDate date = LocalDate.parse(dvd, formatter);
-//            Instant instant = date.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant();
-//            this.dvd = Date.from(instant);
-//        }
-//        catch (DateTimeParseException e)
-//        {
-//            System.out.println(e.getMessage());
-//        }
-//    }
-
     // -------- Getters / Setters ----------
 
     public String getTitle()
@@ -196,7 +63,6 @@ public class Film implements Serializable
         return title;
     }
 
-    @JsonProperty("Title")
     public void setTitle(String title)
     {
         this.title = title;
@@ -207,7 +73,6 @@ public class Film implements Serializable
         return year;
     }
 
-    @JsonProperty("Year")
     public void setYear(String year)
     {
         this.year = year;
@@ -218,7 +83,6 @@ public class Film implements Serializable
         return rated;
     }
 
-    @JsonProperty("Rated")
     public void setRated(String rated)
     {
         this.rated = rated;
@@ -239,7 +103,6 @@ public class Film implements Serializable
         return runtime;
     }
 
-    @JsonProperty("Runtime")
     public void setRuntime(String runtime)
     {
         this.runtime = runtime;
@@ -250,7 +113,6 @@ public class Film implements Serializable
         return genre;
     }
 
-    @JsonProperty("Genre")
     public void setGenre(String genre)
     {
         this.genre = genre;
@@ -261,7 +123,6 @@ public class Film implements Serializable
         return director;
     }
 
-    @JsonProperty("Director")
     public void setDirector(String director)
     {
         this.director = director;
@@ -272,7 +133,6 @@ public class Film implements Serializable
         return writer;
     }
 
-    @JsonProperty("Writer")
     public void setWriter(String writer)
     {
         this.writer = writer;
@@ -283,7 +143,6 @@ public class Film implements Serializable
         return actors;
     }
 
-    @JsonProperty("Actors")
     public void setActors(String actors)
     {
         this.actors = actors;
@@ -294,7 +153,6 @@ public class Film implements Serializable
         return plot;
     }
 
-    @JsonProperty("Plot")
     public void setPlot(String plot)
     {
         this.plot = plot;
@@ -305,7 +163,6 @@ public class Film implements Serializable
         return language;
     }
 
-    @JsonProperty("Language")
     public void setLanguage(String language)
     {
         this.language = language;
@@ -316,7 +173,6 @@ public class Film implements Serializable
         return country;
     }
 
-    @JsonProperty("Country")
     public void setCountry(String country)
     {
         this.country = country;
@@ -327,7 +183,6 @@ public class Film implements Serializable
         return awards;
     }
 
-    @JsonProperty("Awards")
     public void setAwards(String awards)
     {
         this.awards = awards;
@@ -338,7 +193,6 @@ public class Film implements Serializable
         return poster;
     }
 
-    @JsonProperty("Poster")
     public void setPoster(String poster)
     {
         this.poster = poster;
@@ -389,7 +243,6 @@ public class Film implements Serializable
         return type;
     }
 
-    @JsonProperty("Type")
     public void setType(String type)
     {
         this.type = type;
@@ -510,7 +363,6 @@ public class Film implements Serializable
         return boxOffice;
     }
 
-    @JsonProperty("BoxOffice")
     public void setBoxOffice(String boxOffice)
     {
         this.boxOffice = boxOffice;
@@ -521,7 +373,6 @@ public class Film implements Serializable
         return production;
     }
 
-    @JsonProperty("Production")
     public void setProduction(String production)
     {
         this.production = production;
@@ -532,7 +383,6 @@ public class Film implements Serializable
         return website;
     }
 
-    @JsonProperty("Website")
     public void setWebsite(String website)
     {
         this.website = website;
