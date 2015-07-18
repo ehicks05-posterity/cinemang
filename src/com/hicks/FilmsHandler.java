@@ -11,41 +11,24 @@ import java.util.*;
 
 public class FilmsHandler
 {
-    private static List<Film> searchResults = new ArrayList<>();
-
     public static void showFilms(HttpServletRequest request, HttpServletResponse response) throws ParseException
     {
-        if (searchResults.size() == 0 && request.getParameterMap().size() == 0)
-        {
-            // set some defaults
-            String minimumVotes = "0";
-            String rating = "0-10";
-            String language = "";
+        List<Film> searchResults = (List<Film>) request.getSession().getAttribute("searchResults");
+        if (searchResults == null)
+            searchResults = performInitialSearch(request);
 
-            performSearch(request, "", minimumVotes, rating, "", "", language, "");
+        request.getSession().setAttribute("searchResults", searchResults);
 
-            request.getSession().setAttribute("minimumVotes", minimumVotes);
-            request.getSession().setAttribute("rating", rating);
-            request.getSession().setAttribute("language", language);
-        }
-        List<Film> films = searchResults;
-        int pages = 1 + ((films.size() - 1) / 100);
+        int pages = 1 + ((searchResults.size() - 1) / 100);
 
-        List<Film> filmsOnPage = new ArrayList<>();
         String pageParam = request.getParameter("page");
         if (pageParam == null || Integer.valueOf(pageParam) > pages) pageParam = "1";
 
         int pageNumber = Integer.valueOf(pageParam);
 
-        int from = (pageNumber - 1) * 100;
-        int filmsAfterFrom = films.size() - from;
-        int to = filmsAfterFrom < 100 ? from + filmsAfterFrom : from + 100;
+        List<Film> filmsOnPage = getAPageOfFilms(searchResults, pageNumber);
 
-        filmsOnPage.addAll(films.subList(from, to));
-
-        String filmsCount = new DecimalFormat("#,###").format(films.size());
-        request.setAttribute("filmsCount", filmsCount);
-
+        request.setAttribute("searchResultsSize", new DecimalFormat("#,###").format(searchResults.size()));
         request.setAttribute("uniqueLanguages", OmdbLoader.getUniqueLanguages());
         request.setAttribute("uniqueGenres", OmdbLoader.getUniqueGenres());
         request.setAttribute("pages", pages);
@@ -53,6 +36,32 @@ public class FilmsHandler
         request.setAttribute("hasNext", pages > pageNumber);
         request.setAttribute("hasPrevious", pageNumber > 1);
         request.setAttribute("filmsOnPage", filmsOnPage);
+    }
+
+    private static List<Film> performInitialSearch(HttpServletRequest request) throws ParseException
+    {
+        // set some defaults
+        String minimumVotes = "0";
+        String rating = "0-10";
+        String language = "";
+
+        request.getSession().setAttribute("minimumVotes", minimumVotes);
+        request.getSession().setAttribute("rating", rating);
+        request.getSession().setAttribute("language", language);
+
+        return performSearch(request, "", minimumVotes, rating, "", "", language, "");
+    }
+
+    private static List<Film> getAPageOfFilms(List<Film> films, int pageNumber)
+    {
+        List<Film> filmsOnPage = new ArrayList<>();
+
+        int from = (pageNumber - 1) * 100;
+        int filmsAfterFrom = films.size() - from;
+        int to = filmsAfterFrom < 100 ? from + filmsAfterFrom : from + 100;
+
+        filmsOnPage.addAll(films.subList(from, to));
+        return filmsOnPage;
     }
 
     public static void filterFilms(HttpServletRequest request, HttpServletResponse response) throws IOException, ParseException
@@ -65,14 +74,15 @@ public class FilmsHandler
         String language = request.getParameter("language");
         String genre = request.getParameter("fldGenre");
 
-        performSearch(request, titleParam, minimumVotesParam, ratingParam, fromReleaseDate, toReleaseDate, language, genre);
+        List<Film> searchResults = performSearch(request, titleParam, minimumVotesParam, ratingParam, fromReleaseDate, toReleaseDate, language, genre);
 
-        sortFilms(request);
+        searchResults = sortFilms(request, searchResults);
+        request.getSession().setAttribute("searchResults", searchResults);
 
         response.sendRedirect("view?action=index");
     }
 
-    private static void performSearch(HttpServletRequest request, String titleParam, String minimumVotesParam, String ratingParam,
+    private static List<Film> performSearch(HttpServletRequest request, String titleParam, String minimumVotesParam, String ratingParam,
                                       String fromReleaseDate, String toReleaseDate, String language, String genre) throws ParseException
     {
         int minimumVotes = minimumVotesParam.length() > 0 ? Integer.valueOf(minimumVotesParam) : 0;
@@ -132,16 +142,16 @@ public class FilmsHandler
         request.getSession().setAttribute("toReleaseDate", toReleaseDate);
         request.getSession().setAttribute("language", language);
         request.getSession().setAttribute("genre", genre);
-        searchResults = filteredFilms;
+        return filteredFilms;
     }
 
-    private static void sortFilms(HttpServletRequest request) throws IOException
+    private static List<Film> sortFilms(HttpServletRequest request, List<Film> filmsToSort) throws IOException
     {
         final String column = request.getParameter("sortColumn") == null ? "title" : request.getParameter("sortColumn");
         String direction = request.getParameter("sortDirection");
         if (direction == null) direction = "asc";
 
-        List<Film> sortedFilms = new ArrayList<>(searchResults);
+        List<Film> sortedFilms = new ArrayList<>(filmsToSort);
 
         sortedFilms.sort(new Comparator<Film>()
         {
@@ -207,9 +217,9 @@ public class FilmsHandler
 
         if (direction.equals("desc")) Collections.reverse(sortedFilms);
 
-        searchResults = sortedFilms;
-
         request.getSession().setAttribute("sortColumn", column);
         request.getSession().setAttribute("sortDirection", direction);
+
+        return sortedFilms;
     }
 }

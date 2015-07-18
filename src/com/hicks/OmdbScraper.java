@@ -19,7 +19,7 @@ public class OmdbScraper
 
         for (int i = 0; i < THREADS; i++)
         {
-            Runnable worker = new MyRunnable(THREADS, i);
+            Runnable worker = new ScraperWorker(THREADS, i);
             executor.execute(worker);
         }
         executor.shutdown();
@@ -31,12 +31,12 @@ public class OmdbScraper
         System.out.println("\nFinished all threads");
     }
 
-    public static class MyRunnable implements Runnable
+    public static class ScraperWorker implements Runnable
     {
         private final int threads;
         private final int threadIndex;
 
-        MyRunnable(int threads, int threadIndex)
+        ScraperWorker(int threads, int threadIndex)
         {
             this.threads = threads;
             this.threadIndex = threadIndex;

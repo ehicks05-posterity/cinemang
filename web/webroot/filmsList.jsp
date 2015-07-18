@@ -154,7 +154,7 @@
             </td>
         </tr>
         <tr><td colspan="4" style="text-align: center"><input type="submit" value="Search"/></td></tr>
-        <tr><td colspan="4" style="text-align: center"><span>${filmsCount} Results</span></td></tr>
+        <tr><td colspan="4" style="text-align: center"><span>${searchResultsSize} Results</span></td></tr>
     </table>
 </form>
 <br>
