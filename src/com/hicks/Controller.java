@@ -43,9 +43,11 @@ public class Controller extends HttpServlet
         String tab1   = request.getParameter("tab1") == null ? "home" : request.getParameter("tab1");
         String action = request.getParameter("action") == null ? "index" : request.getParameter("action");
 
+        String viewJsp = "";
         try
         {
-            if (action.equals("index")) FilmsHandler.showFilms(request, response);
+            if (action.equals("form"))
+                viewJsp = FilmsHandler.showFilms(request, response);
             if (action.equals("filterFilms"))
             {
                 FilmsHandler.filterFilms(request, response);
@@ -57,27 +59,7 @@ public class Controller extends HttpServlet
             System.out.println(e.getMessage());
         }
 
-        String viewJsp = getAction(tab1, action);
         RequestDispatcher dispatcher = request.getRequestDispatcher(viewJsp);
         dispatcher.forward(request, response);
-    }
-
-    private static String getAction(String tab1, String action)
-    {
-        Map<String, String> actionMap = getActionMap(tab1);
-        return actionMap.get(action);
-    }
-
-    private static Map<String, String> getActionMap(String tab1)
-    {
-        if (tab1.equals("home"))
-        {
-            Map<String, String> actionMap = new HashMap<>();
-            actionMap.put("index", "webroot/filmsList.jsp");
-
-            return actionMap;
-        }
-
-        return null;
     }
 }

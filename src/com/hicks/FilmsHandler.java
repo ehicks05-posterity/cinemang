@@ -11,7 +11,7 @@ import java.util.*;
 
 public class FilmsHandler
 {
-    public static void showFilms(HttpServletRequest request, HttpServletResponse response) throws ParseException
+    public static String showFilms(HttpServletRequest request, HttpServletResponse response) throws ParseException
     {
         List<Film> searchResults = (List<Film>) request.getSession().getAttribute("searchResults");
         if (searchResults == null)
@@ -36,6 +36,8 @@ public class FilmsHandler
         request.setAttribute("hasNext", pages > pageNumber);
         request.setAttribute("hasPrevious", pageNumber > 1);
         request.setAttribute("filmsOnPage", filmsOnPage);
+
+        return "webroot/filmsList.jsp";
     }
 
     private static List<Film> performInitialSearch(HttpServletRequest request) throws ParseException
@@ -79,7 +81,7 @@ public class FilmsHandler
         searchResults = sortFilms(request, searchResults);
         request.getSession().setAttribute("searchResults", searchResults);
 
-        response.sendRedirect("view?action=index");
+        response.sendRedirect("view?action=form");
     }
 
     private static List<Film> performSearch(HttpServletRequest request, String titleParam, String minimumVotesParam, String ratingParam,
@@ -105,8 +107,8 @@ public class FilmsHandler
 
         try
         {
-            if (fromReleaseDate.length() > 0) fromDate = new SimpleDateFormat("mm/dd/YYYY").parse(fromReleaseDate);
-            if (toReleaseDate.length() > 0) toDate = new SimpleDateFormat("mm/dd/YYYY").parse(toReleaseDate);
+            if (fromReleaseDate.length() > 0) fromDate = new SimpleDateFormat("MM/dd/yyyy").parse(fromReleaseDate);
+            if (toReleaseDate.length() > 0) toDate = new SimpleDateFormat("MM/dd/yyyy").parse(toReleaseDate);
         }
         catch (ParseException e)
         {

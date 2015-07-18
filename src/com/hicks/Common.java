@@ -43,7 +43,7 @@ public class Common
         if (input == null || input.length() == 0) return result;
         try
         {
-            result = new SimpleDateFormat("d MMM yyyy").parse(input);
+            result = new SimpleDateFormat("yyyy-MM-dd").parse(input);
         }
         catch (Exception e)
         {

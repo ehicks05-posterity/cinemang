@@ -1,16 +1,20 @@
 package com.hicks;
 
+import org.apache.commons.net.ftp.FTPClient;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class OmdbLoader
 {
     private static List<Film> films = new ArrayList<>();
-    private static int goodReads = 0;
-    private static int badReads = 0;
+    private static int unreadableRows = 0;
     private static List<String> uniqueLanguages = new ArrayList<>();
     private static List<String> uniqueGenres = new ArrayList<>();
 
@@ -23,126 +27,176 @@ public class OmdbLoader
     {
         try
         {
-            OmdbLoader.films = IOUtil.streamFtpFile("***REMOVED***", "", "***REMOVED***", "omdb.zip");
+            FTPClient ftp = IOUtil.prepareFtpClient("***REMOVED***", "***REMOVED***", "");
+
+            InputStream inputStream = ftp.retrieveFileStream("omdb0715.zip");
+            ZipInputStream zipIn = new ZipInputStream(inputStream);
+
+            films = readZipInputStream(zipIn);
+
+            DecimalFormat df = new DecimalFormat("#,###");
+            System.out.println("Films Found: " + df.format(films.size()));
+            System.out.println("Unreadable Rows: " + df.format(unreadableRows));
+
+            films = removeFilmsWithMissingData(films);
+            System.out.println("Films Remaining after Filtering: " + df.format(films.size()));
+
+            ftp.logout();
+            ftp.disconnect();
         }
         catch (Exception e)
         {
             System.out.println(e.getMessage());
         }
-        DecimalFormat df = new DecimalFormat("#,###");
-        System.out.println("Total Movies Loaded: " + df.format(OmdbLoader.films.size()));
-        System.out.println("Successful Reads: " + df.format(goodReads));
-        System.out.println("Bad Reads: " + df.format(badReads));
-        System.out.println("Total Reads: " + df.format((goodReads + badReads)));
     }
 
-    static void parseLine(List<Film> films, String line)
+    private static List<Film> readZipInputStream(ZipInputStream zipIn) throws IOException
+    {
+        Map<String, Film> filmMap = new HashMap<>();
+
+        for (ZipEntry e; (e = zipIn.getNextEntry()) != null;)
+        {
+            System.out.println("reading " + e.getName() + " (" + (e.getSize() / (1024 * 1024)) + "MB)");
+            BufferedReader br = new BufferedReader(new InputStreamReader(zipIn));
+            br.readLine(); // skip the header
+            String line;
+            while ((line = br.readLine()) != null)
+            {
+                Film newFilm = null;
+                if (e.getName().equals("omdbMovies.txt"))
+                    newFilm = readMovieLine(line);
+                if (e.getName().equals("tomatoes.txt"))
+                    newFilm = readRottenLine(line);
+
+                if (newFilm != null)
+                {
+                    Film existing = filmMap.get(newFilm.getImdbID());
+                    if (existing == null)
+                        filmMap.put(newFilm.getImdbID(), newFilm);
+                    else
+                    {
+                        Film mergedFilm = mergeRottenDataIntoFilmData(existing, newFilm);
+                        filmMap.put(newFilm.getImdbID(), mergedFilm);
+                    }
+                }
+            }
+        }
+
+        return new ArrayList<>(filmMap.values());
+    }
+
+    private static Film mergeRottenDataIntoFilmData(Film f1, Film f2)
+    {
+        Film movieData = f1.getLastUpdated().length() > 0 ? f1 : f2;
+        Film rottenData = f1.getLastUpdated().length() > 0 ? f2 : f1;
+
+        movieData.setTomatoImage(rottenData.getTomatoImage());
+        movieData.setTomatoRating(rottenData.getTomatoRating());
+        movieData.setTomatoMeter(rottenData.getTomatoMeter());
+        movieData.setTomatoReviews(rottenData.getTomatoReviews());
+        movieData.setTomatoFresh(rottenData.getTomatoFresh());
+        movieData.setTomatoRotten(rottenData.getTomatoRotten());
+        movieData.setTomatoConsensus(rottenData.getTomatoConsensus());
+        movieData.setTomatoUserMeter(rottenData.getTomatoUserMeter());
+        movieData.setTomatoUserRating(rottenData.getTomatoUserRating());
+        movieData.setTomatoUserReviews(rottenData.getTomatoUserReviews());
+        movieData.setDvd(rottenData.getDvd());
+        movieData.setBoxOffice(rottenData.getBoxOffice());
+        movieData.setProduction(rottenData.getProduction());
+        movieData.setWebsite(rottenData.getWebsite());
+        movieData.setRottenDataLastUpdated(rottenData.getRottenDataLastUpdated());
+
+        return movieData;
+    }
+
+    static Film readMovieLine(String line)
     {
         try
         {
-            Film film = parseOmdbRecord(line);
+            String[] tokens = line.split("\t");
+            Film film = new Film();
+
+            int i = 1;
+            film.setImdbID(tokens[i++]);
+            film.setTitle(tokens[i++]);
+            film.setYear(tokens[i++]);
+            film.setRated(tokens[i++]);
+            film.setRuntime(tokens[i++]);
+            film.setGenre(tokens[i++]);
+            film.setReleased(tokens[i++]);
+            film.setDirector(tokens[i++]);
+            film.setWriter(tokens[i++]);
+            film.setActors(tokens[i++]);
+            film.setMetascore(tokens[i++]);
+            film.setImdbRating(tokens[i++]);
+            film.setImdbVotes(tokens[i++]);
+            film.setPoster(tokens[i++]);
+            film.setPlot(tokens[i++]);
+            film.setFullPlot(tokens[i++]);
+            film.setLanguage(tokens[i++]);
+            film.setCountry(tokens[i++]);
+            film.setAwards(tokens[i++]);
+            film.setLastUpdated(tokens[i++]);
+
             String[] languages = film.getLanguage().split(",");
             if (languages.length > 1)
                 film.setLanguage(languages[0]);
-            if (!film.getImdbRating().equals("N/A") && !film.getTomatoMeter().equals("N/A") && !film.getReleased().equals("N/A") && !film.getLanguage().equals("N/A"))
-                films.add(film);
-            goodReads++;
+
+            return film;
         }
         catch (Exception e)
         {
-            badReads++;
+            unreadableRows++;
         }
+
+        return null;
     }
 
-    static Film parseOmdbRecord(String record)
+    static Film readRottenLine(String line)
     {
-        record = record.substring(1, record.length() - 1); // remove curly brackets
-
-        Map<String, String> properties = new HashMap<>();
-        List<Integer> commaIndices = new ArrayList<>();
-
-        boolean inQuotes = false;
-        boolean nextCharIsEscape = false;
-
-        for (int i = 0; i < record.length(); i++)
+        try
         {
-            String ch = record.substring(i, i + 1);
-            if (ch.equals("\\"))
-            {
-                nextCharIsEscape = true;
-                continue;
-            }
+            String[] tokens = line.split("\t");
+            Film film = new Film();
 
-            if (ch.equals("\"") && !nextCharIsEscape)
-            {
-                inQuotes = !inQuotes;
-            }
+            int i = 0;
+            film.setImdbID(Film.convertIdToImdbId(tokens[i++]));
+            film.setTomatoImage(tokens[i++]);
+            film.setTomatoRating(tokens[i++]);
+            film.setTomatoMeter(tokens[i++]);
+            film.setTomatoReviews(tokens[i++]);
+            film.setTomatoFresh(tokens[i++]);
+            film.setTomatoRotten(tokens[i++]);
+            film.setTomatoConsensus(tokens[i++]);
+            film.setTomatoUserMeter(tokens[i++]);
+            film.setTomatoUserRating(tokens[i++]);
+            film.setTomatoUserReviews(tokens[i++]);
+            film.setDvd(tokens[i++]);
+            film.setBoxOffice(tokens[i++]);
+            film.setProduction(tokens[i++]);
+            film.setWebsite(tokens[i++]);
+            film.setRottenDataLastUpdated(tokens[i++]);
 
-            if (ch.equals(",") && !inQuotes)
-                commaIndices.add(i);
-
-            nextCharIsEscape = false;
+            return film;
+        }
+        catch (Exception e)
+        {
+            unreadableRows++;
         }
 
-        List<String> keyValuePairs = new ArrayList<>();
-        for (int i = 0; i < commaIndices.size(); i++)
+        return null;
+    }
+
+    private static List<Film> removeFilmsWithMissingData(List<Film> films)
+    {
+        for (Iterator<Film> i = films.iterator(); i.hasNext();)
         {
-            if (i == 0)
-                keyValuePairs.add(record.substring(0, commaIndices.get(i)));
-            else if (i == commaIndices.size() - 1)
-                keyValuePairs.add(record.substring(commaIndices.get(i)));
-            else
-                keyValuePairs.add(record.substring(commaIndices.get(i - 1) + 1, commaIndices.get(i)));
+            Film film = i.next();
+            if (film.getImdbRating().isEmpty() || film.getTomatoMeter().isEmpty() ||
+                    film.getReleased().isEmpty() || film.getLanguage().isEmpty())
+                i.remove();
         }
-
-        for (String keyValuePair : keyValuePairs)
-        {
-            keyValuePair = keyValuePair.substring(1, keyValuePair.length() - 1); // remove outer quotes
-
-            String[] tokens = keyValuePair.split("\":\"");
-            properties.put(tokens[0], tokens[1]);
-        }
-
-        if (properties.get("Response") != null && properties.get("Response").equals("False"))
-            return null;
-
-        Film film = new Film();
-
-        film.setTitle(properties.get("Title"));
-        film.setYear(properties.get("Year"));
-        film.setRated(properties.get("Rated"));
-        film.setReleased(properties.get("Released"));
-        film.setRuntime(properties.get("Runtime"));
-        film.setGenre(properties.get("Genre"));
-        film.setDirector(properties.get("Director"));
-        film.setWriter(properties.get("Writer"));
-        film.setActors(properties.get("Actors"));
-        film.setPlot(properties.get("Plot"));
-        film.setLanguage(properties.get("Language"));
-        film.setCountry(properties.get("Country"));
-        film.setAwards(properties.get("Awards"));
-        film.setPoster(properties.get("Poster"));
-        film.setMetascore(properties.get("Metascore"));
-        film.setImdbRating(properties.get("imdbRating"));
-        film.setImdbVotes(properties.get("imdbVotes"));
-        film.setImdbID(properties.get("imdbID"));
-        film.setType(properties.get("Type"));
-        film.setTomatoMeter(properties.get("tomatoMeter"));
-        film.setTomatoImage(properties.get("tomatoImage"));
-        film.setTomatoRating(properties.get("tomatoRating"));
-        film.setTomatoReviews(properties.get("tomatoReviews"));
-        film.setTomatoFresh(properties.get("tomatoFresh"));
-        film.setTomatoRotten(properties.get("tomatoRotten"));
-        film.setTomatoConsensus(properties.get("tomatoConsensus"));
-        film.setTomatoUserMeter(properties.get("tomatoUserMeter"));
-        film.setTomatoUserRating(properties.get("tomatoUserRating"));
-        film.setTomatoUserReviews(properties.get("tomatoUserReviews"));
-        film.setDvd(properties.get("DVD"));
-        film.setBoxOffice(properties.get("BoxOffice"));
-        film.setProduction(properties.get("Production"));
-        film.setWebsite(properties.get("Website"));
-
-        return film;
+        return films;
     }
 
     public static List<String> getUniqueLanguages()

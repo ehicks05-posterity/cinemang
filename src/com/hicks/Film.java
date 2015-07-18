@@ -1,47 +1,49 @@
 package com.hicks;
 
 import java.io.Serializable;
+import java.util.List;
 
 public class Film implements Serializable
 {
+    private String imdbID = "";
     private String title = "";
     private String year = "";
     private String rated = "";
-    private String released;
     private String runtime = "";
     private String genre = "";
+    private String released = "";
     private String director = "";
     private String writer = "";
     private String actors = "";
+    private String metascore = "";
+    private String imdbRating = "";
+    private String imdbVotes = "";
+    private String poster = "";
     private String plot = "";
+    private String fullPlot = "";
     private String language = "";
     private String country = "";
     private String awards = "";
-    private String poster = "";
+    private String lastUpdated = "";
 
-    private String metascore;
-
-    private String imdbRating;
-    private String imdbVotes;
-    private String imdbID = "";
-
-    private String type = "";
-
-    private String tomatoMeter;
     private String tomatoImage = "";
-    private String tomatoRating;
-    private String tomatoReviews;
-    private String tomatoFresh;
-    private String tomatoRotten;
+    private String tomatoRating = "";
+    private String tomatoMeter = "";
+    private String tomatoReviews = "";
+    private String tomatoFresh = "";
+    private String tomatoRotten = "";
     private String tomatoConsensus = "";
-    private String tomatoUserMeter;
-    private String tomatoUserRating;
-    private String tomatoUserReviews;
+    private String tomatoUserMeter = "";
+    private String tomatoUserRating = "";
+    private String tomatoUserReviews = "";
 
-    private String dvd;
+    private String dvd = "";
     private String boxOffice = "";
     private String production = "";
     private String website = "";
+    private String rottenDataLastUpdated = "";
+
+    private String type = "";
 
     @Override
     public boolean equals(Object obj)
@@ -51,12 +53,46 @@ public class Film implements Serializable
         return this.imdbID.equals(that.getImdbID());
     }
 
+    @Override
+    public int hashCode()
+    {
+        return 17 * 37 * Integer.valueOf(imdbID);
+    }
+
     public String toString()
     {
         return title;
     }
 
+    // --------
+
+    public static Film getByImdbId(List<Film> films, String imdbId)
+    {
+        for (Film film : films)
+            if (film.getImdbID().equals(imdbId)) return film;
+        return null;
+    }
+
+    public static String convertIdToImdbId(String id)
+    {
+        StringBuilder newId = new StringBuilder(id);
+        while (newId.length() < 7)
+            newId.insert(0, "0");
+
+        return "tt" + newId.toString();
+    }
+
     // -------- Getters / Setters ----------
+
+    public String getImdbID()
+    {
+        return imdbID;
+    }
+
+    public void setImdbID(String imdbID)
+    {
+        this.imdbID = imdbID;
+    }
 
     public String getTitle()
     {
@@ -88,16 +124,6 @@ public class Film implements Serializable
         this.rated = rated;
     }
 
-    public String getReleased()
-    {
-        return released;
-    }
-
-    public void setReleased(String released)
-    {
-        this.released = released;
-    }
-
     public String getRuntime()
     {
         return runtime;
@@ -116,6 +142,16 @@ public class Film implements Serializable
     public void setGenre(String genre)
     {
         this.genre = genre;
+    }
+
+    public String getReleased()
+    {
+        return released;
+    }
+
+    public void setReleased(String released)
+    {
+        this.released = released;
     }
 
     public String getDirector()
@@ -148,6 +184,46 @@ public class Film implements Serializable
         this.actors = actors;
     }
 
+    public String getMetascore()
+    {
+        return metascore;
+    }
+
+    public void setMetascore(String metascore)
+    {
+        this.metascore = metascore;
+    }
+
+    public String getImdbRating()
+    {
+        return imdbRating;
+    }
+
+    public void setImdbRating(String imdbRating)
+    {
+        this.imdbRating = imdbRating;
+    }
+
+    public String getImdbVotes()
+    {
+        return imdbVotes;
+    }
+
+    public void setImdbVotes(String imdbVotes)
+    {
+        this.imdbVotes = imdbVotes;
+    }
+
+    public String getPoster()
+    {
+        return poster;
+    }
+
+    public void setPoster(String poster)
+    {
+        this.poster = poster;
+    }
+
     public String getPlot()
     {
         return plot;
@@ -156,6 +232,16 @@ public class Film implements Serializable
     public void setPlot(String plot)
     {
         this.plot = plot;
+    }
+
+    public String getFullPlot()
+    {
+        return fullPlot;
+    }
+
+    public void setFullPlot(String fullPlot)
+    {
+        this.fullPlot = fullPlot;
     }
 
     public String getLanguage()
@@ -188,74 +274,14 @@ public class Film implements Serializable
         this.awards = awards;
     }
 
-    public String getPoster()
+    public String getLastUpdated()
     {
-        return poster;
+        return lastUpdated;
     }
 
-    public void setPoster(String poster)
+    public void setLastUpdated(String lastUpdated)
     {
-        this.poster = poster;
-    }
-
-    public String getMetascore()
-    {
-        return metascore;
-    }
-
-    public void setMetascore(String metascore)
-    {
-        this.metascore = metascore;
-    }
-
-    public String getImdbRating()
-    {
-        return imdbRating;
-    }
-
-    public void setImdbRating(String imdbRating)
-    {
-        this.imdbRating = imdbRating;
-    }
-
-    public String getImdbVotes()
-    {
-        return imdbVotes;
-    }
-
-    public void setImdbVotes(String imdbVotes)
-    {
-        this.imdbVotes = imdbVotes;
-    }
-
-    public String getImdbID()
-    {
-        return imdbID;
-    }
-
-    public void setImdbID(String imdbID)
-    {
-        this.imdbID = imdbID;
-    }
-
-    public String getType()
-    {
-        return type;
-    }
-
-    public void setType(String type)
-    {
-        this.type = type;
-    }
-
-    public String getTomatoMeter()
-    {
-        return tomatoMeter;
-    }
-
-    public void setTomatoMeter(String tomatoMeter)
-    {
-        this.tomatoMeter = tomatoMeter;
+        this.lastUpdated = lastUpdated;
     }
 
     public String getTomatoImage()
@@ -276,6 +302,16 @@ public class Film implements Serializable
     public void setTomatoRating(String tomatoRating)
     {
         this.tomatoRating = tomatoRating;
+    }
+
+    public String getTomatoMeter()
+    {
+        return tomatoMeter;
+    }
+
+    public void setTomatoMeter(String tomatoMeter)
+    {
+        this.tomatoMeter = tomatoMeter;
     }
 
     public String getTomatoReviews()
@@ -386,5 +422,25 @@ public class Film implements Serializable
     public void setWebsite(String website)
     {
         this.website = website;
+    }
+
+    public String getRottenDataLastUpdated()
+    {
+        return rottenDataLastUpdated;
+    }
+
+    public void setRottenDataLastUpdated(String rottenDataLastUpdated)
+    {
+        this.rottenDataLastUpdated = rottenDataLastUpdated;
+    }
+
+    public String getType()
+    {
+        return type;
+    }
+
+    public void setType(String type)
+    {
+        this.type = type;
     }
 }
