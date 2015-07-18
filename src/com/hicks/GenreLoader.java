@@ -12,6 +12,8 @@ public class GenreLoader
         {
             String[] genres;
             String genreField = film.getGenre();
+            if (genreField.length() == 0) continue;
+
             if (genreField.contains(","))
                 genres = genreField.split(",");
             else
