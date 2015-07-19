@@ -11,6 +11,8 @@ public class LanguageLoader
         for (Film film : films)
         {
             String language = film.getLanguage();
+            if (language.length() == 0) continue;
+
             if (languagesMap.get(language) == null)
                 languagesMap.put(language, new FilmLanguage(language, 1));
             else

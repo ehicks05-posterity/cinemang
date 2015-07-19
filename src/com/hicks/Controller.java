@@ -10,8 +10,6 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.text.DecimalFormat;
 import java.text.ParseException;
-import java.util.HashMap;
-import java.util.Map;
 
 @WebServlet("/view")
 public class Controller extends HttpServlet
