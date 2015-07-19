@@ -2,6 +2,8 @@ package com.hicks;
 
 import org.apache.commons.net.ftp.FTPClient;
 
+import javax.persistence.EntityManager;
+import javax.persistence.EntityTransaction;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,27 +29,41 @@ public class OmdbLoader
     {
         try
         {
-            FTPClient ftp = IOUtil.prepareFtpClient("***REMOVED***", "***REMOVED***", "");
+            if (Hibernate.executeQuery("select f from Film f").size() == 0)
+            {
+                films = importFilmsFromOmdbDump();
 
-            InputStream inputStream = ftp.retrieveFileStream("omdb0715.zip");
-            ZipInputStream zipIn = new ZipInputStream(inputStream);
+                DecimalFormat df = new DecimalFormat("#,###");
+                System.out.println("Films Found: " + df.format(films.size()));
+                System.out.println("Unreadable Rows: " + df.format(unreadableRows));
 
-            films = readZipInputStream(zipIn);
+                films = removeFilmsWithMissingData(films);
+                System.out.println("Films Remaining after Filtering: " + df.format(films.size()));
 
-            DecimalFormat df = new DecimalFormat("#,###");
-            System.out.println("Films Found: " + df.format(films.size()));
-            System.out.println("Unreadable Rows: " + df.format(unreadableRows));
+                for (Film film : films)
+                    Hibernate.persist(film);
+            }
 
-            films = removeFilmsWithMissingData(films);
-            System.out.println("Films Remaining after Filtering: " + df.format(films.size()));
-
-            ftp.logout();
-            ftp.disconnect();
+            List<Film> filmsFromDb = Hibernate.executeQuery("select f from Film f");
+            films = filmsFromDb;
         }
         catch (Exception e)
         {
             System.out.println(e.getMessage());
         }
+    }
+
+    private static List<Film> importFilmsFromOmdbDump() throws IOException
+    {
+        FTPClient ftp = IOUtil.prepareFtpClient("***REMOVED***", "***REMOVED***", "");
+
+        InputStream inputStream = ftp.retrieveFileStream("omdb0715.zip");
+        ZipInputStream zipIn = new ZipInputStream(inputStream);
+
+        List<Film> films = readZipInputStream(zipIn);
+        ftp.logout();
+        ftp.disconnect();
+        return films;
     }
 
     private static List<Film> readZipInputStream(ZipInputStream zipIn) throws IOException

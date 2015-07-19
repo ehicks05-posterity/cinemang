@@ -1,48 +1,92 @@
 package com.hicks;
 
+import javax.persistence.*;
 import java.io.Serializable;
 import java.util.List;
 
+@Entity
+@Table(name = "films")
 public class Film implements Serializable
 {
+    @Version
+    @Column(name = "version")
+    private int version = 0;
+
+    @Id
+    @Column(name = "imdb_ID", updatable = false, nullable = false)
     private String imdbID = "";
+    @Column(name = "title", length = 16000)
     private String title = "";
+    @Column(name = "year")
     private String year = "";
+    @Column(name = "rated")
     private String rated = "";
+    @Column(name = "runtime")
     private String runtime = "";
+    @Column(name = "genre")
     private String genre = "";
+    @Column(name = "released")
     private String released = "";
+    @Column(name = "director", length = 16000)
     private String director = "";
+    @Column(name = "writer", length = 16000)
     private String writer = "";
+    @Column(name = "actors", length = 16000)
     private String actors = "";
+    @Column(name = "metascore")
     private String metascore = "";
+    @Column(name = "imdb_Rating")
     private String imdbRating = "";
+    @Column(name = "imdb_Votes")
     private String imdbVotes = "";
+    @Column(name = "poster")
     private String poster = "";
+    @Column(name = "plot", length = 4000)
     private String plot = "";
+    @Column(name = "full_Plot", length = 16000)
     private String fullPlot = "";
+    @Column(name = "language")
     private String language = "";
+    @Column(name = "country")
     private String country = "";
+    @Column(name = "awards")
     private String awards = "";
+    @Column(name = "last_Updated")
     private String lastUpdated = "";
 
+    @Column(name = "tomato_Image")
     private String tomatoImage = "";
+    @Column(name = "tomato_Rating")
     private String tomatoRating = "";
+    @Column(name = "tomato_Meter")
     private String tomatoMeter = "";
+    @Column(name = "tomato_Reviews")
     private String tomatoReviews = "";
+    @Column(name = "tomato_Fresh")
     private String tomatoFresh = "";
+    @Column(name = "tomato_Rotten")
     private String tomatoRotten = "";
+    @Column(name = "tomato_Consensus", length = 16000)
     private String tomatoConsensus = "";
+    @Column(name = "tomato_User_Meter")
     private String tomatoUserMeter = "";
+    @Column(name = "tomato_User_Rating")
     private String tomatoUserRating = "";
+    @Column(name = "tomato_User_Reviews")
     private String tomatoUserReviews = "";
 
+    @Column(name = "dvd")
     private String dvd = "";
+    @Column(name = "box_Office")
     private String boxOffice = "";
+    @Column(name = "production")
     private String production = "";
+    @Column(name = "website")
     private String website = "";
+    @Column(name = "rotten_Data_Last_Updated")
     private String rottenDataLastUpdated = "";
 
+    @Column(name = "type")
     private String type = "";
 
     @Override
@@ -83,6 +127,16 @@ public class Film implements Serializable
     }
 
     // -------- Getters / Setters ----------
+
+    public int getVersion()
+    {
+        return version;
+    }
+
+    public void setVersion(int version)
+    {
+        this.version = version;
+    }
 
     public String getImdbID()
     {
