@@ -17,6 +17,8 @@ div.ui-datepicker{
     font-size:10px;
 }
 
+.ui-dialog {font-size: 11pt;}
+
 .sortableHeader {cursor: pointer; color: navy}
 .sortableHeaderSelected {cursor: pointer; color: white;}
 

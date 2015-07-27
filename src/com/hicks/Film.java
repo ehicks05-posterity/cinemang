@@ -2,6 +2,8 @@ package com.hicks;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 @Entity
@@ -10,12 +12,13 @@ public class Film implements Serializable
 {
     @Version
     @Column(name = "version")
-    private int version = 0;
+    private Long version;
 
     @Id
     @Column(name = "imdb_ID", updatable = false, nullable = false)
     private String imdbID = "";
-    @Column(name = "title", length = 16000)
+
+    @Column(name = "title", columnDefinition = "varchar2(2000 char)")
     private String title = "";
     @Column(name = "year")
     private String year = "";
@@ -27,11 +30,14 @@ public class Film implements Serializable
     private String genre = "";
     @Column(name = "released")
     private String released = "";
-    @Column(name = "director", length = 16000)
+
+    @Column(name = "director", columnDefinition = "varchar2(2000 char)")
     private String director = "";
-    @Column(name = "writer", length = 16000)
+
+    @Column(name = "writer", columnDefinition = "varchar2(2000 char)")
     private String writer = "";
-    @Column(name = "actors", length = 16000)
+
+    @Column(name = "actors", columnDefinition = "varchar2(1000 char)")
     private String actors = "";
     @Column(name = "metascore")
     private String metascore = "";
@@ -41,9 +47,12 @@ public class Film implements Serializable
     private String imdbVotes = "";
     @Column(name = "poster")
     private String poster = "";
-    @Column(name = "plot", length = 4000)
+
+    @Column(name = "plot", columnDefinition = "varchar2(2000 char)")
     private String plot = "";
-    @Column(name = "full_Plot", length = 16000)
+
+    @Lob
+    @Column(name = "full_Plot")
     private String fullPlot = "";
     @Column(name = "language")
     private String language = "";
@@ -66,7 +75,8 @@ public class Film implements Serializable
     private String tomatoFresh = "";
     @Column(name = "tomato_Rotten")
     private String tomatoRotten = "";
-    @Column(name = "tomato_Consensus", length = 16000)
+
+    @Column(name = "tomato_Consensus", columnDefinition = "varchar2(2000 char)")
     private String tomatoConsensus = "";
     @Column(name = "tomato_User_Meter")
     private String tomatoUserMeter = "";
@@ -126,14 +136,40 @@ public class Film implements Serializable
         return "tt" + newId.toString();
     }
 
+    public String getComboRating()
+    {
+        if (imdbRating == null || imdbRating.length() == 0 ||
+                tomatoMeter == null || tomatoMeter.length() == 0 ||
+                tomatoUserMeter == null ||  tomatoUserMeter.length() == 0)
+            return "";
+
+        BigDecimal imdbNormalized = Common.stringToBigDecimal(imdbRating).multiply(BigDecimal.TEN);
+        BigDecimal tomatoCritic = Common.stringToBigDecimal(tomatoMeter);
+        BigDecimal tomatoUser = Common.stringToBigDecimal(tomatoUserMeter);
+
+        BigDecimal average = imdbNormalized.add(tomatoCritic).add(tomatoUser).divide(new BigDecimal("3"), 0, RoundingMode.HALF_UP);
+        return average.toString();
+    }
+
+    public String getShortPlot()
+    {
+        if (plot == null) return "";
+        if (plot.length() > 64)
+        {
+            int lastSpace = plot.substring(0, 64).lastIndexOf(" ");
+            return plot.substring(0, lastSpace) + "...";
+        }
+        return plot;
+    }
+
     // -------- Getters / Setters ----------
 
-    public int getVersion()
+    public Long getVersion()
     {
         return version;
     }
 
-    public void setVersion(int version)
+    public void setVersion(Long version)
     {
         this.version = version;
     }

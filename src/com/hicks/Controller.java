@@ -45,7 +45,7 @@ public class Controller extends HttpServlet
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
         String tab1   = request.getParameter("tab1") == null ? "home" : request.getParameter("tab1");
-        String action = request.getParameter("action") == null ? "index" : request.getParameter("action");
+        String action = request.getParameter("action") == null ? "form" : request.getParameter("action");
 
         String viewJsp = "";
         try

@@ -1,9 +1,6 @@
 package com.hicks;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityTransaction;
-import javax.persistence.Persistence;
+import javax.persistence.*;
 import java.util.List;
 
 public class Hibernate
@@ -15,8 +12,8 @@ public class Hibernate
     {
         try
         {
-            emf = Persistence.createEntityManagerFactory("h2-ds");
-            em = Hibernate.getEntityManagerFactory().createEntityManager();
+            emf = Persistence.createEntityManagerFactory("oracle-ds");
+            em = emf.createEntityManager();
         }
         catch (Exception e)
         {
@@ -30,9 +27,12 @@ public class Hibernate
         if (emf != null) emf.close();
     }
 
-    public static List executeQuery(String query, Object... args)
+    public static List executeQuery(String queryString, Object... args)
     {
-        return em.createQuery(query).getResultList();
+        Query query = em.createQuery(queryString);
+        for (Object arg : args)
+            query.setParameter(1, arg);
+        return query.getResultList();
     }
 
     public static void persist(Object obj)
@@ -45,9 +45,25 @@ public class Hibernate
         transaction.commit();
     }
 
-    public static EntityManagerFactory getEntityManagerFactory()
+    public static void persistAsPartOfTransaction(Object obj)
     {
-        EntityManagerFactory emf = Persistence.createEntityManagerFactory("h2-ds");
-        return emf;
+        em.persist(obj);
+    }
+
+    public static EntityTransaction startTransaction()
+    {
+        EntityTransaction transaction = em.getTransaction();
+        transaction.begin();
+        return transaction;
+    }
+
+    public static void commitTransaction(EntityTransaction transaction)
+    {
+        transaction.commit();
+    }
+
+    public static void flushCache()
+    {
+        em.flush();
     }
 }
