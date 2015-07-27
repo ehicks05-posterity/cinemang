@@ -119,22 +119,44 @@ public class FilmsHandler
         List<Film> filteredFilms = new ArrayList<>();
         for (Film film : films)
         {
-            boolean matchesTitle = film.getTitle().toLowerCase().contains(titleParam.toLowerCase());
+            if (titleParam.length() > 0)
+                if (!film.getTitle().toLowerCase().contains(titleParam.toLowerCase()))
+                    continue;
 
-            boolean enoughVotes = Common.stringToInt(film.getImdbVotes()) >= minimumVotes;
+            if (minimumVotes > 0)
+                if (Common.stringToInt(film.getImdbVotes()) < minimumVotes)
+                    continue;
 
-            boolean matchesLanguage = language.length() == 0 || film.getLanguage().equals(language);
-            boolean matchesGenre = genre.length() == 0 || film.getGenre().contains(genre);
+            if (language.length() > 0)
+                if (!film.getLanguage().equals(language))
+                    continue;
 
-            Date releaseDate = Common.stringToDate(film.getReleased());
-            boolean afterOrEqualsFromDate = releaseDate == null || fromDate == null || releaseDate.after(fromDate) || releaseDate.equals(fromDate);
-            boolean beforeOrEqualsToDate = releaseDate == null || toDate == null || releaseDate.before(toDate) || releaseDate.equals(toDate);
-            boolean releaseDateInRange = afterOrEqualsFromDate && beforeOrEqualsToDate;
+            if (genre.length() > 0)
+                if (!film.getGenre().contains(genre))
+                    continue;
 
-            BigDecimal rating = Common.stringToBigDecimal(film.getImdbRating());
-            boolean validRating = rating.compareTo(minimumRating) >= 0 && rating.compareTo(maximumRating) <= 0;
-            if (matchesTitle && enoughVotes && validRating && releaseDateInRange && matchesLanguage && matchesGenre)
-                filteredFilms.add(film);
+            if (fromDate != null || toDate != null)
+            {
+                Date releaseDate = Common.stringToDate(film.getReleased());
+                if (releaseDate == null)
+                    continue;
+
+                boolean afterOrEqualsFromDate = fromDate == null || releaseDate.after(fromDate) || releaseDate.equals(fromDate);
+                boolean beforeOrEqualsToDate = toDate == null || releaseDate.before(toDate) || releaseDate.equals(toDate);
+                boolean releaseDateInRange = afterOrEqualsFromDate && beforeOrEqualsToDate;
+                if (!releaseDateInRange)
+                    continue;
+            }
+
+            if (minimumRating.compareTo(BigDecimal.ZERO) > 0 || maximumRating.compareTo(BigDecimal.TEN) < 0)
+            {
+                BigDecimal rating = Common.stringToBigDecimal(film.getImdbRating());
+                boolean validRating = rating.compareTo(minimumRating) >= 0 && rating.compareTo(maximumRating) <= 0;
+                if (!validRating)
+                    continue;
+            }
+
+            filteredFilms.add(film);
         }
 
         request.getSession().setAttribute("minimumVotes", minimumVotesParam);
@@ -182,6 +204,11 @@ public class FilmsHandler
                 {
                     value1 = Common.stringToInt(o1.getMetascore());
                     value2 = Common.stringToInt(o2.getMetascore());
+                }
+                if (column.equals("comboRating"))
+                {
+                    value1 = Common.stringToInt(o1.getComboRating());
+                    value2 = Common.stringToInt(o2.getComboRating());
                 }
                 if (column.equals("tomatoMeter"))
                 {

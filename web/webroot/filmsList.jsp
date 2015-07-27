@@ -16,6 +16,7 @@
     <script src="../js/jquery-ui.min.js"></script>
     <script src="../js/jquery.ui.touch-punch.min.js"></script>
     <link rel="stylesheet" href="../styles/jquery-ui.min.css" />
+    <link rel="shortcut icon" href="../images/spaceCat.png">
 
     <link rel="stylesheet" type="text/css" href="../styles/cinemang.css" media="screen" />
 
@@ -82,11 +83,35 @@
             document.getElementById("frmFilter").submit();
         }
 
+        function showPlotDialog(title, fullPlot, poster)
+        {
+            $( "#dialog-plot" ).dialog({
+                resizable: false,
+                height:'auto',
+                width:500,
+                modal: true,
+                open: function (event, ui)
+                {
+                    $( "#dialog-plot").dialog('option', 'title', 'Plot of ' + title);
+                    $( "#dialogPlot").html(fullPlot);
+                    $( "#posterUrl").attr('src', poster)
+                },
+                position: { my: "top", at: "top" },
+                buttons:
+                {
+                    Close: function()
+                    {
+                        $( this ).dialog( "close" );
+                    }
+                }
+            });
+        }
+
     </script>
 
 </head>
 <body onload="initHeader();">
-<h1 style="text-align: center;margin: 0;">Cinemang <img src="../images/spaceCat.png" style="height: 32px;vertical-align: middle"></h1>
+<h1 style="text-align: center;margin: 0;">CINEMANG <img src="../images/spaceCat.png" style="height: 30px;vertical-align: middle"></h1>
 
 <form name="frmFilter" id="frmFilter" method="post" action="?tab1=home&action=filterFilms">
     <input type="hidden" id="fldRating" name="fldRating">
@@ -163,13 +188,13 @@
         <td colspan="100" style="text-align: center;">
             <div>
                 <c:if test="${hasPrevious}">
-                    <a href="?tab1=home&action=index&page=1"><</a>
-                    <a style="text-decoration: none" href="?tab1=home&action=index&page=${page - 1}"><</a>
+                    <a href="?tab1=home&action=form&page=1"><</a>
+                    <a style="text-decoration: none" href="?tab1=home&action=form&page=${page - 1}"><</a>
                 </c:if>
                 &nbsp;${page}&nbsp;
                 <c:if test="${hasNext}">
-                    <a style="text-decoration: none" href="?tab1=home&action=index&page=${page + 1}">> </a>
-                    <a href="?tab1=home&action=index&page=${pages}">> </a>
+                    <a style="text-decoration: none" href="?tab1=home&action=form&page=${page + 1}">> </a>
+                    <a href="?tab1=home&action=form&page=${pages}">> </a>
                 </c:if>
             </div>
         </td>
@@ -179,6 +204,11 @@
         <td class="sortableHeader" onclick="sortFilms('title')">Title
             <c:if test="${sessionScope.sortColumn eq 'title' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if>
             <c:if test="${sessionScope.sortColumn eq 'title' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>
+        </td>
+        <td class="sortableHeader alignright" onclick="sortFilms('comboRating')">
+            <img src="../images/spaceCat.png" title="Combo Rating: Combines imdb Rating, Tomato Meter, and Tomato User Meter" style="height:24px;vertical-align: middle"/>
+            <c:if test="${sessionScope.sortColumn eq 'comboRating' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if>
+            <c:if test="${sessionScope.sortColumn eq 'comboRating' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>
         </td>
         <td class="sortableHeader alignright" onclick="sortFilms('tomatoMeter')">
             <img src="../images/rottenTomatoes_logo.png" title="Tomato Meter" style="height:24px;vertical-align: middle"/>
@@ -195,11 +225,11 @@
             <c:if test="${sessionScope.sortColumn eq 'imdbRating' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if>
             <c:if test="${sessionScope.sortColumn eq 'imdbRating' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>
         </td>
-        <td class="sortableHeader mediumPriority alignright" onclick="sortFilms('metascore')">
-            <img src="../images/metacritic_logo.png" title="Metascore" style="height:24px;vertical-align: middle"/>
-            <c:if test="${sessionScope.sortColumn eq 'metascore' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if>
-            <c:if test="${sessionScope.sortColumn eq 'metascore' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>
-        </td>
+        <%--<td class="sortableHeader mediumPriority alignright" onclick="sortFilms('metascore')">--%>
+            <%--<img src="../images/metacritic_logo.png" title="Metascore" style="height:24px;vertical-align: middle"/>--%>
+            <%--<c:if test="${sessionScope.sortColumn eq 'metascore' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if>--%>
+            <%--<c:if test="${sessionScope.sortColumn eq 'metascore' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>--%>
+        <%--</td>--%>
         <td class="sortableHeader mediumPriority alignright" onclick="sortFilms('releaseDate')">Release Date
             <c:if test="${sessionScope.sortColumn eq 'releaseDate' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if>
             <c:if test="${sessionScope.sortColumn eq 'releaseDate' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>
@@ -213,6 +243,7 @@
             <c:if test="${sessionScope.sortColumn eq 'language' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>
         </td>
         <td class="lowPriority">Genres</td>
+        <td class="lowPriority">Plot</td>
     </tr>
 
     <c:set var="count" value="${1 + ((page - 1) * 100)}"/>
@@ -230,14 +261,20 @@
                     <c:if test="${film.tomatoImage=='fresh'}"><img src="../images/certified_logo.png" style="vertical-align: middle" height="16px"/></c:if>
                 </a>
             </td>
+            <td class="alignright">${film.comboRating}</td>
             <td class="alignright">${film.tomatoMeter}</td>
             <td class="alignright">${film.tomatoUserMeter}</td>
             <td class="alignright">${film.imdbRating}</td>
-            <td class="mediumPriority alignright">${film.metascore}</td>
+            <%--<td class="mediumPriority alignright">${film.metascore}</td>--%>
             <td class="mediumPriority alignright">${film.released}</td>
             <td class="alignright lowPriority"><fmt:formatNumber value="${film.imdbVotes}" pattern="#,###"/></td>
             <td class="lowPriority">${film.language}</td>
             <td class="lowPriority">${film.genre}</td>
+            <td class="lowPriority" style="max-width: 450px">
+                <a href="#" onclick="showPlotDialog('${film.title}', '<c:out value="${film.plot}" escapeXml="${true}"/>', '${film.poster}')" style="color: blue; cursor: pointer">
+                    ${film.shortPlot}
+                </a>
+            </td>
         </tr>
 
         <c:if test="${rowToggle}"><c:set var="rowStyle" value="listroweven"/></c:if>
@@ -251,16 +288,26 @@
     <tr>
         <td colspan="100" style="text-align: center;">
             <c:if test="${hasPrevious}">
-                <a href="?tab1=home&action=index&page=1"><</a>
-                <a style="text-decoration: none" href="?tab1=home&action=index&page=${page - 1}"><</a>
+                <a href="?tab1=home&action=form&page=1"><</a>
+                <a style="text-decoration: none" href="?tab1=home&action=form&page=${page - 1}"><</a>
             </c:if>
             &nbsp;${page}&nbsp;
             <c:if test="${hasNext}">
-                <a style="text-decoration: none" href="?tab1=home&action=index&page=${page + 1}">> </a>
-                <a href="?tab1=home&action=index&page=${pages}">> </a>
+                <a style="text-decoration: none" href="?tab1=home&action=form&page=${page + 1}">> </a>
+                <a href="?tab1=home&action=form&page=${pages}">> </a>
             </c:if>
         </td>
     </tr>
 </table>
+
+<%-- Plot Dialog --%>
+<div style="display:none;">
+    <div id="dialog-plot" title="Plot" style="text-align: justify">
+        <span id="dialogPlot"></span>
+        <div align="center">
+            <img id="posterUrl" src=""/>
+        </div>
+    </div>
+</div>
 </body>
 </html>

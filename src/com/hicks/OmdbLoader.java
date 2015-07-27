@@ -37,11 +37,13 @@ public class OmdbLoader
                 System.out.println("Films Found: " + df.format(films.size()));
                 System.out.println("Unreadable Rows: " + df.format(unreadableRows));
 
-                films = removeFilmsWithMissingData(films);
+//                films = removeFilmsWithMissingData(films);
                 System.out.println("Films Remaining after Filtering: " + df.format(films.size()));
 
+                EntityTransaction transaction = Hibernate.startTransaction();
                 for (Film film : films)
-                    Hibernate.persist(film);
+                    Hibernate.persistAsPartOfTransaction(film);
+                Hibernate.commitTransaction(transaction);
             }
 
             List<Film> filmsFromDb = Hibernate.executeQuery("select f from Film f");
