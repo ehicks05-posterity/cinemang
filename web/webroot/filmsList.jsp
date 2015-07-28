@@ -83,18 +83,22 @@
             document.getElementById("frmFilter").submit();
         }
 
-        function showPlotDialog(title, fullPlot, poster)
+        function showPlotDialog(title, poster, fullPlot, director, actors, runtime, tomatoConsensus)
         {
             $( "#dialog-plot" ).dialog({
                 resizable: false,
                 height:'auto',
-                width:500,
+                width:650,
                 modal: true,
                 open: function (event, ui)
                 {
-                    $( "#dialog-plot").dialog('option', 'title', 'Plot of ' + title);
-                    $( "#dialogPlot").html(fullPlot);
+                    $( "#dialog-plot").dialog('option', 'title', title);
                     $( "#posterUrl").attr('src', poster)
+                    $( "#dialogPlot").html('<b>Plot:</b><br>' + fullPlot);
+                    $( "#dialogDirector").html('<b>Director:</b><br>' + director);
+                    $( "#dialogActors").html('<b>Actors:</b><br>' + actors);
+                    $( "#dialogRuntime").html('<b>Running Time:</b><br>' + runtime);
+                    $( "#dialogTomatoConsensus").html('<b>Tomato Critic Consensus:</b><br>' + tomatoConsensus);
                 },
                 position: { my: "top", at: "top" },
                 buttons:
@@ -271,7 +275,13 @@
             <td class="lowPriority">${film.language}</td>
             <td class="lowPriority">${film.genre}</td>
             <td class="lowPriority" style="max-width: 450px">
-                <a href="#" onclick="showPlotDialog('${film.title}', '<c:out value="${film.plot}" escapeXml="${true}"/>', '${film.poster}')" style="color: blue; cursor: pointer">
+                <a href="#" onclick='showPlotDialog("${film.title}", "${film.poster}",
+                        "<c:out value="${film.plot}"/>",
+                        "<c:out value="${film.director}"/>",
+                        "<c:out value="${film.actors}"/>",
+                        "<c:out value="${film.runtime}"/>",
+                        "<c:out value="${film.tomatoConsensus}"/>")'
+                   style="color: blue; cursor: pointer">
                     ${film.shortPlot}
                 </a>
             </td>
@@ -303,10 +313,14 @@
 <%-- Plot Dialog --%>
 <div style="display:none;">
     <div id="dialog-plot" title="Plot" style="text-align: justify">
-        <span id="dialogPlot"></span>
-        <div align="center">
+        <div style="float: left; padding-right: 10pt">
             <img id="posterUrl" src=""/>
         </div>
+        <span id="dialogPlot"></span><br><br>
+        <span id="dialogDirector"></span><br><br>
+        <span id="dialogActors"></span><br><br>
+        <span id="dialogRuntime"></span><br><br>
+        <span id="dialogTomatoConsensus"></span><br><br>
     </div>
 </div>
 </body>
