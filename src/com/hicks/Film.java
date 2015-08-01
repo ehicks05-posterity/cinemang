@@ -4,7 +4,6 @@ import javax.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.List;
 
 @Entity
 @Table(name = "films")
@@ -120,13 +119,6 @@ public class Film implements Serializable
 
     // --------
 
-    public static Film getByImdbId(List<Film> films, String imdbId)
-    {
-        for (Film film : films)
-            if (film.getImdbID().equals(imdbId)) return film;
-        return null;
-    }
-
     public static String convertIdToImdbId(String id)
     {
         StringBuilder newId = new StringBuilder(id);
@@ -151,15 +143,16 @@ public class Film implements Serializable
         return average.toString();
     }
 
-    public String getShortPlot()
+    public String getShortFullPlot()
     {
-        if (plot == null) return "";
-        if (plot.length() > 64)
+        int maxLength = 768;
+        if (fullPlot == null) return "";
+        if (fullPlot.length() > maxLength)
         {
-            int lastSpace = plot.substring(0, 64).lastIndexOf(" ");
-            return plot.substring(0, lastSpace) + "...";
+            int lastSpace = fullPlot.substring(0, maxLength).lastIndexOf(" ");
+            return fullPlot.substring(0, lastSpace) + "...";
         }
-        return plot;
+        return fullPlot;
     }
 
     // -------- Getters / Setters ----------

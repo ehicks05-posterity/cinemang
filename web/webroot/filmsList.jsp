@@ -94,11 +94,15 @@
                 {
                     $( "#dialog-plot").dialog('option', 'title', title);
                     $( "#posterUrl").attr('src', poster);
-                    $( "#dialogPlot").html('<b>Plot:</b><br>' + fullPlot);
                     $( "#dialogDirector").html('<b>Director:</b><br>' + director);
-                    $( "#dialogActors").html('<b>Actors:</b><br>' + actors);
-                    $( "#dialogRuntime").html('<b>Running Time:</b><br>' + runtime);
-                    $( "#dialogTomatoConsensus").html('<b>Tomato Critic Consensus:</b><br>' + tomatoConsensus);
+                    $( "#dialogActors").html('<br><br><b>Actors:</b><br>' + actors);
+                    $( "#dialogRuntime").html('<br><br><b>Running Time:</b><br>' + runtime);
+                    $( "#dialogPlot").html('<br><br><b>Plot:</b><br>' + fullPlot);
+
+                    if (tomatoConsensus != '')
+                        $( "#dialogTomatoConsensus").html('<br><br><b>Tomato Critic Consensus:</b><br>' + tomatoConsensus);
+                    else
+                        $( "#dialogTomatoConsensus").html('');
                 },
                 close: function (event, ui)
                 {
@@ -264,7 +268,7 @@
             <td class="alignright"><fmt:formatNumber value="${count}" pattern="#,###"/></td>
             <td>
                 <span onclick='showPlotDialog("${fn:escapeXml(film.title)}", "${film.poster}",
-                        "<c:out value="${fn:escapeXml(film.plot)}"/>",
+                        "<c:out value="${fn:escapeXml(film.shortFullPlot)}"/>",
                         "<c:out value="${fn:escapeXml(film.director)}"/>",
                         "<c:out value="${fn:escapeXml(film.actors)}"/>",
                         "<c:out value="${fn:escapeXml(film.runtime)}"/>",
@@ -316,15 +320,15 @@
 
 <%-- Plot Dialog --%>
 <div style="display:none;">
-    <div id="dialog-plot" title="Plot" style="text-align: justify">
+    <div id="dialog-plot" title="Plot" style="text-align: justify;">
         <div style="float: left; padding-right: 10pt">
             <img id="posterUrl" src=""/>
         </div>
-        <span id="dialogPlot"></span><br><br>
-        <span id="dialogDirector"></span><br><br>
-        <span id="dialogActors"></span><br><br>
-        <span id="dialogRuntime"></span><br><br>
-        <span id="dialogTomatoConsensus"></span><br><br>
+        <span id="dialogDirector"></span>
+        <span id="dialogActors"></span>
+        <span id="dialogRuntime"></span>
+        <span id="dialogTomatoConsensus"></span>
+        <span id="dialogPlot"></span>
     </div>
 </div>
 </body>
