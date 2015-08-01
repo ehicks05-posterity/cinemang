@@ -14,7 +14,7 @@ import java.text.ParseException;
 @WebServlet("/view")
 public class Controller extends HttpServlet
 {
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
 
     @Override
     public void init() throws ServletException

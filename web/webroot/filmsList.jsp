@@ -97,12 +97,16 @@
                     $( "#dialogDirector").html('<b>Director:</b><br>' + director);
                     $( "#dialogActors").html('<br><br><b>Actors:</b><br>' + actors);
                     $( "#dialogRuntime").html('<br><br><b>Running Time:</b><br>' + runtime);
-                    $( "#dialogPlot").html('<br><br><b>Plot:</b><br>' + fullPlot);
 
                     if (tomatoConsensus != '')
                         $( "#dialogTomatoConsensus").html('<br><br><b>Tomato Critic Consensus:</b><br>' + tomatoConsensus);
                     else
                         $( "#dialogTomatoConsensus").html('');
+
+                    if (fullPlot != '')
+                        $( "#dialogPlot").html('<br><br><b>Plot:</b><br>' + fullPlot);
+                    else
+                        $( "#dialogPlot").html('');
                 },
                 close: function (event, ui)
                 {
@@ -205,7 +209,7 @@
                     <a href="?tab1=home&action=form&page=1"><</a>
                     <a style="text-decoration: none" href="?tab1=home&action=form&page=${page - 1}"><</a>
                 </c:if>
-                &nbsp;${page}&nbsp;
+                page&nbsp;${page}&nbsp;of&nbsp;${pages}&nbsp;
                 <c:if test="${hasNext}">
                     <a style="text-decoration: none" href="?tab1=home&action=form&page=${page + 1}">> </a>
                     <a href="?tab1=home&action=form&page=${pages}">> </a>
@@ -283,7 +287,7 @@
             <td class="alignright">${film.comboRating}</td>
             <td class="alignright">${film.tomatoMeter}</td>
             <td class="alignright">${film.tomatoUserMeter}</td>
-            <td class="alignright">
+            <td class="alignright" onclick="window.open('http://www.imdb.com/title/${film.imdbID}', '_blank');">
                 <a href="http://www.imdb.com/title/${film.imdbID}" title="${film.title}" target="_blank">
                     ${film.imdbRating}
                 </a>
@@ -309,7 +313,7 @@
                 <a href="?tab1=home&action=form&page=1"><</a>
                 <a style="text-decoration: none" href="?tab1=home&action=form&page=${page - 1}"><</a>
             </c:if>
-            &nbsp;${page}&nbsp;
+            page&nbsp;${page}&nbsp;of&nbsp;${pages}&nbsp;
             <c:if test="${hasNext}">
                 <a style="text-decoration: none" href="?tab1=home&action=form&page=${page + 1}">> </a>
                 <a href="?tab1=home&action=form&page=${pages}">> </a>

@@ -17,7 +17,7 @@ public class Film implements Serializable
     @Column(name = "imdb_ID", updatable = false, nullable = false)
     private String imdbID = "";
 
-    @Column(name = "title", columnDefinition = "varchar2(2000 char)")
+    @Column(name = "title", length = 2000)
     private String title = "";
     @Column(name = "year")
     private String year = "";
@@ -30,13 +30,13 @@ public class Film implements Serializable
     @Column(name = "released")
     private String released = "";
 
-    @Column(name = "director", columnDefinition = "varchar2(2000 char)")
+    @Column(name = "director", length = 2000)
     private String director = "";
 
-    @Column(name = "writer", columnDefinition = "varchar2(2000 char)")
+    @Column(name = "writer", length = 2000)
     private String writer = "";
 
-    @Column(name = "actors", columnDefinition = "varchar2(1000 char)")
+    @Column(name = "actors", length = 2000)
     private String actors = "";
     @Column(name = "metascore")
     private String metascore = "";
@@ -47,11 +47,10 @@ public class Film implements Serializable
     @Column(name = "poster")
     private String poster = "";
 
-    @Column(name = "plot", columnDefinition = "varchar2(2000 char)")
+    @Column(name = "plot", length = 2000)
     private String plot = "";
 
-    @Lob
-    @Column(name = "full_Plot")
+    @Column(name = "full_Plot", columnDefinition = "varchar2(32000 CHAR)")
     private String fullPlot = "";
     @Column(name = "language")
     private String language = "";
@@ -75,7 +74,7 @@ public class Film implements Serializable
     @Column(name = "tomato_Rotten")
     private String tomatoRotten = "";
 
-    @Column(name = "tomato_Consensus", columnDefinition = "varchar2(2000 char)")
+    @Column(name = "tomato_Consensus", length = 2000)
     private String tomatoConsensus = "";
     @Column(name = "tomato_User_Meter")
     private String tomatoUserMeter = "";
