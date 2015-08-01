@@ -100,7 +100,10 @@
                     $( "#dialogRuntime").html('<b>Running Time:</b><br>' + runtime);
                     $( "#dialogTomatoConsensus").html('<b>Tomato Critic Consensus:</b><br>' + tomatoConsensus);
                 },
-                position: { my: "top", at: "top" },
+                close: function (event, ui)
+                {
+                    $( "#posterUrl").attr('src', '');
+                },
                 buttons:
                 {
                     Close: function()
@@ -108,7 +111,7 @@
                         $( this ).dialog( "close" );
                     }
                 }
-            });
+            }).position({ my: "middle", at: "middle"});
         }
 
     </script>
