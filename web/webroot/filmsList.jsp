@@ -17,7 +17,7 @@
     <script src="../js/jquery.ui.touch-punch.min.js"></script>
     <link rel="stylesheet" href="../styles/jquery-ui.min.css" />
     <link rel="shortcut icon" href="../images/spaceCat.png">
-
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
     <link rel="stylesheet" type="text/css" href="../styles/cinemang.css" media="screen" />
 
     <style>#ratingSlider { margin: 10px; }	</style>
@@ -93,7 +93,7 @@
                 open: function (event, ui)
                 {
                     $( "#dialog-plot").dialog('option', 'title', title);
-                    $( "#posterUrl").attr('src', poster)
+                    $( "#posterUrl").attr('src', poster);
                     $( "#dialogPlot").html('<b>Plot:</b><br>' + fullPlot);
                     $( "#dialogDirector").html('<b>Director:</b><br>' + director);
                     $( "#dialogActors").html('<b>Actors:</b><br>' + actors);
@@ -115,14 +115,17 @@
 
 </head>
 <body onload="initHeader();">
-<h1 style="text-align: center;margin: 0;">CINEMANG <img src="../images/spaceCat.png" style="height: 30px;vertical-align: middle"></h1>
-
 <form name="frmFilter" id="frmFilter" method="post" action="?tab1=home&action=filterFilms">
     <input type="hidden" id="fldRating" name="fldRating">
     <input type="hidden" name="sortColumn" id="sortColumn" value="${sessionScope.sortColumn}"/>
     <input type="hidden" name="sortDirection" id="sortDirection" value="${sessionScope.sortDirection}"/>
 
-    <table style="margin: 0 auto" class="list">
+    <table style="margin: 10px auto 0 auto" class="list">
+        <tr>
+            <td colspan="4">
+                <h1 style="text-align: center;margin: 0;">CINEMANG <img src="../images/spaceCat.png" style="height: 30px;vertical-align: middle"></h1>
+            </td>
+        </tr>
         <tr>
             <td class="alignright"><label for="title">Title:</label></td>
             <td colspan="3"><input id="title" name="title" type="text" size="20" maxlength="32" value="${sessionScope.title}"></td>
@@ -247,7 +250,6 @@
             <c:if test="${sessionScope.sortColumn eq 'language' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>
         </td>
         <td class="lowPriority">Genres</td>
-        <td class="lowPriority">Plot</td>
     </tr>
 
     <c:set var="count" value="${1 + ((page - 1) * 100)}"/>
@@ -258,33 +260,32 @@
         <tr class="${rowStyle}">
             <td class="alignright"><fmt:formatNumber value="${count}" pattern="#,###"/></td>
             <td>
-                <a href="http://www.imdb.com/title/${film.imdbID}" title="${film.title}" target="_blank">
+                <span onclick='showPlotDialog("${fn:escapeXml(film.title)}", "${film.poster}",
+                        "<c:out value="${fn:escapeXml(film.plot)}"/>",
+                        "<c:out value="${fn:escapeXml(film.director)}"/>",
+                        "<c:out value="${fn:escapeXml(film.actors)}"/>",
+                        "<c:out value="${fn:escapeXml(film.runtime)}"/>",
+                        "<c:out value="${fn:escapeXml(film.tomatoConsensus)}"/>")'
+                         style="color: blue; text-decoration: underline; cursor: pointer">
                     <c:set var="filmTitle" value="${film.title}"/>
                     <c:if test="${fn:length(film.title) > 50}"><c:set var="filmTitle" value="${fn:substring(film.title, 0, 50)}..."/></c:if>
                     ${filmTitle}
                     <c:if test="${film.tomatoImage=='fresh'}"><img src="../images/certified_logo.png" style="vertical-align: middle" height="16px"/></c:if>
-                </a>
+                </span>
             </td>
             <td class="alignright">${film.comboRating}</td>
             <td class="alignright">${film.tomatoMeter}</td>
             <td class="alignright">${film.tomatoUserMeter}</td>
-            <td class="alignright">${film.imdbRating}</td>
+            <td class="alignright">
+                <a href="http://www.imdb.com/title/${film.imdbID}" title="${film.title}" target="_blank">
+                    ${film.imdbRating}
+                </a>
+            </td>
             <%--<td class="mediumPriority alignright">${film.metascore}</td>--%>
             <td class="mediumPriority alignright">${film.released}</td>
             <td class="alignright lowPriority"><fmt:formatNumber value="${film.imdbVotes}" pattern="#,###"/></td>
             <td class="lowPriority">${film.language}</td>
             <td class="lowPriority">${film.genre}</td>
-            <td class="lowPriority" style="max-width: 450px">
-                <a href="#" onclick='showPlotDialog("${film.title}", "${film.poster}",
-                        "<c:out value="${film.plot}"/>",
-                        "<c:out value="${film.director}"/>",
-                        "<c:out value="${film.actors}"/>",
-                        "<c:out value="${film.runtime}"/>",
-                        "<c:out value="${film.tomatoConsensus}"/>")'
-                   style="color: blue; cursor: pointer">
-                    ${film.shortPlot}
-                </a>
-            </td>
         </tr>
 
         <c:if test="${rowToggle}"><c:set var="rowStyle" value="listroweven"/></c:if>

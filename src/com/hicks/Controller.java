@@ -21,9 +21,9 @@ public class Controller extends HttpServlet
     {
         if (DEBUG)
         {
-            System.out.println("Max Memory: " + new DecimalFormat("#,###").format(Runtime.getRuntime().maxMemory()));
             for (String argument : ManagementFactory.getRuntimeMXBean().getInputArguments())
                 System.out.println(argument);
+            System.out.println("Max Memory: " + new DecimalFormat("#,###").format(Runtime.getRuntime().maxMemory()));
         }
 
         OmdbLoader.loadFilms();
