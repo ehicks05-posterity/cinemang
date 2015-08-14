@@ -126,7 +126,7 @@
 
 </head>
 <body onload="initHeader();">
-<form name="frmFilter" id="frmFilter" method="post" action="?tab1=home&action=filterFilms">
+<form name="frmFilter" id="frmFilter" method="post" action="${pageContext.request.contextPath}/cinemang/view?tab1=home&action=filterFilms">
     <input type="hidden" id="fldRating" name="fldRating">
     <input type="hidden" name="sortColumn" id="sortColumn" value="${sessionScope.sortColumn}"/>
     <input type="hidden" name="sortDirection" id="sortDirection" value="${sessionScope.sortDirection}"/>
@@ -204,17 +204,17 @@
 <table style="margin: 0 auto" class="list">
     <tr>
         <td colspan="100" style="text-align: center;">
-            <div>
-                <c:if test="${hasPrevious}">
-                    <a href="?tab1=home&action=form&page=1"><</a>
-                    <a style="text-decoration: none" href="?tab1=home&action=form&page=${page - 1}"><</a>
-                </c:if>
-                page&nbsp;${page}&nbsp;of&nbsp;${pages}&nbsp;
-                <c:if test="${hasNext}">
-                    <a style="text-decoration: none" href="?tab1=home&action=form&page=${page + 1}">> </a>
-                    <a href="?tab1=home&action=form&page=${pages}">> </a>
-                </c:if>
-            </div>
+            <c:if test="${hasPrevious}">
+                <input type="button" value="First" onclick="window.location.href='${pageContext.request.contextPath}/cinemang/view?tab1=home&action=form&page=1'"/>
+                <input type="button" value="Previous" onclick="window.location.href='${pageContext.request.contextPath}/cinemang/view?tab1=home&action=form&page=${page - 1}'"/>
+            </c:if>
+            <fmt:formatNumber value="${page}" var="formattedPage" pattern="#,###"/>
+            <fmt:formatNumber value="${pages}" var="formattedPages" pattern="#,###"/>
+            ${formattedPage} of ${formattedPages}
+            <c:if test="${hasNext}">
+                <input type="button" value="Next" onclick="window.location.href='${pageContext.request.contextPath}/cinemang/view?tab1=home&action=form&page=${page + 1}'"/>
+                <input type="button" value="Last" onclick="window.location.href='${pageContext.request.contextPath}/cinemang/view?tab1=home&action=form&page=${pages}'"/>
+            </c:if>
         </td>
     </tr>
     <tr class="listheading">
@@ -310,13 +310,15 @@
     <tr>
         <td colspan="100" style="text-align: center;">
             <c:if test="${hasPrevious}">
-                <a href="?tab1=home&action=form&page=1"><</a>
-                <a style="text-decoration: none" href="?tab1=home&action=form&page=${page - 1}"><</a>
+                <input type="button" value="First" onclick="window.location.href='${pageContext.request.contextPath}/cinemang/view?tab1=home&action=form&page=1'"/>
+                <input type="button" value="Previous" onclick="window.location.href='${pageContext.request.contextPath}/cinemang/view?tab1=home&action=form&page=${page - 1}'"/>
             </c:if>
-            page&nbsp;${page}&nbsp;of&nbsp;${pages}&nbsp;
+            <fmt:formatNumber value="${page}" var="formattedPage" pattern="#,###"/>
+            <fmt:formatNumber value="${pages}" var="formattedPages" pattern="#,###"/>
+            ${formattedPage} of ${formattedPages}
             <c:if test="${hasNext}">
-                <a style="text-decoration: none" href="?tab1=home&action=form&page=${page + 1}">> </a>
-                <a href="?tab1=home&action=form&page=${pages}">> </a>
+                <input type="button" value="Next" onclick="window.location.href='${pageContext.request.contextPath}/cinemang/view?tab1=home&action=form&page=${page + 1}'"/>
+                <input type="button" value="Last" onclick="window.location.href='${pageContext.request.contextPath}/cinemang/view?tab1=home&action=form&page=${pages}'"/>
             </c:if>
         </td>
     </tr>

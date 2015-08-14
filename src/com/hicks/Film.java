@@ -4,6 +4,7 @@ import javax.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.List;
 
 @Entity
 @Table(name = "films")
@@ -39,11 +40,11 @@ public class Film implements Serializable
     @Column(name = "actors", length = 2000)
     private String actors = "";
     @Column(name = "metascore")
-    private String metascore = "";
+    private Integer metascore;
     @Column(name = "imdb_Rating")
-    private String imdbRating = "";
+    private BigDecimal imdbRating;
     @Column(name = "imdb_Votes")
-    private String imdbVotes = "";
+    private Integer imdbVotes;
     @Column(name = "poster")
     private String poster = "";
 
@@ -64,24 +65,24 @@ public class Film implements Serializable
     @Column(name = "tomato_Image")
     private String tomatoImage = "";
     @Column(name = "tomato_Rating")
-    private String tomatoRating = "";
+    private BigDecimal tomatoRating;
     @Column(name = "tomato_Meter")
-    private String tomatoMeter = "";
+    private Integer tomatoMeter;
     @Column(name = "tomato_Reviews")
-    private String tomatoReviews = "";
+    private Integer tomatoReviews;
     @Column(name = "tomato_Fresh")
-    private String tomatoFresh = "";
+    private Integer tomatoFresh;
     @Column(name = "tomato_Rotten")
-    private String tomatoRotten = "";
+    private Integer tomatoRotten;
 
     @Column(name = "tomato_Consensus", length = 2000)
     private String tomatoConsensus = "";
     @Column(name = "tomato_User_Meter")
-    private String tomatoUserMeter = "";
+    private Integer tomatoUserMeter;
     @Column(name = "tomato_User_Rating")
-    private String tomatoUserRating = "";
+    private BigDecimal tomatoUserRating;
     @Column(name = "tomato_User_Reviews")
-    private String tomatoUserReviews = "";
+    private Integer tomatoUserReviews;
 
     @Column(name = "dvd")
     private String dvd = "";
@@ -129,14 +130,14 @@ public class Film implements Serializable
 
     public String getComboRating()
     {
-        if (imdbRating == null || imdbRating.length() == 0 ||
-                tomatoMeter == null || tomatoMeter.length() == 0 ||
-                tomatoUserMeter == null ||  tomatoUserMeter.length() == 0)
+        if (imdbRating == null ||
+                tomatoMeter == null || tomatoMeter == 0 ||
+                tomatoUserMeter == null ||  tomatoUserMeter == 0)
             return "";
 
-        BigDecimal imdbNormalized = Common.stringToBigDecimal(imdbRating).multiply(BigDecimal.TEN);
-        BigDecimal tomatoCritic = Common.stringToBigDecimal(tomatoMeter);
-        BigDecimal tomatoUser = Common.stringToBigDecimal(tomatoUserMeter);
+        BigDecimal imdbNormalized = imdbRating.multiply(BigDecimal.TEN);
+        BigDecimal tomatoCritic = Common.integerToBigDecimal(tomatoMeter);
+        BigDecimal tomatoUser = Common.integerToBigDecimal(tomatoUserMeter);
 
         BigDecimal average = imdbNormalized.add(tomatoCritic).add(tomatoUser).divide(new BigDecimal("3"), 0, RoundingMode.HALF_UP);
         return average.toString();
@@ -154,6 +155,10 @@ public class Film implements Serializable
         return fullPlot;
     }
 
+    public static List<Film> getAllFilms()
+    {
+        return Hibernate.executeQuery("select f from Film f");
+    }
     // -------- Getters / Setters ----------
 
     public Long getVersion()
@@ -266,32 +271,32 @@ public class Film implements Serializable
         this.actors = actors;
     }
 
-    public String getMetascore()
+    public Integer getMetascore()
     {
         return metascore;
     }
 
-    public void setMetascore(String metascore)
+    public void setMetascore(Integer metascore)
     {
         this.metascore = metascore;
     }
 
-    public String getImdbRating()
+    public BigDecimal getImdbRating()
     {
         return imdbRating;
     }
 
-    public void setImdbRating(String imdbRating)
+    public void setImdbRating(BigDecimal imdbRating)
     {
         this.imdbRating = imdbRating;
     }
 
-    public String getImdbVotes()
+    public Integer getImdbVotes()
     {
         return imdbVotes;
     }
 
-    public void setImdbVotes(String imdbVotes)
+    public void setImdbVotes(Integer imdbVotes)
     {
         this.imdbVotes = imdbVotes;
     }
@@ -376,52 +381,52 @@ public class Film implements Serializable
         this.tomatoImage = tomatoImage;
     }
 
-    public String getTomatoRating()
+    public BigDecimal getTomatoRating()
     {
         return tomatoRating;
     }
 
-    public void setTomatoRating(String tomatoRating)
+    public void setTomatoRating(BigDecimal tomatoRating)
     {
         this.tomatoRating = tomatoRating;
     }
 
-    public String getTomatoMeter()
+    public Integer getTomatoMeter()
     {
         return tomatoMeter;
     }
 
-    public void setTomatoMeter(String tomatoMeter)
+    public void setTomatoMeter(Integer tomatoMeter)
     {
         this.tomatoMeter = tomatoMeter;
     }
 
-    public String getTomatoReviews()
+    public Integer getTomatoReviews()
     {
         return tomatoReviews;
     }
 
-    public void setTomatoReviews(String tomatoReviews)
+    public void setTomatoReviews(Integer tomatoReviews)
     {
         this.tomatoReviews = tomatoReviews;
     }
 
-    public String getTomatoFresh()
+    public Integer getTomatoFresh()
     {
         return tomatoFresh;
     }
 
-    public void setTomatoFresh(String tomatoFresh)
+    public void setTomatoFresh(Integer tomatoFresh)
     {
         this.tomatoFresh = tomatoFresh;
     }
 
-    public String getTomatoRotten()
+    public Integer getTomatoRotten()
     {
         return tomatoRotten;
     }
 
-    public void setTomatoRotten(String tomatoRotten)
+    public void setTomatoRotten(Integer tomatoRotten)
     {
         this.tomatoRotten = tomatoRotten;
     }
@@ -436,32 +441,32 @@ public class Film implements Serializable
         this.tomatoConsensus = tomatoConsensus;
     }
 
-    public String getTomatoUserMeter()
+    public Integer getTomatoUserMeter()
     {
         return tomatoUserMeter;
     }
 
-    public void setTomatoUserMeter(String tomatoUserMeter)
+    public void setTomatoUserMeter(Integer tomatoUserMeter)
     {
         this.tomatoUserMeter = tomatoUserMeter;
     }
 
-    public String getTomatoUserRating()
+    public BigDecimal getTomatoUserRating()
     {
         return tomatoUserRating;
     }
 
-    public void setTomatoUserRating(String tomatoUserRating)
+    public void setTomatoUserRating(BigDecimal tomatoUserRating)
     {
         this.tomatoUserRating = tomatoUserRating;
     }
 
-    public String getTomatoUserReviews()
+    public Integer getTomatoUserReviews()
     {
         return tomatoUserReviews;
     }
 
-    public void setTomatoUserReviews(String tomatoUserReviews)
+    public void setTomatoUserReviews(Integer tomatoUserReviews)
     {
         this.tomatoUserReviews = tomatoUserReviews;
     }

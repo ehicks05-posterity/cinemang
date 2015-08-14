@@ -11,7 +11,7 @@ import java.lang.management.ManagementFactory;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 
-@WebServlet("/view")
+@WebServlet("/cinemang/view")
 public class Controller extends HttpServlet
 {
     private static final boolean DEBUG = true;

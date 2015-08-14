@@ -6,7 +6,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-@WebFilter(urlPatterns = "/*", filterName="Security Filter")
+@WebFilter(urlPatterns = "/cinemang/*", filterName="Security Filter")
 public class SecurityFilter implements Filter
 {
     @Override
@@ -33,9 +33,12 @@ public class SecurityFilter implements Filter
 
         if (!isResource)
         {
-            if (!servletPath.startsWith("/view"))
+            if (!servletPath.startsWith("/cinemang/view"))
             {
-                response.sendRedirect("view");
+//                response.sendRedirect("cinemang/view?action=form");
+
+                String newURL = request.getScheme() + "://" + request.getServerName()  + ":" + request.getServerPort() + "/" + request.getContextPath();
+                response.sendRedirect(newURL + "cinemang/view?action=form");
                 return;
             }
 

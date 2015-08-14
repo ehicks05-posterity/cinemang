@@ -1,1 +1,1 @@
-<% response.sendRedirect("view?action=form"); %>
+<% response.sendRedirect("cinemang/view?action=form"); %>

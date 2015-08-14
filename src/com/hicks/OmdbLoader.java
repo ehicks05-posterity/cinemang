@@ -2,7 +2,6 @@ package com.hicks;
 
 import org.apache.commons.net.ftp.FTPClient;
 
-import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -38,16 +37,21 @@ public class OmdbLoader
                 System.out.println("Unreadable Rows: " + df.format(unreadableRows));
 
 //                films = removeFilmsWithMissingData(films);
-                System.out.println("Films Remaining after Filtering: " + df.format(films.size()));
+//                System.out.println("Films Remaining after Filtering: " + df.format(films.size()));
 
+                int persistIndex = 0;
                 EntityTransaction transaction = Hibernate.startTransaction();
                 for (Film film : films)
+                {
                     Hibernate.persistAsPartOfTransaction(film);
+                    persistIndex++;
+                    if (persistIndex % 100000 == 0)
+                        System.out.println(persistIndex + "/" + films.size());
+                }
+                System.out.println(persistIndex + "/" + films.size());
+                System.out.println("committing transaction...");
                 Hibernate.commitTransaction(transaction);
             }
-
-            List<Film> filmsFromDb = Hibernate.executeQuery("select f from Film f");
-            films = filmsFromDb;
         }
         catch (Exception e)
         {
@@ -145,9 +149,9 @@ public class OmdbLoader
             film.setDirector(tokens[i++]);
             film.setWriter(tokens[i++]);
             film.setActors(tokens[i++]);
-            film.setMetascore(tokens[i++]);
-            film.setImdbRating(tokens[i++]);
-            film.setImdbVotes(tokens[i++]);
+            film.setMetascore(Common.stringToInt(tokens[i++]));
+            film.setImdbRating(Common.stringToBigDecimal(tokens[i++]));
+            film.setImdbVotes(Common.stringToInt(tokens[i++]));
             film.setPoster(tokens[i++]);
             film.setPlot(tokens[i++]);
             film.setFullPlot(tokens[i++]);
@@ -180,15 +184,15 @@ public class OmdbLoader
             int i = 0;
             film.setImdbID(Film.convertIdToImdbId(tokens[i++]));
             film.setTomatoImage(tokens[i++]);
-            film.setTomatoRating(tokens[i++]);
-            film.setTomatoMeter(tokens[i++]);
-            film.setTomatoReviews(tokens[i++]);
-            film.setTomatoFresh(tokens[i++]);
-            film.setTomatoRotten(tokens[i++]);
+            film.setTomatoRating(Common.stringToBigDecimal(tokens[i++]));
+            film.setTomatoMeter(Common.stringToInt(tokens[i++]));
+            film.setTomatoReviews(Common.stringToInt(tokens[i++]));
+            film.setTomatoFresh(Common.stringToInt(tokens[i++]));
+            film.setTomatoRotten(Common.stringToInt(tokens[i++]));
             film.setTomatoConsensus(tokens[i++]);
-            film.setTomatoUserMeter(tokens[i++]);
-            film.setTomatoUserRating(tokens[i++]);
-            film.setTomatoUserReviews(tokens[i++]);
+            film.setTomatoUserMeter(Common.stringToInt(tokens[i++]));
+            film.setTomatoUserRating(Common.stringToBigDecimal(tokens[i++]));
+            film.setTomatoUserReviews(Common.stringToInt(tokens[i++]));
             film.setDvd(tokens[i++]);
             film.setBoxOffice(tokens[i++]);
             film.setProduction(tokens[i++]);
@@ -210,7 +214,7 @@ public class OmdbLoader
         for (Iterator<Film> i = films.iterator(); i.hasNext();)
         {
             Film film = i.next();
-            if (film.getImdbRating().isEmpty() || film.getTomatoMeter().isEmpty() ||
+            if (film.getImdbRating() == null || film.getTomatoMeter() == null ||
                     film.getReleased().isEmpty() || film.getLanguage().isEmpty())
                 i.remove();
         }
@@ -220,14 +224,17 @@ public class OmdbLoader
     public static List<String> getUniqueLanguages()
     {
         if (uniqueLanguages.size() == 0)
-            uniqueLanguages = LanguageLoader.identifyUniqueLanguages(films);
+        {
+            uniqueLanguages = Hibernate.executeQuery("select distinct(f.language) from Film f where f.language is not null group by f.language order by count(f.language) desc");
+            System.out.println("Identified " + uniqueLanguages.size() + " unique film languages");
+        }
         return uniqueLanguages;
     }
 
     public static List<String> getUniqueGenres()
     {
         if (uniqueGenres.size() == 0)
-            uniqueGenres = GenreLoader.identifyUniqueGenres(films);
+            uniqueGenres = GenreLoader.identifyUniqueGenres(Film.getAllFilms());
         return uniqueGenres;
     }
 }

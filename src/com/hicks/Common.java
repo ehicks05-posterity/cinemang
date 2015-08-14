@@ -37,6 +37,21 @@ public class Common
         return result;
     }
 
+    public static BigDecimal integerToBigDecimal(Integer input)
+    {
+        BigDecimal result = BigDecimal.ZERO;
+        if (input == null) return result;
+        try
+        {
+            result = new BigDecimal(input);
+        }
+        catch (Exception e)
+        {
+//            System.out.println(e.getMessage());
+        }
+        return result;
+    }
+
     public static Date stringToDate(String input)
     {
         Date result = null;

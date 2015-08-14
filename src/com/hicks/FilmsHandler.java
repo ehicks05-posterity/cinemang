@@ -37,13 +37,13 @@ public class FilmsHandler
         request.setAttribute("hasPrevious", pageNumber > 1);
         request.setAttribute("filmsOnPage", filmsOnPage);
 
-        return "webroot/filmsList.jsp";
+        return "filmsList.jsp";
     }
 
     private static List<Film> performInitialSearch(HttpServletRequest request) throws ParseException
     {
         // set some defaults
-        String minimumVotes = "0";
+        String minimumVotes = "1000";
         String rating = "0-10";
         String language = "";
 
@@ -115,8 +115,85 @@ public class FilmsHandler
             System.out.println(e.getMessage());
         }
 
-        List<Film> films = OmdbLoader.getFilms();
+        Map<String, Object> args = new HashMap<>();
+        String query = "select f from Film f where ";
+        String whereClause = "";
+
+        if (titleParam.length() > 0)
+        {
+            if (whereClause.length() > 0) whereClause += " and ";
+            whereClause += " f.title like :title ";
+            args.put("title", "%" + titleParam + "%");
+        }
+
+        if (minimumVotes > 0)
+        {
+            if (whereClause.length() > 0) whereClause += " and ";
+            whereClause += " f.imdbVotes >= :minimumVotes ";
+            args.put("minimumVotes", minimumVotes);
+        }
+
+        if (language.length() > 0)
+        {
+            if (whereClause.length() > 0) whereClause += " and ";
+            whereClause += " f.language = :language ";
+            args.put("language", language);
+        }
+
+        if (genre.length() > 0)
+        {
+            if (whereClause.length() > 0) whereClause += " and ";
+            whereClause += " f.genre like :genre ";
+            args.put("genre", "%" + genre + "%");
+        }
+
+        if (fromDate != null)
+        {
+            if (whereClause.length() > 0) whereClause += " and ";
+            whereClause += " f.released >= :fromDate ";
+            args.put("fromDate", fromDate);
+        }
+        if (toDate != null)
+        {
+            if (whereClause.length() > 0) whereClause += " and ";
+            whereClause += " f.released <= :toDate ";
+            args.put("toDate", toDate);
+        }
+
+        if (minimumRating.compareTo(BigDecimal.ZERO) > 0)
+        {
+            if (whereClause.length() > 0) whereClause += " and ";
+            whereClause += " f.imdbRating >= :minimumRating ";
+            args.put("minimumRating", minimumRating);
+        }
+        if (maximumRating.compareTo(BigDecimal.TEN) < 0)
+        {
+            if (whereClause.length() > 0) whereClause += " and ";
+            whereClause += " f.imdbRating <= :maximumRating ";
+            args.put("maximumRating", maximumRating);
+        }
+
+        if (args.size() == 0) query = query.replace("where", "");
+
+        List<Film> filteredFilms = Hibernate.executeQuery(query + whereClause, args);
+
+//        List<Film> filteredFilms = filterFilmsFromMemory(titleParam, language, genre, minimumVotes, minimumRating, maximumRating, fromDate, toDate);
+
+        request.getSession().setAttribute("minimumVotes", minimumVotesParam);
+        request.getSession().setAttribute("title", titleParam);
+        request.getSession().setAttribute("rating", ratingParam);
+        request.getSession().setAttribute("fromReleaseDate", fromReleaseDate);
+        request.getSession().setAttribute("toReleaseDate", toReleaseDate);
+        request.getSession().setAttribute("language", language);
+        request.getSession().setAttribute("genre", genre);
+        return filteredFilms;
+    }
+
+    // todo remove this
+    private static List<Film> filterFilmsFromMemory(String titleParam, String language, String genre, int minimumVotes, BigDecimal minimumRating, BigDecimal maximumRating, Date fromDate, Date toDate)
+    {
         List<Film> filteredFilms = new ArrayList<>();
+        List<Film> films = OmdbLoader.getFilms();
         for (Film film : films)
         {
             if (titleParam.length() > 0)
@@ -124,7 +201,7 @@ public class FilmsHandler
                     continue;
 
             if (minimumVotes > 0)
-                if (Common.stringToInt(film.getImdbVotes()) < minimumVotes)
+                if (film.getImdbVotes() < minimumVotes)
                     continue;
 
             if (language.length() > 0)
@@ -150,7 +227,7 @@ public class FilmsHandler
 
             if (minimumRating.compareTo(BigDecimal.ZERO) > 0 || maximumRating.compareTo(BigDecimal.TEN) < 0)
             {
-                BigDecimal rating = Common.stringToBigDecimal(film.getImdbRating());
+                BigDecimal rating = film.getImdbRating();
                 boolean validRating = rating.compareTo(minimumRating) >= 0 && rating.compareTo(maximumRating) <= 0;
                 if (!validRating)
                     continue;
@@ -158,14 +235,6 @@ public class FilmsHandler
 
             filteredFilms.add(film);
         }
-
-        request.getSession().setAttribute("minimumVotes", minimumVotesParam);
-        request.getSession().setAttribute("title", titleParam);
-        request.getSession().setAttribute("rating", ratingParam);
-        request.getSession().setAttribute("fromReleaseDate", fromReleaseDate);
-        request.getSession().setAttribute("toReleaseDate", toReleaseDate);
-        request.getSession().setAttribute("language", language);
-        request.getSession().setAttribute("genre", genre);
         return filteredFilms;
     }
 
@@ -202,8 +271,8 @@ public class FilmsHandler
                 }
                 if (column.equals("metascore"))
                 {
-                    value1 = Common.stringToInt(o1.getMetascore());
-                    value2 = Common.stringToInt(o2.getMetascore());
+                    value1 = o1.getMetascore();
+                    value2 = o2.getMetascore();
                 }
                 if (column.equals("comboRating"))
                 {
@@ -212,23 +281,23 @@ public class FilmsHandler
                 }
                 if (column.equals("tomatoMeter"))
                 {
-                    value1 = Common.stringToInt(o1.getTomatoMeter());
-                    value2 = Common.stringToInt(o2.getTomatoMeter());
+                    value1 = o1.getTomatoMeter();
+                    value2 = o2.getTomatoMeter();
                 }
                 if (column.equals("tomatoUserMeter"))
                 {
-                    value1 = Common.stringToInt(o1.getTomatoUserMeter());
-                    value2 = Common.stringToInt(o2.getTomatoUserMeter());
+                    value1 = o1.getTomatoUserMeter();
+                    value2 = o2.getTomatoUserMeter();
                 }
                 if (column.equals("imdbVotes"))
                 {
-                    value1 = Common.stringToInt(o1.getImdbVotes());
-                    value2 = Common.stringToInt(o2.getImdbVotes());
+                    value1 = o1.getImdbVotes();
+                    value2 = o2.getImdbVotes();
                 }
                 if (column.equals("imdbRating"))
                 {
-                    value1 = Common.stringToBigDecimal(o1.getImdbRating());
-                    value2 = Common.stringToBigDecimal(o2.getImdbRating());
+                    value1 = o1.getImdbRating();
+                    value2 = o2.getImdbRating();
                 }
 
                 if (value1 == null && value2 == null) return 0;
