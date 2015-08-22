@@ -18,6 +18,7 @@ public class OmdbLoader
     private static int unreadableRows = 0;
     private static List<String> uniqueLanguages = new ArrayList<>();
     private static List<String> uniqueGenres = new ArrayList<>();
+    private static boolean loadingMode = false;
 
     public static List<Film> getFilms()
     {
@@ -28,7 +29,8 @@ public class OmdbLoader
     {
         try
         {
-            if (Hibernate.executeQuery("select f from Film f").size() == 0)
+            Long filmsInDb = (Long) Hibernate.executeQuerySingleResult("select count(f) from Film f");
+            if (filmsInDb == 0 && loadingMode)
             {
                 films = importFilmsFromOmdbDump();
 
@@ -52,6 +54,8 @@ public class OmdbLoader
                 System.out.println("committing transaction...");
                 Hibernate.commitTransaction(transaction);
             }
+            getUniqueGenres();
+            getUniqueLanguages();
         }
         catch (Exception e)
         {

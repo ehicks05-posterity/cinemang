@@ -1,6 +1,7 @@
 package com.hicks;
 
 import javax.persistence.*;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -48,6 +49,11 @@ public class Hibernate
         for (String key : args.keySet())
             query.setParameter(key, args.get(key));
         return query.getResultList();
+    }
+
+    public static Object executeQuerySingleResult(String queryString)
+    {
+        return executeQuerySingleResult(queryString, Collections.emptyMap());
     }
 
     public static Object executeQuerySingleResult(String queryString, Map<String, Object> args)

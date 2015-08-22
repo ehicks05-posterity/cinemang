@@ -14,19 +14,20 @@ import java.text.ParseException;
 @WebServlet("/cinemang/view")
 public class Controller extends HttpServlet
 {
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     @Override
     public void init() throws ServletException
     {
+        long start = System.currentTimeMillis();
         if (DEBUG)
-        {
             for (String argument : ManagementFactory.getRuntimeMXBean().getInputArguments())
                 System.out.println(argument);
-            System.out.println("Max Memory: " + new DecimalFormat("#,###").format(Runtime.getRuntime().maxMemory()));
-        }
 
+        System.out.println("Max Memory: " + new DecimalFormat("#,###").format(Runtime.getRuntime().maxMemory()));
         OmdbLoader.loadFilms();
+        long startupTime = System.currentTimeMillis() - start;
+        System.out.println("Cinemang started in " + startupTime + " ms");
     }
 
     @Override
