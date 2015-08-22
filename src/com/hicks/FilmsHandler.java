@@ -11,7 +11,7 @@ import java.util.*;
 
 public class FilmsHandler
 {
-    public static String showFilms(HttpServletRequest request, HttpServletResponse response) throws ParseException
+    public static String showFilms(HttpServletRequest request, HttpServletResponse response) throws ParseException, IOException
     {
         List<Film> searchResults = (List<Film>) request.getSession().getAttribute("searchResults");
         if (searchResults == null)
@@ -19,28 +19,14 @@ public class FilmsHandler
 
         request.getSession().setAttribute("searchResults", searchResults);
 
-        int pages = 1 + ((searchResults.size() - 1) / 100);
-
-        String pageParam = request.getParameter("page");
-        if (pageParam == null || Integer.valueOf(pageParam) > pages) pageParam = "1";
-
-        int pageNumber = Integer.valueOf(pageParam);
-
-        List<Film> filmsOnPage = getAPageOfFilms(searchResults, pageNumber);
-
         request.setAttribute("searchResultsSize", new DecimalFormat("#,###").format(searchResults.size()));
         request.setAttribute("uniqueLanguages", OmdbLoader.getUniqueLanguages());
         request.setAttribute("uniqueGenres", OmdbLoader.getUniqueGenres());
-        request.setAttribute("pages", pages);
-        request.setAttribute("page", pageParam);
-        request.setAttribute("hasNext", pages > pageNumber);
-        request.setAttribute("hasPrevious", pageNumber > 1);
-        request.setAttribute("filmsOnPage", filmsOnPage);
 
         return "filmsList.jsp";
     }
 
-    private static List<Film> performInitialSearch(HttpServletRequest request) throws ParseException
+    private static List<Film> performInitialSearch(HttpServletRequest request) throws ParseException, IOException
     {
         // set some defaults
         String minimumVotes = "1000";
@@ -78,14 +64,11 @@ public class FilmsHandler
 
         List<Film> searchResults = performSearch(request, titleParam, minimumVotesParam, ratingParam, fromReleaseDate, toReleaseDate, language, genre);
 
-        searchResults = sortFilms(request, searchResults);
-        request.getSession().setAttribute("searchResults", searchResults);
-
         response.sendRedirect("view?action=form");
     }
 
     private static List<Film> performSearch(HttpServletRequest request, String titleParam, String minimumVotesParam, String ratingParam,
-                                      String fromReleaseDate, String toReleaseDate, String language, String genre) throws ParseException
+                                      String fromReleaseDate, String toReleaseDate, String language, String genre) throws ParseException, IOException
     {
         int minimumVotes = minimumVotesParam.length() > 0 ? Integer.valueOf(minimumVotesParam) : 0;
 
@@ -175,7 +158,19 @@ public class FilmsHandler
 
         if (args.size() == 0) query = query.replace("where", "");
 
-        List<Film> filteredFilms = Hibernate.executeQuery(query + whereClause, args);
+        String countQuery = query.replace("select f", "select count(f)");
+        Long countResult = (Long) Hibernate.executeQuerySingleResult(countQuery + whereClause, args);
+        int searchResultsSize = countResult.intValue();
+        int pages = 1 + ((searchResultsSize - 1) / 100);
+
+        String pageParam = request.getParameter("page");
+        if (pageParam == null || Integer.valueOf(pageParam) > pages) pageParam = "1";
+
+        int pageNumber = Integer.valueOf(pageParam);
+        int from = (pageNumber - 1) * 100;
+
+        List<Film> filteredFilms = Hibernate.executeQuery(query + whereClause, args, from, 100);
+        filteredFilms = sortFilms(request, filteredFilms);
 
 //        List<Film> filteredFilms = filterFilmsFromMemory(titleParam, language, genre, minimumVotes, minimumRating, maximumRating, fromDate, toDate);
 
@@ -186,55 +181,13 @@ public class FilmsHandler
         request.getSession().setAttribute("toReleaseDate", toReleaseDate);
         request.getSession().setAttribute("language", language);
         request.getSession().setAttribute("genre", genre);
-        return filteredFilms;
-    }
 
-    // todo remove this
-    private static List<Film> filterFilmsFromMemory(String titleParam, String language, String genre, int minimumVotes, BigDecimal minimumRating, BigDecimal maximumRating, Date fromDate, Date toDate)
-    {
-        List<Film> filteredFilms = new ArrayList<>();
-        List<Film> films = OmdbLoader.getFilms();
-        for (Film film : films)
-        {
-            if (titleParam.length() > 0)
-                if (!film.getTitle().toLowerCase().contains(titleParam.toLowerCase()))
-                    continue;
-
-            if (minimumVotes > 0)
-                if (film.getImdbVotes() < minimumVotes)
-                    continue;
-
-            if (language.length() > 0)
-                if (!film.getLanguage().equals(language))
-                    continue;
-
-            if (genre.length() > 0)
-                if (!film.getGenre().contains(genre))
-                    continue;
-
-            if (fromDate != null || toDate != null)
-            {
-                Date releaseDate = Common.stringToDate(film.getReleased());
-                if (releaseDate == null)
-                    continue;
-
-                boolean afterOrEqualsFromDate = fromDate == null || releaseDate.after(fromDate) || releaseDate.equals(fromDate);
-                boolean beforeOrEqualsToDate = toDate == null || releaseDate.before(toDate) || releaseDate.equals(toDate);
-                boolean releaseDateInRange = afterOrEqualsFromDate && beforeOrEqualsToDate;
-                if (!releaseDateInRange)
-                    continue;
-            }
-
-            if (minimumRating.compareTo(BigDecimal.ZERO) > 0 || maximumRating.compareTo(BigDecimal.TEN) < 0)
-            {
-                BigDecimal rating = film.getImdbRating();
-                boolean validRating = rating.compareTo(minimumRating) >= 0 && rating.compareTo(maximumRating) <= 0;
-                if (!validRating)
-                    continue;
-            }
-
-            filteredFilms.add(film);
-        }
+        request.getSession().setAttribute("pages", pages);
+        request.getSession().setAttribute("page", pageParam);
+        request.getSession().setAttribute("hasNext", pages > pageNumber);
+        request.getSession().setAttribute("hasPrevious", pageNumber > 1);
+        request.getSession().setAttribute("searchResultsSize", new DecimalFormat("#,###").format(searchResultsSize));
+        request.getSession().setAttribute("searchResults", filteredFilms);
         return filteredFilms;
     }
 

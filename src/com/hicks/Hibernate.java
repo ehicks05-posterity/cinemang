@@ -50,6 +50,14 @@ public class Hibernate
         return query.getResultList();
     }
 
+    public static Object executeQuerySingleResult(String queryString, Map<String, Object> args)
+    {
+        Query query = em.createQuery(queryString);
+        for (String key : args.keySet())
+            query.setParameter(key, args.get(key));
+        return query.getSingleResult();
+    }
+
     public static void persist(Object obj)
     {
         EntityTransaction transaction = em.getTransaction();

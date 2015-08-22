@@ -1,7 +1,7 @@
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<jsp:useBean id="filmsOnPage" type="java.util.List<com.hicks.Film>" scope="request"/>
+<jsp:useBean id="searchResults" type="java.util.List<com.hicks.Film>" scope="session"/>
 <jsp:useBean id="uniqueLanguages" type="java.util.List<java.lang.String>" scope="request"/>
 <jsp:useBean id="uniqueGenres" type="java.util.List<java.lang.String>" scope="request"/>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
@@ -79,7 +79,13 @@
             }
             $('#sortColumn').val(column);
             $('#sortDirection').val(direction);
+            document.getElementById("frmFilter").submit();
 
+        }
+
+        function goToPage(pageNumber)
+        {
+            $('#page').val(pageNumber);
             document.getElementById("frmFilter").submit();
         }
 
@@ -130,6 +136,7 @@
     <input type="hidden" id="fldRating" name="fldRating">
     <input type="hidden" name="sortColumn" id="sortColumn" value="${sessionScope.sortColumn}"/>
     <input type="hidden" name="sortDirection" id="sortDirection" value="${sessionScope.sortDirection}"/>
+    <input type="hidden" name="page" id="page" value="${sessionScope.page}"/>
 
     <table style="margin: 10px auto 0 auto" class="list">
         <tr>
@@ -197,23 +204,23 @@
             </td>
         </tr>
         <tr><td colspan="4" style="text-align: center"><input type="submit" value="Search"/></td></tr>
-        <tr><td colspan="4" style="text-align: center"><span>${searchResultsSize} Results</span></td></tr>
+        <tr><td colspan="4" style="text-align: center"><span>${sessionScope.searchResultsSize} Results</span></td></tr>
     </table>
 </form>
 <br>
 <table style="margin: 0 auto" class="list">
     <tr>
         <td colspan="100" style="text-align: center;">
-            <c:if test="${hasPrevious}">
-                <input type="button" value="First" onclick="window.location.href='${pageContext.request.contextPath}/cinemang/view?tab1=home&action=form&page=1'"/>
-                <input type="button" value="Previous" onclick="window.location.href='${pageContext.request.contextPath}/cinemang/view?tab1=home&action=form&page=${page - 1}'"/>
+            <c:if test="${sessionScope.hasPrevious}">
+                <input type="button" value="First" onclick="goToPage('1')"/>
+                <input type="button" value="Previous" onclick="goToPage('${sessionScope.page - 1}')"/>
             </c:if>
-            <fmt:formatNumber value="${page}" var="formattedPage" pattern="#,###"/>
-            <fmt:formatNumber value="${pages}" var="formattedPages" pattern="#,###"/>
+            <fmt:formatNumber value="${sessionScope.page}" var="formattedPage" pattern="#,###"/>
+            <fmt:formatNumber value="${sessionScope.pages}" var="formattedPages" pattern="#,###"/>
             ${formattedPage} of ${formattedPages}
-            <c:if test="${hasNext}">
-                <input type="button" value="Next" onclick="window.location.href='${pageContext.request.contextPath}/cinemang/view?tab1=home&action=form&page=${page + 1}'"/>
-                <input type="button" value="Last" onclick="window.location.href='${pageContext.request.contextPath}/cinemang/view?tab1=home&action=form&page=${pages}'"/>
+            <c:if test="${sessionScope.hasNext}">
+                <input type="button" value="Next" onclick="goToPage('${sessionScope.page + 1}')"/>
+                <input type="button" value="Last" onclick="goToPage('${sessionScope.pages}')"/>
             </c:if>
         </td>
     </tr>
@@ -263,10 +270,10 @@
         <td class="lowPriority">Genres</td>
     </tr>
 
-    <c:set var="count" value="${1 + ((page - 1) * 100)}"/>
+    <c:set var="count" value="${1 + ((sessionScope.page - 1) * 100)}"/>
     <c:set var="rowStyle" value="listrowodd"/>
     <c:set var="rowToggle" value="${true}"/>
-    <c:forEach var="film" items="${filmsOnPage}">
+    <c:forEach var="film" items="${searchResults}">
 
         <tr class="${rowStyle}">
             <td class="alignright"><fmt:formatNumber value="${count}" pattern="#,###"/></td>
@@ -304,21 +311,21 @@
         <c:set var="rowToggle" value="${!rowToggle}"/>
         <c:set var="count" value="${count + 1}"/>
     </c:forEach>
-    <c:if test="${empty filmsOnPage}">
+    <c:if test="${empty searchResults}">
         <tr><td colspan="100">-</td></tr>
     </c:if>
     <tr>
         <td colspan="100" style="text-align: center;">
-            <c:if test="${hasPrevious}">
-                <input type="button" value="First" onclick="window.location.href='${pageContext.request.contextPath}/cinemang/view?tab1=home&action=form&page=1'"/>
-                <input type="button" value="Previous" onclick="window.location.href='${pageContext.request.contextPath}/cinemang/view?tab1=home&action=form&page=${page - 1}'"/>
+            <c:if test="${sessionScope.hasPrevious}">
+                <input type="button" value="First" onclick="goToPage('1')"/>
+                <input type="button" value="Previous" onclick="goToPage('${sessionScope.page - 1}')"/>
             </c:if>
-            <fmt:formatNumber value="${page}" var="formattedPage" pattern="#,###"/>
-            <fmt:formatNumber value="${pages}" var="formattedPages" pattern="#,###"/>
+            <fmt:formatNumber value="${sessionScope.page}" var="formattedPage" pattern="#,###"/>
+            <fmt:formatNumber value="${sessionScope.pages}" var="formattedPages" pattern="#,###"/>
             ${formattedPage} of ${formattedPages}
-            <c:if test="${hasNext}">
-                <input type="button" value="Next" onclick="window.location.href='${pageContext.request.contextPath}/cinemang/view?tab1=home&action=form&page=${page + 1}'"/>
-                <input type="button" value="Last" onclick="window.location.href='${pageContext.request.contextPath}/cinemang/view?tab1=home&action=form&page=${pages}'"/>
+            <c:if test="${sessionScope.hasNext}">
+                <input type="button" value="Next" onclick="goToPage('${sessionScope.page + 1}')"/>
+                <input type="button" value="Last" onclick="goToPage('${sessionScope.pages}')"/>
             </c:if>
         </td>
     </tr>
