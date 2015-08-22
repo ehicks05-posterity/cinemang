@@ -30,26 +30,14 @@ public class FilmsHandler
     {
         // set some defaults
         String minimumVotes = "1000";
-        String rating = "0-10";
-        String language = "";
+        String imdbRating = "0-10";
+        String language = "English";
 
         request.getSession().setAttribute("minimumVotes", minimumVotes);
-        request.getSession().setAttribute("rating", rating);
+        request.getSession().setAttribute("rating", imdbRating);
         request.getSession().setAttribute("language", language);
 
-        return performSearch(request, "", minimumVotes, rating, "", "", language, "");
-    }
-
-    private static List<Film> getAPageOfFilms(List<Film> films, int pageNumber)
-    {
-        List<Film> filmsOnPage = new ArrayList<>();
-
-        int from = (pageNumber - 1) * 100;
-        int filmsAfterFrom = films.size() - from;
-        int to = filmsAfterFrom < 100 ? from + filmsAfterFrom : from + 100;
-
-        filmsOnPage.addAll(films.subList(from, to));
-        return filmsOnPage;
+        return performSearch(request, "", minimumVotes, imdbRating, "", "", language, "");
     }
 
     public static void filterFilms(HttpServletRequest request, HttpServletResponse response) throws IOException, ParseException
@@ -105,8 +93,8 @@ public class FilmsHandler
         if (titleParam.length() > 0)
         {
             if (whereClause.length() > 0) whereClause += " and ";
-            whereClause += " f.title like :title ";
-            args.put("title", "%" + titleParam + "%");
+            whereClause += " lower(f.title) like :title ";
+            args.put("title", titleParam.toLowerCase().replaceAll("\\*","%"));
         }
 
         if (minimumVotes > 0)
@@ -158,21 +146,33 @@ public class FilmsHandler
 
         if (args.size() == 0) query = query.replace("where", "");
 
+        // sort
+        final String column = request.getParameter("sortColumn") == null ? "title" : request.getParameter("sortColumn");
+        String direction = request.getParameter("sortDirection");
+        if (direction == null) direction = "asc";
+        String orderByClause = "";
+        if (column.length() > 0)
+        {
+            orderByClause += " order by f." + column + " " + direction + " nulls last " ;
+        }
+
+        // find out size of search results
         String countQuery = query.replace("select f", "select count(f)");
         Long countResult = (Long) Hibernate.executeQuerySingleResult(countQuery + whereClause, args);
         int searchResultsSize = countResult.intValue();
         int pages = 1 + ((searchResultsSize - 1) / 100);
 
         String pageParam = request.getParameter("page");
-        if (pageParam == null || Integer.valueOf(pageParam) > pages) pageParam = "1";
+        String resetPage = Common.getSafeString(request.getParameter("resetPage"));
+        if (pageParam == null || Integer.valueOf(pageParam) > pages || resetPage.equals("yes")) pageParam = "1";
 
         int pageNumber = Integer.valueOf(pageParam);
         int from = (pageNumber - 1) * 100;
 
-        List<Film> filteredFilms = Hibernate.executeQuery(query + whereClause, args, from, 100);
-        filteredFilms = sortFilms(request, filteredFilms);
+        List<Film> filteredFilms = Hibernate.executeQuery(query + whereClause + orderByClause, args, from, 100);
 
-//        List<Film> filteredFilms = filterFilmsFromMemory(titleParam, language, genre, minimumVotes, minimumRating, maximumRating, fromDate, toDate);
+        request.getSession().setAttribute("sortColumn", column);
+        request.getSession().setAttribute("sortDirection", direction);
 
         request.getSession().setAttribute("minimumVotes", minimumVotesParam);
         request.getSession().setAttribute("title", titleParam);
@@ -189,88 +189,5 @@ public class FilmsHandler
         request.getSession().setAttribute("searchResultsSize", new DecimalFormat("#,###").format(searchResultsSize));
         request.getSession().setAttribute("searchResults", filteredFilms);
         return filteredFilms;
-    }
-
-    private static List<Film> sortFilms(HttpServletRequest request, List<Film> filmsToSort) throws IOException
-    {
-        final String column = request.getParameter("sortColumn") == null ? "title" : request.getParameter("sortColumn");
-        String direction = request.getParameter("sortDirection");
-        if (direction == null) direction = "asc";
-
-        List<Film> sortedFilms = new ArrayList<>(filmsToSort);
-
-        sortedFilms.sort(new Comparator<Film>()
-        {
-            @Override
-            public int compare(Film o1, Film o2)
-            {
-                Object value1 = null;
-                Object value2 = null;
-
-                if (column.equals("title"))
-                {
-                    value1 = o1.getTitle();
-                    value2 = o2.getTitle();
-                }
-                if (column.equals("language"))
-                {
-                    value1 = o1.getLanguage();
-                    value2 = o2.getLanguage();
-                }
-                if (column.equals("releaseDate"))
-                {
-                    value1 = Common.stringToDate(o1.getReleased());
-                    value2 = Common.stringToDate(o2.getReleased());
-                }
-                if (column.equals("metascore"))
-                {
-                    value1 = o1.getMetascore();
-                    value2 = o2.getMetascore();
-                }
-                if (column.equals("comboRating"))
-                {
-                    value1 = Common.stringToInt(o1.getComboRating());
-                    value2 = Common.stringToInt(o2.getComboRating());
-                }
-                if (column.equals("tomatoMeter"))
-                {
-                    value1 = o1.getTomatoMeter();
-                    value2 = o2.getTomatoMeter();
-                }
-                if (column.equals("tomatoUserMeter"))
-                {
-                    value1 = o1.getTomatoUserMeter();
-                    value2 = o2.getTomatoUserMeter();
-                }
-                if (column.equals("imdbVotes"))
-                {
-                    value1 = o1.getImdbVotes();
-                    value2 = o2.getImdbVotes();
-                }
-                if (column.equals("imdbRating"))
-                {
-                    value1 = o1.getImdbRating();
-                    value2 = o2.getImdbRating();
-                }
-
-                if (value1 == null && value2 == null) return 0;
-                if (value1 == null) return -1;
-                if (value2 == null) return 1;
-
-                if (value1 instanceof Integer) return ((Integer)value1).compareTo((Integer) value2);
-                if (value1 instanceof String) return ((String)value1).compareToIgnoreCase((String) value2);
-                if (value1 instanceof Date) return ((Date)value1).compareTo((Date) value2);
-                if (value1 instanceof BigDecimal) return  ((BigDecimal)value1).compareTo((BigDecimal) value2);
-
-                return 0;
-            }
-        });
-
-        if (direction.equals("desc")) Collections.reverse(sortedFilms);
-
-        request.getSession().setAttribute("sortColumn", column);
-        request.getSession().setAttribute("sortDirection", direction);
-
-        return sortedFilms;
     }
 }

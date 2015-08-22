@@ -67,7 +67,7 @@ public class JsonParser
         film.setTitle(properties.get("Title"));
         film.setYear(properties.get("Year"));
         film.setRated(properties.get("Rated"));
-        film.setReleased(properties.get("Released"));
+        film.setReleased(Common.stringToDate(properties.get("Released")));
         film.setRuntime(properties.get("Runtime"));
         film.setGenre(properties.get("Genre"));
         film.setDirector(properties.get("Director"));
@@ -93,7 +93,7 @@ public class JsonParser
         film.setTomatoUserMeter(Common.stringToInt(properties.get("tomatoUserMeter")));
         film.setTomatoUserRating(Common.stringToBigDecimal(properties.get("tomatoUserRating")));
         film.setTomatoUserReviews(Common.stringToInt(properties.get("tomatoUserReviews")));
-        film.setDvd(properties.get("DVD"));
+        film.setDvd(Common.stringToDate(properties.get("DVD")));
         film.setBoxOffice(properties.get("BoxOffice"));
         film.setProduction(properties.get("Production"));
         film.setWebsite(properties.get("Website"));

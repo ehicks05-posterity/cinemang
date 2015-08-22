@@ -2,6 +2,7 @@ package com.hicks;
 
 import javax.persistence.*;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -29,13 +30,11 @@ public class Hibernate
         if (emf != null) emf.close();
     }
 
-    public static List executeQuery(String queryString, Object... args)
+    public static List executeQuery(String queryString)
     {
-        Query query = em.createQuery(queryString);
-        for (Object arg : args)
-            query.setParameter(1, arg);
-        return query.getResultList();
+        return executeQuery(queryString, Collections.EMPTY_MAP, 0, 0);
     }
+
     public static List executeQuery(String queryString, Map<String, Object> args)
     {
         return executeQuery(queryString, args, 0, 0);
@@ -46,8 +45,7 @@ public class Hibernate
         Query query = em.createQuery(queryString);
         if (firstResult > 0) query.setFirstResult(firstResult);
         if (maxResults > 0) query.setMaxResults(maxResults);
-        for (String key : args.keySet())
-            query.setParameter(key, args.get(key));
+        setQueryParams(args, query);
         return query.getResultList();
     }
 
@@ -59,9 +57,19 @@ public class Hibernate
     public static Object executeQuerySingleResult(String queryString, Map<String, Object> args)
     {
         Query query = em.createQuery(queryString);
-        for (String key : args.keySet())
-            query.setParameter(key, args.get(key));
+        setQueryParams(args, query);
         return query.getSingleResult();
+    }
+
+    private static void setQueryParams(Map<String, Object> args, Query query)
+    {
+        for (String key : args.keySet())
+        {
+            if (args.get(key) instanceof Date)
+                query.setParameter(key, ((Date) args.get(key)), TemporalType.DATE);
+            else
+                query.setParameter(key, args.get(key));
+        }
     }
 
     public static void persist(Object obj)

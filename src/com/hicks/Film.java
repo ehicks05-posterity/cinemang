@@ -4,6 +4,7 @@ import javax.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -29,7 +30,8 @@ public class Film implements Serializable
     @Column(name = "genre")
     private String genre = "";
     @Column(name = "released")
-    private String released = "";
+    @Temporal(TemporalType.DATE)
+    private Date released;
 
     @Column(name = "director", length = 2000)
     private String director = "";
@@ -47,6 +49,9 @@ public class Film implements Serializable
     private Integer imdbVotes;
     @Column(name = "poster")
     private String poster = "";
+
+    @Column(name = "cinemang_Rating")
+    private Integer cinemangRating;
 
     @Column(name = "plot", length = 2000)
     private String plot = "";
@@ -85,7 +90,8 @@ public class Film implements Serializable
     private Integer tomatoUserReviews;
 
     @Column(name = "dvd")
-    private String dvd = "";
+    @Temporal(TemporalType.DATE)
+    private Date dvd;
     @Column(name = "box_Office")
     private String boxOffice = "";
     @Column(name = "production")
@@ -128,19 +134,19 @@ public class Film implements Serializable
         return "tt" + newId.toString();
     }
 
-    public String getComboRating()
+    public Integer calculateCinemangRating()
     {
         if (imdbRating == null ||
                 tomatoMeter == null || tomatoMeter == 0 ||
                 tomatoUserMeter == null ||  tomatoUserMeter == 0)
-            return "";
+            return null;
 
         BigDecimal imdbNormalized = imdbRating.multiply(BigDecimal.TEN);
         BigDecimal tomatoCritic = Common.integerToBigDecimal(tomatoMeter);
         BigDecimal tomatoUser = Common.integerToBigDecimal(tomatoUserMeter);
 
         BigDecimal average = imdbNormalized.add(tomatoCritic).add(tomatoUser).divide(new BigDecimal("3"), 0, RoundingMode.HALF_UP);
-        return average.toString();
+        return average.intValue();
     }
 
     public String getShortFullPlot()
@@ -231,12 +237,12 @@ public class Film implements Serializable
         this.genre = genre;
     }
 
-    public String getReleased()
+    public Date getReleased()
     {
         return released;
     }
 
-    public void setReleased(String released)
+    public void setReleased(Date released)
     {
         this.released = released;
     }
@@ -309,6 +315,16 @@ public class Film implements Serializable
     public void setPoster(String poster)
     {
         this.poster = poster;
+    }
+
+    public Integer getCinemangRating()
+    {
+        return cinemangRating;
+    }
+
+    public void setCinemangRating(Integer cinemangRating)
+    {
+        this.cinemangRating = cinemangRating;
     }
 
     public String getPlot()
@@ -471,12 +487,12 @@ public class Film implements Serializable
         this.tomatoUserReviews = tomatoUserReviews;
     }
 
-    public String getDvd()
+    public Date getDvd()
     {
         return dvd;
     }
 
-    public void setDvd(String dvd)
+    public void setDvd(Date dvd)
     {
         this.dvd = dvd;
     }

@@ -89,6 +89,11 @@
             document.getElementById("frmFilter").submit();
         }
 
+        function resetPagination()
+        {
+            $('#resetPage').val('yes');
+        }
+
         function showPlotDialog(title, poster, fullPlot, director, actors, runtime, tomatoConsensus)
         {
             $( "#dialog-plot" ).dialog({
@@ -137,6 +142,7 @@
     <input type="hidden" name="sortColumn" id="sortColumn" value="${sessionScope.sortColumn}"/>
     <input type="hidden" name="sortDirection" id="sortDirection" value="${sessionScope.sortDirection}"/>
     <input type="hidden" name="page" id="page" value="${sessionScope.page}"/>
+    <input type="hidden" name="resetPage" id="resetPage"/>
 
     <table style="margin: 10px auto 0 auto" class="list">
         <tr>
@@ -203,7 +209,7 @@
                 </select>
             </td>
         </tr>
-        <tr><td colspan="4" style="text-align: center"><input type="submit" value="Search"/></td></tr>
+        <tr><td colspan="4" style="text-align: center"><input type="submit" value="Search" onclick="resetPagination();"/></td></tr>
         <tr><td colspan="4" style="text-align: center"><span>${sessionScope.searchResultsSize} Results</span></td></tr>
     </table>
 </form>
@@ -211,17 +217,15 @@
 <table style="margin: 0 auto" class="list">
     <tr>
         <td colspan="100" style="text-align: center;">
-            <c:if test="${sessionScope.hasPrevious}">
-                <input type="button" value="First" onclick="goToPage('1')"/>
-                <input type="button" value="Previous" onclick="goToPage('${sessionScope.page - 1}')"/>
-            </c:if>
+            <input type="button" value="First" onclick="goToPage('1')" <c:if test="${!sessionScope.hasPrevious}">disabled</c:if> />
+            <input type="button" value="Previous" onclick="goToPage('${sessionScope.page - 1}')" <c:if test="${!sessionScope.hasPrevious}">disabled</c:if> />
+
             <fmt:formatNumber value="${sessionScope.page}" var="formattedPage" pattern="#,###"/>
             <fmt:formatNumber value="${sessionScope.pages}" var="formattedPages" pattern="#,###"/>
             ${formattedPage} of ${formattedPages}
-            <c:if test="${sessionScope.hasNext}">
-                <input type="button" value="Next" onclick="goToPage('${sessionScope.page + 1}')"/>
-                <input type="button" value="Last" onclick="goToPage('${sessionScope.pages}')"/>
-            </c:if>
+
+            <input type="button" value="Next" onclick="goToPage('${sessionScope.page + 1}')" <c:if test="${!sessionScope.hasNext}">disabled</c:if> />
+            <input type="button" value="Last" onclick="goToPage('${sessionScope.pages}')" <c:if test="${!sessionScope.hasNext}">disabled</c:if> />
         </td>
     </tr>
     <tr class="listheading">
@@ -230,10 +234,10 @@
             <c:if test="${sessionScope.sortColumn eq 'title' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if>
             <c:if test="${sessionScope.sortColumn eq 'title' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>
         </td>
-        <td class="sortableHeader alignright" onclick="sortFilms('comboRating')">
-            <img src="../images/spaceCat.png" title="Combo Rating: Combines imdb Rating, Tomato Meter, and Tomato User Meter" style="height:24px;vertical-align: middle"/>
-            <c:if test="${sessionScope.sortColumn eq 'comboRating' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if>
-            <c:if test="${sessionScope.sortColumn eq 'comboRating' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>
+        <td class="sortableHeader alignright" onclick="sortFilms('cinemangRating')">
+            <img src="../images/spaceCat.png" title="Cinemang Rating: Combines imdb Rating, Tomato Meter, and Tomato User Meter" style="height:24px;vertical-align: middle"/>
+            <c:if test="${sessionScope.sortColumn eq 'cinemangRating' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if>
+            <c:if test="${sessionScope.sortColumn eq 'cinemangRating' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>
         </td>
         <td class="sortableHeader alignright" onclick="sortFilms('tomatoMeter')">
             <img src="../images/rottenTomatoes_logo.png" title="Tomato Meter" style="height:24px;vertical-align: middle"/>
@@ -250,14 +254,9 @@
             <c:if test="${sessionScope.sortColumn eq 'imdbRating' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if>
             <c:if test="${sessionScope.sortColumn eq 'imdbRating' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>
         </td>
-        <%--<td class="sortableHeader mediumPriority alignright" onclick="sortFilms('metascore')">--%>
-            <%--<img src="../images/metacritic_logo.png" title="Metascore" style="height:24px;vertical-align: middle"/>--%>
-            <%--<c:if test="${sessionScope.sortColumn eq 'metascore' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if>--%>
-            <%--<c:if test="${sessionScope.sortColumn eq 'metascore' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>--%>
-        <%--</td>--%>
-        <td class="sortableHeader mediumPriority alignright" onclick="sortFilms('releaseDate')">Release Date
-            <c:if test="${sessionScope.sortColumn eq 'releaseDate' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if>
-            <c:if test="${sessionScope.sortColumn eq 'releaseDate' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>
+        <td class="sortableHeader mediumPriority alignright" onclick="sortFilms('released')">Release Date
+            <c:if test="${sessionScope.sortColumn eq 'released' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if>
+            <c:if test="${sessionScope.sortColumn eq 'released' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>
         </td>
         <td class="sortableHeader lowPriority alignright" onclick="sortFilms('imdbVotes')">IMDb Votes
             <c:if test="${sessionScope.sortColumn eq 'imdbVotes' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if>
@@ -291,7 +290,7 @@
                     <c:if test="${film.tomatoImage=='fresh'}"><img src="../images/certified_logo.png" style="vertical-align: middle" height="16px"/></c:if>
                 </span>
             </td>
-            <td class="alignright">${film.comboRating}</td>
+            <td class="alignright">${film.cinemangRating}</td>
             <td class="alignright">${film.tomatoMeter}</td>
             <td class="alignright">${film.tomatoUserMeter}</td>
             <td class="alignright" onclick="window.open('http://www.imdb.com/title/${film.imdbID}', '_blank');">
@@ -299,8 +298,7 @@
                     ${film.imdbRating}
                 </a>
             </td>
-            <%--<td class="mediumPriority alignright">${film.metascore}</td>--%>
-            <td class="mediumPriority alignright">${film.released}</td>
+            <td class="mediumPriority alignright"><fmt:formatDate value="${film.released}" pattern="MM/dd/yyyy"/></td>
             <td class="alignright lowPriority"><fmt:formatNumber value="${film.imdbVotes}" pattern="#,###"/></td>
             <td class="lowPriority">${film.language}</td>
             <td class="lowPriority">${film.genre}</td>
@@ -316,17 +314,15 @@
     </c:if>
     <tr>
         <td colspan="100" style="text-align: center;">
-            <c:if test="${sessionScope.hasPrevious}">
-                <input type="button" value="First" onclick="goToPage('1')"/>
-                <input type="button" value="Previous" onclick="goToPage('${sessionScope.page - 1}')"/>
-            </c:if>
+            <input type="button" value="First" onclick="goToPage('1')" <c:if test="${!sessionScope.hasPrevious}">disabled</c:if> />
+            <input type="button" value="Previous" onclick="goToPage('${sessionScope.page - 1}')" <c:if test="${!sessionScope.hasPrevious}">disabled</c:if> />
+
             <fmt:formatNumber value="${sessionScope.page}" var="formattedPage" pattern="#,###"/>
             <fmt:formatNumber value="${sessionScope.pages}" var="formattedPages" pattern="#,###"/>
             ${formattedPage} of ${formattedPages}
-            <c:if test="${sessionScope.hasNext}">
-                <input type="button" value="Next" onclick="goToPage('${sessionScope.page + 1}')"/>
-                <input type="button" value="Last" onclick="goToPage('${sessionScope.pages}')"/>
-            </c:if>
+
+            <input type="button" value="Next" onclick="goToPage('${sessionScope.page + 1}')" <c:if test="${!sessionScope.hasNext}">disabled</c:if> />
+            <input type="button" value="Last" onclick="goToPage('${sessionScope.pages}')" <c:if test="${!sessionScope.hasNext}">disabled</c:if> />
         </td>
     </tr>
 </table>

@@ -18,7 +18,7 @@ public class OmdbLoader
     private static int unreadableRows = 0;
     private static List<String> uniqueLanguages = new ArrayList<>();
     private static List<String> uniqueGenres = new ArrayList<>();
-    private static boolean loadingMode = false;
+    private static boolean loadingMode = true;
 
     public static List<Film> getFilms()
     {
@@ -102,6 +102,8 @@ public class OmdbLoader
                     else
                     {
                         Film mergedFilm = mergeRottenDataIntoFilmData(existing, newFilm);
+                        mergedFilm.setCinemangRating(mergedFilm.calculateCinemangRating());
+
                         filmMap.put(newFilm.getImdbID(), mergedFilm);
                     }
                 }
@@ -149,7 +151,7 @@ public class OmdbLoader
             film.setRated(tokens[i++]);
             film.setRuntime(tokens[i++]);
             film.setGenre(tokens[i++]);
-            film.setReleased(tokens[i++]);
+            film.setReleased(Common.stringToDate(tokens[i++]));
             film.setDirector(tokens[i++]);
             film.setWriter(tokens[i++]);
             film.setActors(tokens[i++]);
@@ -197,7 +199,7 @@ public class OmdbLoader
             film.setTomatoUserMeter(Common.stringToInt(tokens[i++]));
             film.setTomatoUserRating(Common.stringToBigDecimal(tokens[i++]));
             film.setTomatoUserReviews(Common.stringToInt(tokens[i++]));
-            film.setDvd(tokens[i++]);
+            film.setDvd(Common.stringToDate(tokens[i++]));
             film.setBoxOffice(tokens[i++]);
             film.setProduction(tokens[i++]);
             film.setWebsite(tokens[i++]);
@@ -219,7 +221,7 @@ public class OmdbLoader
         {
             Film film = i.next();
             if (film.getImdbRating() == null || film.getTomatoMeter() == null ||
-                    film.getReleased().isEmpty() || film.getLanguage().isEmpty())
+                    film.getReleased() == null || film.getLanguage().isEmpty())
                 i.remove();
         }
         return films;
