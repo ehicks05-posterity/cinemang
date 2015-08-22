@@ -226,7 +226,7 @@ public class OmdbLoader
         if (uniqueLanguages.size() == 0)
         {
             uniqueLanguages = Hibernate.executeQuery("select distinct(f.language) from Film f where f.language is not null group by f.language order by count(f.language) desc");
-            System.out.println("Identified " + uniqueLanguages.size() + " unique film languages");
+            System.out.println("Identified " + uniqueLanguages.size() + " distinct languages");
         }
         return uniqueLanguages;
     }
@@ -234,7 +234,10 @@ public class OmdbLoader
     public static List<String> getUniqueGenres()
     {
         if (uniqueGenres.size() == 0)
-            uniqueGenres = GenreLoader.identifyUniqueGenres(Film.getAllFilms());
+        {
+            uniqueGenres = GenreLoader.identifyUniqueGenres();
+            System.out.println("Identified " + uniqueGenres.size() + " distinct genres");
+        }
         return uniqueGenres;
     }
 }

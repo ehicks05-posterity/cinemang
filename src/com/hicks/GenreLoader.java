@@ -4,30 +4,33 @@ import java.util.*;
 
 public class GenreLoader
 {
-    public static List<String> identifyUniqueGenres(List<Film> films)
+    public static List<String> identifyUniqueGenres()
     {
-        System.out.println("Identifying unique film genres");
         Map<String, Genre> genreMap = new HashMap<>();
-        for (Film film : films)
+        List<Object[]> results = Hibernate.executeQuery("select count(f.genre), genre from Film f where f.genre is not null group by f.genre");
+        String[] genreTokens;
+
+        for (Object[] result : results)
         {
-            String[] genres;
-            String genreField = film.getGenre();
+            Long count = (Long)result[0];
+            String genreField = (String)result[1];
+
             if (genreField.length() == 0) continue;
 
             if (genreField.contains(","))
-                genres = genreField.split(",");
+                genreTokens = genreField.split(",");
             else
-                genres = new String[]{genreField};
+                genreTokens = new String[]{genreField};
 
-            for (String genre : genres)
+            for (String genre : genreTokens)
             {
                 genre = genre.trim();
                 if (genreMap.get(genre) == null)
-                    genreMap.put(genre, new Genre(genre, 1));
+                    genreMap.put(genre, new Genre(genre, count));
                 else
                 {
                     Genre filmGenre = genreMap.get(genre);
-                    filmGenre.setOccurrences(filmGenre.getOccurrences() + 1);
+                    filmGenre.setOccurrences(filmGenre.getOccurrences() + count);
                 }
             }
         }
@@ -38,8 +41,8 @@ public class GenreLoader
             @Override
             public int compare(Genre o1, Genre o2)
             {
-                Integer o1Occurrences = o1.getOccurrences();
-                Integer o2Occurrences = o2.getOccurrences();
+                Long o1Occurrences = o1.getOccurrences();
+                Long o2Occurrences = o2.getOccurrences();
                 return o1Occurrences.compareTo(o2Occurrences);
             }
         });
@@ -49,16 +52,15 @@ public class GenreLoader
         for (Genre genre : genres)
             genreNames.add(genre.getName());
 
-        System.out.println("...Found " + genreNames.size());
         return genreNames;
     }
 
     private static class Genre
     {
         private String name = "";
-        private int occurrences;
+        private long occurrences;
 
-        public Genre(String name, int occurrences)
+        public Genre(String name, long occurrences)
         {
             this.name = name;
             this.occurrences = occurrences;
@@ -74,12 +76,12 @@ public class GenreLoader
             return name;
         }
 
-        public int getOccurrences()
+        public long getOccurrences()
         {
             return occurrences;
         }
 
-        public void setOccurrences(int occurrences)
+        public void setOccurrences(long occurrences)
         {
             this.occurrences = occurrences;
         }
