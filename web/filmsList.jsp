@@ -12,13 +12,13 @@
     <title>Cinemang</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <script src="../js/jquery-2.1.1.min.js"></script>
-    <script src="../js/jquery-ui.min.js"></script>
-    <script src="../js/jquery.ui.touch-punch.min.js"></script>
-    <link rel="stylesheet" href="../styles/jquery-ui.min.css" />
-    <link rel="shortcut icon" href="../images/spaceCat.png">
+    <script src="js/jquery-2.1.1.min.js"></script>
+    <script src="js/jquery-ui.min.js"></script>
+    <script src="js/jquery.ui.touch-punch.min.js"></script>
+    <link rel="stylesheet" href="styles/jquery-ui.min.css" />
+    <link rel="shortcut icon" href="images/spaceCat.png">
     <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type="text/css" href="../styles/cinemang.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="styles/cinemang.css" media="screen" />
 
     <style>#ratingSlider { margin: 10px; }	</style>
     <script>
@@ -94,7 +94,7 @@
             $('#resetPage').val('yes');
         }
 
-        function showPlotDialog(title, poster, fullPlot, director, actors, runtime, tomatoConsensus)
+        function showPlotDialog(title, imdbID, fullPlot, director, actors, runtime, tomatoConsensus)
         {
             $( "#dialog-plot" ).dialog({
                 resizable: false,
@@ -104,7 +104,19 @@
                 open: function (event, ui)
                 {
                     $( "#dialog-plot").dialog('option', 'title', title);
-                    $( "#posterUrl").attr('src', poster);
+
+                    var myUrl = '${pageContext.request.contextPath}/view?tab1=home&action=getPoster';
+                    $( "#posterUrl").load(myUrl, {imdbId : imdbID},
+                        function(responseTxt, statusTxt, xhr)
+                        {
+                            if(statusTxt == "success")
+                            {
+                                $( "#posterUrl").attr('src', responseTxt);
+                            }
+//                            if(statusTxt == "error")
+//                                alert("Error: " + xhr.status + ": " + xhr.statusText);
+                        });
+
                     $( "#dialogDirector").html('<b>Director:</b><br>' + director);
                     $( "#dialogActors").html('<br><br><b>Actors:</b><br>' + actors);
                     $( "#dialogRuntime").html('<br><br><b>Running Time:</b><br>' + runtime);
@@ -137,7 +149,7 @@
 
 </head>
 <body onload="initHeader();">
-<form name="frmFilter" id="frmFilter" method="post" action="${pageContext.request.contextPath}/cinemang/view?tab1=home&action=filterFilms">
+<form name="frmFilter" id="frmFilter" method="post" action="${pageContext.request.contextPath}/view?tab1=home&action=filterFilms">
     <input type="hidden" id="fldRating" name="fldRating">
     <input type="hidden" name="sortColumn" id="sortColumn" value="${sessionScope.sortColumn}"/>
     <input type="hidden" name="sortDirection" id="sortDirection" value="${sessionScope.sortDirection}"/>
@@ -147,7 +159,7 @@
     <table style="margin: 10px auto 0 auto" class="list">
         <tr>
             <td colspan="4">
-                <h1 style="text-align: center;margin: 0;">CINEMANG <img src="../images/spaceCat.png" style="height: 30px;vertical-align: middle"></h1>
+                <h1 style="text-align: center;margin: 0;">CINEMANG <img src="images/spaceCat.png" style="height: 30px;vertical-align: middle"></h1>
             </td>
         </tr>
         <tr>
@@ -235,22 +247,22 @@
             <c:if test="${sessionScope.sortColumn eq 'title' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>
         </td>
         <td class="sortableHeader alignright" onclick="sortFilms('cinemangRating')">
-            <img src="../images/spaceCat.png" title="Cinemang Rating: Combines imdb Rating, Tomato Meter, and Tomato User Meter" style="height:24px;vertical-align: middle"/>
+            <img src="images/spaceCat.png" title="Cinemang Rating: Combines imdb Rating, Tomato Meter, and Tomato User Meter" style="height:24px;vertical-align: middle"/>
             <c:if test="${sessionScope.sortColumn eq 'cinemangRating' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if>
             <c:if test="${sessionScope.sortColumn eq 'cinemangRating' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>
         </td>
         <td class="sortableHeader alignright" onclick="sortFilms('tomatoMeter')">
-            <img src="../images/rottenTomatoes_logo.png" title="Tomato Meter" style="height:24px;vertical-align: middle"/>
+            <img src="images/rottenTomatoes_logo.png" title="Tomato Meter" style="height:24px;vertical-align: middle"/>
             <c:if test="${sessionScope.sortColumn eq 'tomatoMeter' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if>
             <c:if test="${sessionScope.sortColumn eq 'tomatoMeter' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>
         </td>
         <td class="sortableHeader alignright" onclick="sortFilms('tomatoUserMeter')">
-            <img src="../images/rottenTomatoes_user_logo.png" title="Tomato User Meter" style="height:24px;vertical-align: middle"/>
+            <img src="images/rottenTomatoes_user_logo.png" title="Tomato User Meter" style="height:24px;vertical-align: middle"/>
             <c:if test="${sessionScope.sortColumn eq 'tomatoUserMeter' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if>
             <c:if test="${sessionScope.sortColumn eq 'tomatoUserMeter' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>
         </td>
         <td class="sortableHeader alignright" onclick="sortFilms('imdbRating')">
-            <img src="../images/imdb_logo.png" title="IMDb Rating" style="height:24px;vertical-align: middle"/>
+            <img src="images/imdb_logo.png" title="IMDb Rating" style="height:24px;vertical-align: middle"/>
             <c:if test="${sessionScope.sortColumn eq 'imdbRating' and sessionScope.sortDirection eq 'asc'}">&#9650;</c:if>
             <c:if test="${sessionScope.sortColumn eq 'imdbRating' and sessionScope.sortDirection eq 'desc'}">&#9660;</c:if>
         </td>
@@ -277,7 +289,7 @@
         <tr class="${rowStyle}">
             <td class="alignright"><fmt:formatNumber value="${count}" pattern="#,###"/></td>
             <td>
-                <span onclick='showPlotDialog("${fn:escapeXml(film.title)}", "${film.poster}",
+                <span onclick='showPlotDialog("${fn:escapeXml(film.title)}", "${film.imdbID}",
                         "<c:out value="${fn:escapeXml(film.shortFullPlot)}"/>",
                         "<c:out value="${fn:escapeXml(film.director)}"/>",
                         "<c:out value="${fn:escapeXml(film.actors)}"/>",
@@ -287,7 +299,7 @@
                     <c:set var="filmTitle" value="${film.title}"/>
                     <c:if test="${fn:length(film.title) > 50}"><c:set var="filmTitle" value="${fn:substring(film.title, 0, 50)}..."/></c:if>
                     ${filmTitle}
-                    <c:if test="${film.tomatoImage=='fresh'}"><img src="../images/certified_logo.png" style="vertical-align: middle" height="16px"/></c:if>
+                    <c:if test="${film.tomatoImage=='fresh'}"><img src="images/certified_logo.png" style="vertical-align: middle" height="16px"/></c:if>
                 </span>
             </td>
             <td class="alignright">${film.cinemangRating}</td>

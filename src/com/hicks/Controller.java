@@ -11,7 +11,7 @@ import java.lang.management.ManagementFactory;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 
-@WebServlet("/cinemang/view")
+@WebServlet("/view")
 public class Controller extends HttpServlet
 {
     private static final boolean DEBUG = false;
@@ -56,6 +56,11 @@ public class Controller extends HttpServlet
             if (action.equals("filterFilms"))
             {
                 FilmsHandler.filterFilms(request, response);
+                return;
+            }
+            if (action.equals("getPoster"))
+            {
+                FilmsHandler.getPoster(request, response);
                 return;
             }
         }

@@ -1,9 +1,11 @@
 package com.hicks;
 
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -24,6 +26,27 @@ public class FilmsHandler
         request.setAttribute("uniqueGenres", OmdbLoader.getUniqueGenres());
 
         return "filmsList.jsp";
+    }
+
+    public static void getPoster(HttpServletRequest request, HttpServletResponse response) throws ParseException, IOException
+    {
+        String imdbId = request.getParameter("imdbId");
+        URL url = new URL("http://img.omdbapi.com?apikey=9011ed1e&i=" + imdbId);
+        byte[] imageResponse;
+
+        try
+        {
+            imageResponse = IOUtil.getBytesFromUrlConnection(url);
+        }
+        catch (Exception e)
+        {
+            System.out.println("No poster found for " + imdbId);
+            return;
+        }
+
+        String base64Image = Base64.getEncoder().encodeToString(imageResponse);
+        ServletOutputStream outputStream = response.getOutputStream();
+        outputStream.print("data:image/jpeg;base64," + base64Image);
     }
 
     private static List<Film> performInitialSearch(HttpServletRequest request) throws ParseException, IOException

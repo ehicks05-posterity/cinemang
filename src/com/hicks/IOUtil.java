@@ -5,8 +5,11 @@ import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPClientConfig;
 import org.apache.commons.net.ftp.FTPReply;
 
-import java.io.*;
-import java.util.zip.GZIPInputStream;
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
 
 public class IOUtil
 {
@@ -49,36 +52,28 @@ public class IOUtil
         return null;
     }
 
-    static File unzipFile(File input) throws IOException
+    public static byte[] getBytesFromUrlConnection(URL url) throws IOException
     {
-        File unzippedFile = new File(System.getProperty("java.io.tmpdir") + File.separator + input.getName().replace(".gz", ""));
-        if (unzippedFile.exists())
+        URLConnection uc = url.openConnection();
+        int len = uc.getContentLength();
+        try (InputStream is = new BufferedInputStream(uc.getInputStream()))
         {
-            System.out.println("Found " + unzippedFile.getCanonicalPath());
-            return unzippedFile;
-        }
-        System.out.println("Unzipping " + input.getCanonicalPath());
-        try
-        {
-            GZIPInputStream gzipInputStream = new GZIPInputStream(new FileInputStream(input));
-            ByteArrayOutputStream unzippedData = new ByteArrayOutputStream();
-
-            int bytesRead;
-            byte[] buffer = new byte[1024];
-
-            while ((bytesRead = gzipInputStream.read(buffer)) > 0)
+            byte[] data = new byte[len];
+            int offset = 0;
+            while (offset < len)
             {
-                unzippedData.write(buffer, 0, bytesRead);
+                int read = is.read(data, offset, data.length - offset);
+                if (read < 0)
+                {
+                    break;
+                }
+                offset += read;
             }
-
-            FileOutputStream unzippedOutputStream = new FileOutputStream(unzippedFile);
-            unzippedOutputStream.write(unzippedData.toByteArray());
+            if (offset < len)
+            {
+                throw new IOException(String.format("Read %d bytes; expected %d", offset, len));
+            }
+            return data;
         }
-        catch (IOException e)
-        {
-            System.out.println(e.getMessage());
-        }
-
-        return unzippedFile;
     }
 }
