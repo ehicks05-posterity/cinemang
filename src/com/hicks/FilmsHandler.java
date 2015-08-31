@@ -170,9 +170,18 @@ public class FilmsHandler
         if (args.size() == 0) query = query.replace("where", "");
 
         // sort
-        final String column = request.getParameter("sortColumn") == null ? "title" : request.getParameter("sortColumn");
-        String direction = request.getParameter("sortDirection");
-        if (direction == null) direction = "asc";
+        String column;
+        String direction = null;
+        if (request.getParameter("sortColumn") == null)
+        {
+            column = "cinemangRating";
+            direction = "desc";
+        }
+        else
+            column = request.getParameter("sortColumn");
+
+        String directionParam = request.getParameter("sortDirection");
+        if (direction == null) direction = directionParam == null ? "asc" : directionParam;
         String orderByClause = "";
         if (column.length() > 0)
         {
