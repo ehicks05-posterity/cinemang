@@ -10,7 +10,7 @@ public class Common
     private static SimpleDateFormat mmddyyyy = new SimpleDateFormat("MM/dd/yyyy");
     private static SimpleDateFormat yyyymmdd = new SimpleDateFormat("yyyy-MM-dd");
 
-    public static java.util.Date stringToDate(String input)
+    public static Date stringToDate(String input)
     {
         Date result = null;
         if (input == null || input.length() == 0) return null;

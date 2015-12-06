@@ -4,7 +4,19 @@ import java.util.*;
 
 public class GenreLoader
 {
-    public static List<String> identifyUniqueGenres()
+    private static List<String> uniqueGenres = new ArrayList<>();
+
+    public static List<String> getUniqueGenres()
+    {
+        if (uniqueGenres.size() == 0)
+        {
+            uniqueGenres = identifyUniqueGenres();
+            System.out.println("Identified " + uniqueGenres.size() + " distinct genres");
+        }
+        return uniqueGenres;
+    }
+
+    private static List<String> identifyUniqueGenres()
     {
         Map<String, Genre> genreMap = new HashMap<>();
         List<Object[]> results = Hibernate.executeQuery("select count(f.genre), genre from Film f where f.genre is not null group by f.genre");

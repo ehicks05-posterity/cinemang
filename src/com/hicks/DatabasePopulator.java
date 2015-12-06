@@ -12,62 +12,42 @@ import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-public class OmdbLoader
+public class DatabasePopulator
 {
-    private static List<Film> films = new ArrayList<>();
     private static int unreadableRows = 0;
-    private static List<String> uniqueLanguages = new ArrayList<>();
-    private static List<String> uniqueGenres = new ArrayList<>();
-    private static boolean loadingMode = true;
 
-    public static List<Film> getFilms()
+    public static List<Film> populateDatabase() throws IOException
     {
+        List<Film> films = loadFromDumpToRam();
+
+        DecimalFormat df = new DecimalFormat("#,###");
+        System.out.println("Films Found: " + df.format(films.size()));
+        System.out.println("Unreadable Rows: " + df.format(unreadableRows));
+
+        int persistIndex = 0;
+        EntityTransaction transaction = Hibernate.startTransaction();
+        for (Film film : films)
+        {
+            if (film.getImdbVotes() < 1000)
+                continue;
+
+            Hibernate.persistAsPartOfTransaction(film);
+            persistIndex++;
+            if (persistIndex % 10_000 == 0)
+                System.out.println(persistIndex + "/" + films.size());
+        }
+        System.out.println(persistIndex + "/" + films.size());
+        System.out.println("committing transaction...");
+        Hibernate.commitTransaction(transaction);
+
         return films;
     }
 
-    public static void loadFilms()
-    {
-        try
-        {
-            Long filmsInDb = (Long) Hibernate.executeQuerySingleResult("select count(f) from Film f");
-            if (filmsInDb == 0 && loadingMode)
-            {
-                films = importFilmsFromOmdbDump();
-
-                DecimalFormat df = new DecimalFormat("#,###");
-                System.out.println("Films Found: " + df.format(films.size()));
-                System.out.println("Unreadable Rows: " + df.format(unreadableRows));
-
-//                films = removeFilmsWithMissingData(films);
-//                System.out.println("Films Remaining after Filtering: " + df.format(films.size()));
-
-                int persistIndex = 0;
-                EntityTransaction transaction = Hibernate.startTransaction();
-                for (Film film : films)
-                {
-                    Hibernate.persistAsPartOfTransaction(film);
-                    persistIndex++;
-                    if (persistIndex % 100000 == 0)
-                        System.out.println(persistIndex + "/" + films.size());
-                }
-                System.out.println(persistIndex + "/" + films.size());
-                System.out.println("committing transaction...");
-                Hibernate.commitTransaction(transaction);
-            }
-            getUniqueGenres();
-            getUniqueLanguages();
-        }
-        catch (Exception e)
-        {
-            System.out.println(e.getMessage());
-        }
-    }
-
-    private static List<Film> importFilmsFromOmdbDump() throws IOException
+    private static List<Film> loadFromDumpToRam() throws IOException
     {
         FTPClient ftp = IOUtil.prepareFtpClient("***REMOVED***", "***REMOVED***", "");
 
-        InputStream inputStream = ftp.retrieveFileStream("omdb0715.zip");
+        InputStream inputStream = ftp.retrieveFileStream("omdbFull1115.zip");
         ZipInputStream zipIn = new ZipInputStream(inputStream);
 
         List<Film> films = readZipInputStream(zipIn);
@@ -89,22 +69,28 @@ public class OmdbLoader
             while ((line = br.readLine()) != null)
             {
                 Film newFilm = null;
-                if (e.getName().equals("omdbMovies.txt"))
+                if (e.getName().equals("omdbFull.txt"))
                     newFilm = readMovieLine(line);
                 if (e.getName().equals("tomatoes.txt"))
                     newFilm = readRottenLine(line);
+                if (!Arrays.asList("omdbFull.txt", "tomatoes.txt").contains(e.getName()))
+                    break;
 
                 if (newFilm != null)
                 {
                     Film existing = filmMap.get(newFilm.getImdbID());
-                    if (existing == null)
-                        filmMap.put(newFilm.getImdbID(), newFilm);
-                    else
+                    if (existing == null && e.getName().equals("omdbFull.txt"))
+                    {
+                        if (newFilm.getImdbVotes() >= 1000)
+                            filmMap.put(newFilm.getImdbID(), newFilm);
+                    }
+                    if (existing != null && e.getName().equals("tomatoes.txt"))
                     {
                         Film mergedFilm = mergeRottenDataIntoFilmData(existing, newFilm);
                         mergedFilm.setCinemangRating(mergedFilm.calculateCinemangRating());
 
-                        filmMap.put(newFilm.getImdbID(), mergedFilm);
+                        if (mergedFilm.getImdbVotes() >= 1000)
+                            filmMap.put(newFilm.getImdbID(), mergedFilm);
                     }
                 }
             }
@@ -137,7 +123,7 @@ public class OmdbLoader
         return movieData;
     }
 
-    static Film readMovieLine(String line)
+    private static Film readMovieLine(String line)
     {
         try
         {
@@ -180,7 +166,7 @@ public class OmdbLoader
         return null;
     }
 
-    static Film readRottenLine(String line)
+    private static Film readRottenLine(String line)
     {
         try
         {
@@ -213,37 +199,5 @@ public class OmdbLoader
         }
 
         return null;
-    }
-
-    private static List<Film> removeFilmsWithMissingData(List<Film> films)
-    {
-        for (Iterator<Film> i = films.iterator(); i.hasNext();)
-        {
-            Film film = i.next();
-            if (film.getImdbRating() == null || film.getTomatoMeter() == null ||
-                    film.getReleased() == null || film.getLanguage().isEmpty())
-                i.remove();
-        }
-        return films;
-    }
-
-    public static List<String> getUniqueLanguages()
-    {
-        if (uniqueLanguages.size() == 0)
-        {
-            uniqueLanguages = Hibernate.executeQuery("select distinct(f.language) from Film f where f.language is not null group by f.language order by count(f.language) desc");
-            System.out.println("Identified " + uniqueLanguages.size() + " distinct languages");
-        }
-        return uniqueLanguages;
-    }
-
-    public static List<String> getUniqueGenres()
-    {
-        if (uniqueGenres.size() == 0)
-        {
-            uniqueGenres = GenreLoader.identifyUniqueGenres();
-            System.out.println("Identified " + uniqueGenres.size() + " distinct genres");
-        }
-        return uniqueGenres;
     }
 }

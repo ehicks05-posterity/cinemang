@@ -79,7 +79,15 @@ public class Hibernate
 
         em.persist(obj);
 
-        transaction.commit();
+        try
+        {
+            transaction.commit();
+        }
+        catch (Exception e)
+        {
+            System.out.println(e.getMessage());
+            transaction.rollback();
+        }
     }
 
     public static void persistAsPartOfTransaction(Object obj)

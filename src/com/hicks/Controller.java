@@ -25,7 +25,7 @@ public class Controller extends HttpServlet
                 System.out.println(argument);
 
         System.out.println("Max Memory: " + new DecimalFormat("#,###").format(Runtime.getRuntime().maxMemory()));
-        OmdbLoader.loadFilms();
+        FilmLoader.initFilms();
         long startupTime = System.currentTimeMillis() - start;
         System.out.println("Cinemang started in " + startupTime + " ms");
     }
@@ -45,6 +45,7 @@ public class Controller extends HttpServlet
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
+        long start = System.currentTimeMillis();
         String tab1   = request.getParameter("tab1") == null ? "home" : request.getParameter("tab1");
         String action = request.getParameter("action") == null ? "form" : request.getParameter("action");
 
@@ -71,5 +72,8 @@ public class Controller extends HttpServlet
 
         RequestDispatcher dispatcher = request.getRequestDispatcher(viewJsp);
         dispatcher.forward(request, response);
+
+        long end = System.currentTimeMillis();
+        System.out.println(end - start + " ms for last request " + request.getQueryString());
     }
 }

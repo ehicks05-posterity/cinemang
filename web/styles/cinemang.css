@@ -1,4 +1,4 @@
-body {font-family: 'Open Sans', sans-serif; background-color: darkslategrey}
+body {font-family: 'Open Sans', sans-serif; background-color: darkslategrey; margin: 0;}
 
 /* Tables */
 .alignleft {text-align: left}
