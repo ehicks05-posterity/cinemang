@@ -59,6 +59,11 @@ public class Controller extends HttpServlet
                 FilmsHandler.filterFilms(request, response);
                 return;
             }
+            if (action.equals("getNewPage"))
+            {
+                FilmsHandler.getNewPage(request, response);
+                return;
+            }
             if (action.equals("getPoster"))
             {
                 FilmsHandler.getPoster(request, response);
@@ -73,7 +78,6 @@ public class Controller extends HttpServlet
         RequestDispatcher dispatcher = request.getRequestDispatcher(viewJsp);
         dispatcher.forward(request, response);
 
-        long end = System.currentTimeMillis();
-        System.out.println(end - start + " ms for last request " + request.getQueryString());
+        System.out.println(System.currentTimeMillis() - start + " ms for last request " + request.getQueryString());
     }
 }

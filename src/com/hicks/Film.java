@@ -139,7 +139,7 @@ public class Film implements Serializable
         if (imdbRating == null ||
                 tomatoMeter == null || tomatoMeter == 0 ||
                 tomatoUserMeter == null ||  tomatoUserMeter == 0)
-            return null;
+            return 0;
 
         BigDecimal imdbNormalized = imdbRating.multiply(BigDecimal.TEN);
         BigDecimal tomatoCritic = Common.integerToBigDecimal(tomatoMeter);

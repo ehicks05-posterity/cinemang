@@ -1,11 +1,15 @@
 package com.hicks;
 
+import org.apache.commons.lang3.StringEscapeUtils;
+
+import javax.json.*;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URL;
+import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -68,6 +72,70 @@ public class FilmsHandler
         request.getSession().setAttribute("filmSearchResult", filmSearchResult);
 
         response.sendRedirect("view?action=form");
+    }
+
+    public static void getNewPage(HttpServletRequest request, HttpServletResponse response) throws IOException, ParseException
+    {
+        String newPage = request.getParameter("page");
+        String newSortColumn = request.getParameter("sortColumn");
+        String newSortDirection = request.getParameter("sortDirection");
+
+        FilmSearchResult filmSearchResult = (FilmSearchResult) request.getSession().getAttribute("filmSearchResult");
+
+        boolean resort = (newSortColumn != null && !newSortColumn.equals(filmSearchResult.getSortColumn())) ||
+                (newSortDirection != null && !newSortDirection.equals(filmSearchResult.getSortDirection()));
+
+        if (newPage != null) filmSearchResult.setPage(newPage);
+        if (newSortColumn != null) filmSearchResult.setSortColumn(newSortColumn);
+        if (newSortDirection != null) filmSearchResult.setSortDirection(newSortDirection);
+
+
+
+        if (resort)
+            filmSearchResult.setSearchResults(sortFilmsInMemory(filmSearchResult.getSearchResults(), filmSearchResult.getSortColumn(), filmSearchResult.getSortDirection()));
+
+        request.getSession().setAttribute("filmSearchResult", filmSearchResult);
+
+        JsonArrayBuilder jsonArrayBuilder = Json.createArrayBuilder();
+
+        for (Film film : filmSearchResult.getPageOfResults())
+        {
+            String title = film.getTitle();
+            if (title.length() > 50)
+                title = title.substring(0, 50);
+
+            String released = "";
+            if (film.getReleased() != null)
+                released = new SimpleDateFormat("yyyy").format(film.getReleased());
+
+            JsonObject jsonObject = Json.createObjectBuilder()
+                    .add("imdbId", film.getImdbID())
+                    .add("title", escapeHtml(title))
+                    .add("shortFullPlot", escapeHtml(film.getShortFullPlot()))
+                    .add("director", escapeHtml(film.getDirector()))
+                    .add("actors", escapeHtml(film.getActors()))
+                    .add("runtime", film.getRuntime())
+                    .add("tomatoConsensus", escapeHtml(film.getTomatoConsensus()))
+                    .add("tomatoImage", film.getTomatoImage())
+                    .add("cinemangRating", film.getCinemangRating() == null ? 0 : film.getCinemangRating())
+                    .add("tomatoMeter", film.getTomatoMeter() == null ? 0 : film.getTomatoMeter())
+                    .add("tomatoUserMeter", film.getTomatoUserMeter() == null ? 0 : film.getTomatoUserMeter())
+                    .add("imdbRating", film.getImdbRating() == null ? BigDecimal.ZERO : film.getImdbRating())
+                    .add("released", released)
+                    .add("imdbVotes", new DecimalFormat("#,###").format(film.getImdbVotes()))
+                    .add("language", film.getLanguage())
+                    .add("genre", film.getGenre())
+                    .build();
+            jsonArrayBuilder.add(jsonObject);
+        }
+
+        JsonArray jsonArray = jsonArrayBuilder.build();
+        response.getOutputStream().print(jsonArray.toString());
+    }
+
+    private static String escapeHtml(String input)
+    {
+        return StringEscapeUtils.escapeHtml4((input));
     }
 
     private static FilmSearchResult performSearch(HttpServletRequest request, FilmsForm filmsForm) throws ParseException, IOException
@@ -296,7 +364,7 @@ public class FilmsHandler
                     value1 = o1.getLanguage();
                     value2 = o2.getLanguage();
                 }
-                if (sortColumn.equals("releaseDate"))
+                if (sortColumn.equals("released"))
                 {
                     value1 = o1.getReleased();
                     value2 = o2.getReleased();

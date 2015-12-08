@@ -23,6 +23,11 @@
 
     <style>#ratingSlider { margin: 10px; }	</style>
     <script>
+        var page = ${filmSearchResult.page};
+        var pages = ${filmSearchResult.pages};
+        var sortColumn = '${filmSearchResult.sortColumn}';
+        var sortDirection = '${filmSearchResult.sortDirection}';
+
         function initHeader()
         {
             var ratingParam = '${filmsForm.ratingParam}';
@@ -68,10 +73,10 @@
             $('#fldRating').val(values[0] + '-' + values[1]);
         }
 
-        function sortFilms(column)
+        function sortFilms(element, column)
         {
-            var previousColumn = '${filmSearchResult.sortColumn}';
-            var previousDirection = '${filmSearchResult.sortDirection}';
+            var previousColumn = sortColumn;
+            var previousDirection = sortDirection;
             var direction = 'desc';
             if (column === previousColumn)
             {
@@ -80,14 +85,63 @@
             }
             $('#sortColumn').val(column);
             $('#sortDirection').val(direction);
-            document.getElementById("frmFilter").submit();
+            sortColumn = column;
+            sortDirection = direction;
 
+
+            // remove sort indicator from all .sortableHeader
+            $('.sortableHeader span').each(function(index) {
+                if (this.textContent.indexOf('▼') > -1 || this.textContent.indexOf('▲') > -1)
+                {
+//                    this.textContent = this.textContent.replace('▼', '');
+//                    this.textContent = this.textContent.replace('▲', '');
+                    $(this).closest('span')[0].textContent = $(this).closest('span')[0].textContent.replace('▼', '');
+                    $(this).closest('span')[0].textContent = $(this).closest('span')[0].textContent.replace('▲', '');
+                }
+            });
+            // add sort indicator to the one that was clicked
+            var sortIcon = direction == 'asc' ? '▲' : '▼';
+            $(element).find('span')[0].innerHTML += ' ' + sortIcon;
+//            element.textContent = element.textContent + ' ' + sortIcon;
+
+            ajaxFilms('', column, direction);
         }
 
         function goToPage(pageNumber)
         {
-            $('#page').val(pageNumber);
-            document.getElementById("frmFilter").submit();
+            var parsedPage = '';
+            if (pageNumber == 'first') parsedPage = 1;
+            if (pageNumber == 'last') parsedPage = pages;
+            if (pageNumber == 'next') parsedPage = (page + 1);
+            if (pageNumber == 'previous') parsedPage = (page - 1);
+
+            page = parsedPage;
+            $('#page').val(parsedPage);
+
+            $('.currentPageSpan').html(parsedPage);
+
+            if (parsedPage == 1)
+            {
+                $('.firstButton').prop( "disabled", true );
+                $('.previousButton').prop( "disabled", true );
+            }
+            else
+            {
+                $('.firstButton').prop( "disabled", false );
+                $('.previousButton').prop( "disabled", false );
+            }
+            if (parsedPage == ${filmSearchResult.pages})
+            {
+                $('.nextButton').prop( "disabled", true );
+                $('.lastButton').prop( "disabled", true );
+            }
+            else
+            {
+                $('.nextButton').prop( "disabled", false );
+                $('.lastButton').prop( "disabled", false );
+            }
+
+            ajaxFilms(parsedPage, '', '');
         }
 
         function resetPagination()
@@ -144,6 +198,69 @@
                     }
                 }
             }).position({ my: "middle", at: "middle"});
+        }
+
+        function ajaxFilms(newPage, newSortColumn, newSortDirection)
+        {
+            var myUrl = '${pageContext.request.contextPath}/view?tab1=home&action=getNewPage';
+            var params = {};
+            if (newPage) params.page = newPage;
+            if (newSortColumn) params.sortColumn = newSortColumn;
+            if (newSortDirection) params.sortDirection = newSortDirection;
+
+            $.getJSON(myUrl, params,
+                    function(data, textStatus, xhr)
+                    {
+                        if(textStatus == "success")
+                        {
+                            var rows = [];
+                            $.each(data, function(key, value){
+                                var indexOnCurrentPage = key + 1;
+                                var resultIndex = (page - 1) * 100 + indexOnCurrentPage;
+                                var rowClass = indexOnCurrentPage % 2 == 0 ? 'listroweven' : 'listrowodd';
+                                var row = "<tr class=" + rowClass + ">";
+                                row += "<td class='alignright'>" + resultIndex + "</td>";
+
+                                var onclickValue = "\"showPlotDialog(&quot;" +
+                                        value.title + "&quot;, &quot;" +
+                                        value.imdbId + "&quot;, &quot;" +
+                                        value.shortFullPlot + "&quot;, &quot;" +
+                                        value.director + "&quot;, &quot;" +
+                                        value.actors + "&quot;, &quot;" +
+                                        value.runtime + "&quot;, &quot;" +
+                                        value.tomatoConsensus + "&quot;" +
+                                        ");\"";
+
+                                var styleValue = "'color: blue; text-decoration: underline; cursor: pointer'";
+
+                                var freshImage = "";
+                                if (value.tomatoImage == 'fresh')
+                                    freshImage = "<img src='images/certified_logo.png' style='vertical-align: middle' height='16px'/>";
+
+                                row += "<td><span onclick=" + onclickValue + " style=" + styleValue + ">" + value.title + freshImage + "</span></td>";
+
+                                row += "<td class='alignright'>" + value.cinemangRating + "</td>";
+                                row += "<td class='alignright'>" + value.tomatoMeter + "</td>";
+                                row += "<td class='alignright'>" + value.tomatoUserMeter + "</td>";
+
+                                onclickValue = "'window.open(&quot;" + "http://www.imdb.com/title/" + value.imdbId + "&quot;, &quot;_blank&quot);'";
+                                row += "<td class='alignright' onclick=" + onclickValue + " style=" + styleValue + ">" + value.imdbRating + "</td>";
+
+                                row += "<td class='mediumPriority alignright'>" + value.released + "</td>";
+                                row += "<td class='lowPriority alignright'>" + value.imdbVotes + "</td>";
+                                row += "<td class='lowPriority'>" + value.language + "</td>";
+                                row += "<td class='lowPriority'>" + value.genre + "</td>";
+
+                                row += "</tr>";
+                                rows.push(row);
+                            });
+
+                            var oldTBody = document.getElementById('myTBody');
+                            oldTBody.innerHTML = rows.join("");
+                        }
+                        if (textStatus == "error")
+                            alert("Error: " + xhr.status + ": " + xhr.statusText);
+                    });
         }
 
     </script>
@@ -237,61 +354,80 @@
     </table>
 </form>
 <br>
-<table style="margin: 0 auto" class="list">
+<table id="filmTable" style="margin: 0 auto" class="list">
+    <thead>
     <tr>
         <td colspan="100" style="text-align: center;">
-            <input type="button" value="First" onclick="goToPage('1')" <c:if test="${!filmSearchResult.hasPrevious}">disabled</c:if> />
-            <input type="button" value="Previous" onclick="goToPage('${filmSearchResult.page - 1}')" <c:if test="${!filmSearchResult.hasPrevious}">disabled</c:if> />
+            <input class="firstButton" type="button" value="First" onclick="goToPage('first')" <c:if test="${!filmSearchResult.hasPrevious}">disabled</c:if> />
+            <input class="previousButton" type="button" value="Previous" onclick="goToPage('previous')" <c:if test="${!filmSearchResult.hasPrevious}">disabled</c:if> />
 
             <fmt:formatNumber value="${filmSearchResult.page}" var="formattedPage" pattern="#,###"/>
             <fmt:formatNumber value="${filmSearchResult.pages}" var="formattedPages" pattern="#,###"/>
-            ${formattedPage} of ${formattedPages}
+            <span class="currentPageSpan">${formattedPage}</span> of ${formattedPages}
 
-            <input type="button" value="Next" onclick="goToPage('${filmSearchResult.page + 1}')" <c:if test="${!filmSearchResult.hasNext}">disabled</c:if> />
-            <input type="button" value="Last" onclick="goToPage('${filmSearchResult.pages}')" <c:if test="${!filmSearchResult.hasNext}">disabled</c:if> />
+            <input class="nextButton" type="button" value="Next" onclick="goToPage('next')" <c:if test="${!filmSearchResult.hasNext}">disabled</c:if> />
+            <input class="lastButton" type="button" value="Last" onclick="goToPage('last')" <c:if test="${!filmSearchResult.hasNext}">disabled</c:if> />
         </td>
     </tr>
     <tr class="listheading">
         <td></td>
-        <td class="sortableHeader" onclick="sortFilms('title')">Title
-            <c:if test="${filmSearchResult.sortColumn eq 'title' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
-            <c:if test="${filmSearchResult.sortColumn eq 'title' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
+        <td class="sortableHeader" onclick="sortFilms(this, 'title')">Title
+            <span>
+                <c:if test="${filmSearchResult.sortColumn eq 'title' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
+                <c:if test="${filmSearchResult.sortColumn eq 'title' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
+            </span>
         </td>
-        <td class="sortableHeader alignright" onclick="sortFilms('cinemangRating')">
+        <td class="sortableHeader alignright" onclick="sortFilms(this, 'cinemangRating')">
             <img src="images/spaceCat.png" title="Cinemang Rating: Combines imdb Rating, Tomato Meter, and Tomato User Meter" style="height:24px;vertical-align: middle"/>
-            <c:if test="${filmSearchResult.sortColumn eq 'cinemangRating' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
-            <c:if test="${filmSearchResult.sortColumn eq 'cinemangRating' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
+            <span>
+                <c:if test="${filmSearchResult.sortColumn eq 'cinemangRating' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
+                <c:if test="${filmSearchResult.sortColumn eq 'cinemangRating' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
+            </span>
         </td>
-        <td class="sortableHeader alignright" onclick="sortFilms('tomatoMeter')">
+        <td class="sortableHeader alignright" onclick="sortFilms(this, 'tomatoMeter')">
             <img src="images/rottenTomatoes_logo.png" title="Tomato Meter" style="height:24px;vertical-align: middle"/>
-            <c:if test="${filmSearchResult.sortColumn eq 'tomatoMeter' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
-            <c:if test="${filmSearchResult.sortColumn eq 'tomatoMeter' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
+            <span>
+                <c:if test="${filmSearchResult.sortColumn eq 'tomatoMeter' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
+                <c:if test="${filmSearchResult.sortColumn eq 'tomatoMeter' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
+            </span>
         </td>
-        <td class="sortableHeader alignright" onclick="sortFilms('tomatoUserMeter')">
+        <td class="sortableHeader alignright" onclick="sortFilms(this, 'tomatoUserMeter')">
             <img src="images/rottenTomatoes_user_logo.png" title="Tomato User Meter" style="height:24px;vertical-align: middle"/>
-            <c:if test="${filmSearchResult.sortColumn eq 'tomatoUserMeter' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
-            <c:if test="${filmSearchResult.sortColumn eq 'tomatoUserMeter' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
+            <span>
+                <c:if test="${filmSearchResult.sortColumn eq 'tomatoUserMeter' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
+                <c:if test="${filmSearchResult.sortColumn eq 'tomatoUserMeter' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
+            </span>
         </td>
-        <td class="sortableHeader alignright" onclick="sortFilms('imdbRating')">
+        <td class="sortableHeader alignright" onclick="sortFilms(this, 'imdbRating')">
             <img src="images/imdb_logo.png" title="IMDb Rating" style="height:24px;vertical-align: middle"/>
-            <c:if test="${filmSearchResult.sortColumn eq 'imdbRating' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
-            <c:if test="${filmSearchResult.sortColumn eq 'imdbRating' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
+            <span>
+                <c:if test="${filmSearchResult.sortColumn eq 'imdbRating' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
+                <c:if test="${filmSearchResult.sortColumn eq 'imdbRating' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
+            </span>
         </td>
-        <td class="sortableHeader mediumPriority alignright" onclick="sortFilms('released')">Released
-            <c:if test="${filmSearchResult.sortColumn eq 'released' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
-            <c:if test="${filmSearchResult.sortColumn eq 'released' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
+        <td class="sortableHeader mediumPriority alignright" onclick="sortFilms(this, 'released')">Released
+            <span>
+                <c:if test="${filmSearchResult.sortColumn eq 'released' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
+                <c:if test="${filmSearchResult.sortColumn eq 'released' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
+            </span>
         </td>
-        <td class="sortableHeader lowPriority alignright" onclick="sortFilms('imdbVotes')">IMDb Votes
-            <c:if test="${filmSearchResult.sortColumn eq 'imdbVotes' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
-            <c:if test="${filmSearchResult.sortColumn eq 'imdbVotes' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
+        <td class="sortableHeader lowPriority alignright" onclick="sortFilms(this, 'imdbVotes')">IMDb Votes
+            <span>
+                <c:if test="${filmSearchResult.sortColumn eq 'imdbVotes' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
+                <c:if test="${filmSearchResult.sortColumn eq 'imdbVotes' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
+            </span>
         </td>
-        <td class="sortableHeader lowPriority" onclick="sortFilms('language')">Language
-            <c:if test="${filmSearchResult.sortColumn eq 'language' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
-            <c:if test="${filmSearchResult.sortColumn eq 'language' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
+        <td class="sortableHeader lowPriority" onclick="sortFilms(this, 'language')">Language
+            <span>
+                <c:if test="${filmSearchResult.sortColumn eq 'language' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
+                <c:if test="${filmSearchResult.sortColumn eq 'language' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
+            </span>
         </td>
         <td class="lowPriority">Genres</td>
     </tr>
+    </thead>
 
+    <tbody id="myTBody">
     <c:set var="count" value="${1 + ((filmSearchResult.page - 1) * 100)}"/>
     <c:set var="rowStyle" value="listrowodd"/>
     <c:set var="rowToggle" value="${true}"/>
@@ -316,10 +452,8 @@
             <td class="alignright">${film.cinemangRating}</td>
             <td class="alignright">${film.tomatoMeter}</td>
             <td class="alignright">${film.tomatoUserMeter}</td>
-            <td class="alignright" onclick="window.open('http://www.imdb.com/title/${film.imdbID}', '_blank');">
-                <a href="http://www.imdb.com/title/${film.imdbID}" title="${film.title}" target="_blank">
-                    ${film.imdbRating}
-                </a>
+            <td class="alignright" onclick="window.open('http://www.imdb.com/title/${film.imdbID}', '_blank');" style="cursor: pointer; color: blue; text-decoration: underline;">
+                ${film.imdbRating}
             </td>
             <td class="mediumPriority alignright"><fmt:formatDate value="${film.released}" pattern="yyyy"/></td>
             <td class="alignright lowPriority"><fmt:formatNumber value="${film.imdbVotes}" pattern="#,###"/></td>
@@ -332,20 +466,22 @@
         <c:set var="rowToggle" value="${!rowToggle}"/>
         <c:set var="count" value="${count + 1}"/>
     </c:forEach>
+    </tbody>
+
     <c:if test="${empty filmSearchResult.searchResults}">
         <tr><td colspan="100">-</td></tr>
     </c:if>
     <tr>
         <td colspan="100" style="text-align: center;">
-            <input type="button" value="First" onclick="goToPage('1')" <c:if test="${!filmSearchResult.hasPrevious}">disabled</c:if> />
-            <input type="button" value="Previous" onclick="goToPage('${filmSearchResult.page - 1}')" <c:if test="${!filmSearchResult.hasPrevious}">disabled</c:if> />
+            <input class="firstButton" type="button" value="First" onclick="goToPage('first')" <c:if test="${!filmSearchResult.hasPrevious}">disabled</c:if> />
+            <input class="previousButton" type="button" value="Previous" onclick="goToPage('previous')" <c:if test="${!filmSearchResult.hasPrevious}">disabled</c:if> />
 
             <fmt:formatNumber value="${filmSearchResult.page}" var="formattedPage" pattern="#,###"/>
             <fmt:formatNumber value="${filmSearchResult.pages}" var="formattedPages" pattern="#,###"/>
-            ${formattedPage} of ${formattedPages}
+            <span class="currentPageSpan">${formattedPage}</span> of ${formattedPages}
 
-            <input type="button" value="Next" onclick="goToPage('${filmSearchResult.page + 1}')" <c:if test="${!filmSearchResult.hasNext}">disabled</c:if> />
-            <input type="button" value="Last" onclick="goToPage('${filmSearchResult.pages}')" <c:if test="${!filmSearchResult.hasNext}">disabled</c:if> />
+            <input class="nextButton" type="button" value="Next" onclick="goToPage('next')" <c:if test="${!filmSearchResult.hasNext}">disabled</c:if> />
+            <input class="lastButton" type="button" value="Last" onclick="goToPage('last')" <c:if test="${!filmSearchResult.hasNext}">disabled</c:if> />
         </td>
     </tr>
 </table>
