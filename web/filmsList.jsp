@@ -12,6 +12,7 @@
 <head>
     <title>Cinemang</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8" />
 
     <script src="js/jquery-2.1.1.min.js"></script>
     <script src="js/jquery-ui.min.js"></script>
@@ -31,19 +32,16 @@
         function initHeader()
         {
             var ratingParam = '${filmsForm.ratingParam}';
-            if (ratingParam.length === 0) ratingParam = '0-10';
+            if (ratingParam.length === 0) ratingParam = '0-100';
             var ratingValues = ratingParam.split('-');
 
             $('#ratingSlider').slider({
                 range: true,
                 min: 0,
-                max: 10,
+                max: 100,
                 animate: "fast",
                 values: [ ratingValues[0], ratingValues[1] ]
-            });
-            $('#ratingSlider').slider( "option", "step", 0.1 );
-
-            $('#ratingSlider').on( "slide", function( event, ui ) {updateRatingSelection()} );
+            }).slider( "option", "step", 1 ).on( "slide", function() {updateRatingSelection()} );
 
             updateRatingSelection();
 
@@ -88,13 +86,10 @@
             sortColumn = column;
             sortDirection = direction;
 
-
             // remove sort indicator from all .sortableHeader
             $('.sortableHeader span').each(function(index) {
                 if (this.textContent.indexOf('▼') > -1 || this.textContent.indexOf('▲') > -1)
                 {
-//                    this.textContent = this.textContent.replace('▼', '');
-//                    this.textContent = this.textContent.replace('▲', '');
                     $(this).closest('span')[0].textContent = $(this).closest('span')[0].textContent.replace('▼', '');
                     $(this).closest('span')[0].textContent = $(this).closest('span')[0].textContent.replace('▲', '');
                 }
@@ -102,7 +97,6 @@
             // add sort indicator to the one that was clicked
             var sortIcon = direction == 'asc' ? '▲' : '▼';
             $(element).find('span')[0].innerHTML += ' ' + sortIcon;
-//            element.textContent = element.textContent + ' ' + sortIcon;
 
             ajaxFilms('', column, direction);
         }
@@ -149,57 +143,37 @@
             $('#resetPage').val('yes');
         }
 
-        function showPlotDialog(title, imdbID, fullPlot, director, actors, runtime, tomatoConsensus)
+        function loadPoster(imdbID, elementId)
         {
-            $( "#dialog-plot" ).dialog({
-                resizable: false,
-                height:'auto',
-                width:650,
-                modal: true,
-                open: function (event, ui)
-                {
-                    $( "#dialog-plot").dialog('option', 'title', title);
+            var winW = $(window).width() - 20;
+            var minimumWidth = 400;
 
-                    var myUrl = '${pageContext.request.contextPath}/view?tab1=home&action=getPoster';
-                    $( "#posterUrl").load(myUrl, {imdbId : imdbID},
-                        function(responseTxt, statusTxt, xhr)
-                        {
-                            if(statusTxt == "success")
-                            {
-                                $( "#posterUrl").attr('src', responseTxt);
-                            }
-//                            if(statusTxt == "error")
-//                                alert("Error: " + xhr.status + ": " + xhr.statusText);
-                        });
+            var myUrl = '${pageContext.request.contextPath}/view?tab1=home&action=getPoster';
+            if (winW < minimumWidth)
+                myUrl = '${pageContext.request.contextPath}/view?tab1=home&action=getPoster&transparent=true';
 
-                    $( "#dialogDirector").html('<b>Director:</b><br>' + director);
-                    $( "#dialogActors").html('<br><br><b>Actors:</b><br>' + actors);
-                    $( "#dialogRuntime").html('<br><br><b>Running Time:</b><br>' + runtime);
-
-                    if (tomatoConsensus != '')
-                        $( "#dialogTomatoConsensus").html('<br><br><b>Tomato Critic Consensus:</b><br>' + tomatoConsensus);
-                    else
-                        $( "#dialogTomatoConsensus").html('');
-
-                    if (fullPlot != '')
-                        $( "#dialogPlot").html('<br><br><b>Plot:</b><br>' + fullPlot);
-                    else
-                        $( "#dialogPlot").html('');
-                },
-                close: function (event, ui)
-                {
-                    $( "#posterUrl").attr('src', '');
-                },
-                buttons:
-                {
-                    Close: function()
+            $( "#" + elementId).load(myUrl, {imdbId : imdbID},
+                    function(responseTxt, statusTxt, xhr)
                     {
-                        $( this ).dialog( "close" );
-                    }
-                }
-            }).position({ my: "middle", at: "middle"});
+                        if (statusTxt == "success")
+                        {
+                            if (winW < minimumWidth)
+                            {
+                                $("#" + imdbID + "_animatedDiv").css('background-image', 'url(' + responseTxt + ')').css('background-repeat', 'no-repeat');
+                                $( "#" + elementId).attr('src', '');
+                            }
+                            else
+                            {
+                                $( "#" + elementId).attr('src', responseTxt);
+                                $("#" + imdbID + "_animatedDiv").css('background', 'white');
+                            }
+                        }
+                        if (statusTxt == "error")
+                            console.log("Error: " + xhr.status + ": " + xhr.statusText);
+                    });
         }
 
+        // todo: find a way to avoid having to keep this in sync
         function ajaxFilms(newPage, newSortColumn, newSortDirection)
         {
             var myUrl = '${pageContext.request.contextPath}/view?tab1=home&action=getNewPage';
@@ -219,17 +193,9 @@
                                 var resultIndex = (page - 1) * 100 + indexOnCurrentPage;
                                 var rowClass = indexOnCurrentPage % 2 == 0 ? 'listroweven' : 'listrowodd';
                                 var row = "<tr class=" + rowClass + ">";
-                                row += "<td class='alignright'>" + resultIndex + "</td>";
+                                row += "  <td class='alignright'>" + resultIndex + "</td>";
 
-                                var onclickValue = "\"showPlotDialog(&quot;" +
-                                        value.title + "&quot;, &quot;" +
-                                        value.imdbId + "&quot;, &quot;" +
-                                        value.shortFullPlot + "&quot;, &quot;" +
-                                        value.director + "&quot;, &quot;" +
-                                        value.actors + "&quot;, &quot;" +
-                                        value.runtime + "&quot;, &quot;" +
-                                        value.tomatoConsensus + "&quot;" +
-                                        ");\"";
+                                var onclickValue = "\"toggleRow('" + value.imdbId + "'" + ")\"";
 
                                 var styleValue = "'color: blue; text-decoration: underline; cursor: pointer'";
 
@@ -237,21 +203,45 @@
                                 if (value.tomatoImage == 'fresh')
                                     freshImage = "<img src='images/certified_logo.png' style='vertical-align: middle' height='16px'/>";
 
-                                row += "<td><span onclick=" + onclickValue + " style=" + styleValue + ">" + value.title + freshImage + "</span></td>";
+                                row += "  <td><span onclick=" + onclickValue + " style=" + styleValue + ">" + value.title + freshImage + "</span></td>";
 
-                                row += "<td class='alignright'>" + value.cinemangRating + "</td>";
-                                row += "<td class='alignright'>" + value.tomatoMeter + "</td>";
-                                row += "<td class='alignright'>" + value.tomatoUserMeter + "</td>";
+                                row += "  <td class='alignright'>" + value.cinemangRating + "</td>";
+                                row += "  <td class='mediumPriority alignright'>" + value.tomatoMeter + "</td>";
+                                row += "  <td class='mediumPriority alignright'>" + value.tomatoUserMeter + "</td>";
 
                                 onclickValue = "'window.open(&quot;" + "http://www.imdb.com/title/" + value.imdbId + "&quot;, &quot;_blank&quot);'";
-                                row += "<td class='alignright' onclick=" + onclickValue + " style=" + styleValue + ">" + value.imdbRating + "</td>";
+                                row += "  <td class='mediumPriority alignright' onclick=" + onclickValue + " style=" + styleValue + ">" + value.imdbRating + "</td>";
 
-                                row += "<td class='mediumPriority alignright'>" + value.released + "</td>";
-                                row += "<td class='lowPriority alignright'>" + value.imdbVotes + "</td>";
-                                row += "<td class='lowPriority'>" + value.language + "</td>";
-                                row += "<td class='lowPriority'>" + value.genre + "</td>";
+                                row += "  <td class='alignright'>" + value.released + "</td>";
+                                row += "  <td class='lowPriority alignright'>" + value.imdbVotes + "</td>";
+                                row += "  <td class='lowPriority'>" + value.language + "</td>";
+                                row += "  <td class='lowPriority'>" + value.genre + "</td>";
 
                                 row += "</tr>";
+                                rows.push(row);
+
+                                row  = "<tr id='" + value.imdbId + "_secondRow' style='display: none'>";
+                                row += "\n  <td colspan='100' class='aligncenter' style='height: 200px; padding: 1px 3px;'>";
+                                row += "\n    <div id='" + value.imdbId + "_animatedDiv' style='display: none; max-width: 700px; margin: 0 auto;'>";
+                                row += "\n      <div style='float: left; padding-right: 10pt'>";
+                                row += "\n        <img id='" + value.imdbId + "_posterUrl' src='' style='margin: 0 auto;'/>";
+                                row += "\n      </div>";
+                                row += "\n      <div style='width: 100%; text-align: left;'>";
+                                row += "\n        <div><b>Running Time: </b></div>";
+                                row += "\n        <div>" + value.runtime + "</div>";
+                                row += "\n        <div><b>Director: </b></div>";
+                                row += "\n        <div>" + value.director + "</div>";
+                                row += "\n        <div><b>Actors: </b></div>";
+                                row += "\n        <div>" + value.actors + "</div>";
+                                row += "\n        <div><b>Tomato Critic Consensus: </b></div>";
+                                row += "\n        <div>" + value.tomatoConsensus + "</div>";
+                                row += "\n        <div><b>Plot: </b></div>";
+                                row += "\n        <div>" + value.prettyPlot + "</div>";
+                                row += "\n      </div>";
+                                row += "\n    </div>";
+                                row += "\n  </td>";
+                                row += "\n</tr>";
+
                                 rows.push(row);
                             });
 
@@ -261,6 +251,25 @@
                         if (textStatus == "error")
                             alert("Error: " + xhr.status + ": " + xhr.statusText);
                     });
+        }
+
+        function toggleRow(imdbId)
+        {
+            var rowId = '#' + imdbId + '_secondRow';
+            var animatedDivId = '#' + imdbId + '_animatedDiv';
+
+            // make visible
+            if ($(rowId).css('display') == 'none')
+            {
+                loadPoster(imdbId, imdbId + '_posterUrl');
+                $(rowId).toggle();
+                $(animatedDivId).toggle(200);
+            }
+            // make hidden
+            else
+            {
+                $(animatedDivId).toggle(200, function() {$(rowId).toggle();});
+            }
         }
 
     </script>
@@ -322,7 +331,7 @@
             <td colspan="3"><input id="minimumVotes" name="minimumVotes" type="number" size="7" maxlength="7" value="${filmsForm.minimumVotesParam}"></td>
         </tr>
         <tr>
-            <td class="alignright">IMDb Rating: (<span id="ratingStart"></span>-<span id="ratingEnd"></span>)</td>
+            <td class="alignright">Cinemang Rating: (<span id="ratingStart"></span>-<span id="ratingEnd"></span>)</td>
             <td colspan="3">
                 <div id="ratingSlider" style="width: 80%;margin-left: auto;margin-right: auto"></div>
             </td>
@@ -349,7 +358,7 @@
                 </select>
             </td>
         </tr>
-        <tr><td colspan="4" style="text-align: center"><input type="submit" value="Search" onclick="resetPagination();"/></td></tr>
+        <tr><td colspan="4" style="text-align: center"><input type="submit" value="Search" class="btn btn-primary" onclick="resetPagination();"/></td></tr>
         <tr><td colspan="4" style="text-align: center"><span>${filmSearchResult.searchResultsSize} Results</span></td></tr>
     </table>
 </form>
@@ -384,28 +393,28 @@
                 <c:if test="${filmSearchResult.sortColumn eq 'cinemangRating' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
             </span>
         </td>
-        <td class="sortableHeader alignright" onclick="sortFilms(this, 'tomatoMeter')">
+        <td class="sortableHeader mediumPriority alignright" onclick="sortFilms(this, 'tomatoMeter')">
             <img src="images/rottenTomatoes_logo.png" title="Tomato Meter" style="height:24px;vertical-align: middle"/>
             <span>
                 <c:if test="${filmSearchResult.sortColumn eq 'tomatoMeter' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
                 <c:if test="${filmSearchResult.sortColumn eq 'tomatoMeter' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
             </span>
         </td>
-        <td class="sortableHeader alignright" onclick="sortFilms(this, 'tomatoUserMeter')">
+        <td class="sortableHeader mediumPriority alignright" onclick="sortFilms(this, 'tomatoUserMeter')">
             <img src="images/rottenTomatoes_user_logo.png" title="Tomato User Meter" style="height:24px;vertical-align: middle"/>
             <span>
                 <c:if test="${filmSearchResult.sortColumn eq 'tomatoUserMeter' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
                 <c:if test="${filmSearchResult.sortColumn eq 'tomatoUserMeter' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
             </span>
         </td>
-        <td class="sortableHeader alignright" onclick="sortFilms(this, 'imdbRating')">
+        <td class="sortableHeader mediumPriority alignright" onclick="sortFilms(this, 'imdbRating')">
             <img src="images/imdb_logo.png" title="IMDb Rating" style="height:24px;vertical-align: middle"/>
             <span>
                 <c:if test="${filmSearchResult.sortColumn eq 'imdbRating' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
                 <c:if test="${filmSearchResult.sortColumn eq 'imdbRating' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
             </span>
         </td>
-        <td class="sortableHeader mediumPriority alignright" onclick="sortFilms(this, 'released')">Released
+        <td class="sortableHeader alignright" onclick="sortFilms(this, 'released')">Released
             <span>
                 <c:if test="${filmSearchResult.sortColumn eq 'released' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
                 <c:if test="${filmSearchResult.sortColumn eq 'released' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
@@ -436,13 +445,7 @@
         <tr class="${rowStyle}">
             <td class="alignright"><fmt:formatNumber value="${count}" pattern="#,###"/></td>
             <td>
-                <span onclick='showPlotDialog("${fn:escapeXml(film.title)}", "${film.imdbID}",
-                        "<c:out value="${fn:escapeXml(film.shortFullPlot)}"/>",
-                        "<c:out value="${fn:escapeXml(film.director)}"/>",
-                        "<c:out value="${fn:escapeXml(film.actors)}"/>",
-                        "<c:out value="${fn:escapeXml(film.runtime)}"/>",
-                        "<c:out value="${fn:escapeXml(film.tomatoConsensus)}"/>")'
-                         style="color: blue; text-decoration: underline; cursor: pointer">
+                <span onclick="toggleRow('${film.imdbID}')" style="color: blue; text-decoration: underline; cursor: pointer">
                     <c:set var="filmTitle" value="${film.title}"/>
                     <c:if test="${fn:length(film.title) > 50}"><c:set var="filmTitle" value="${fn:substring(film.title, 0, 50)}..."/></c:if>
                     ${filmTitle}
@@ -450,15 +453,37 @@
                 </span>
             </td>
             <td class="alignright">${film.cinemangRating}</td>
-            <td class="alignright">${film.tomatoMeter}</td>
-            <td class="alignright">${film.tomatoUserMeter}</td>
-            <td class="alignright" onclick="window.open('http://www.imdb.com/title/${film.imdbID}', '_blank');" style="cursor: pointer; color: blue; text-decoration: underline;">
+            <td class="mediumPriority alignright">${film.tomatoMeter}</td>
+            <td class="mediumPriority alignright">${film.tomatoUserMeter}</td>
+            <td class="mediumPriority alignright" onclick="window.open('http://www.imdb.com/title/${film.imdbID}', '_blank');" style="cursor: pointer; color: blue; text-decoration: underline;">
                 ${film.imdbRating}
             </td>
-            <td class="mediumPriority alignright"><fmt:formatDate value="${film.released}" pattern="yyyy"/></td>
+            <td class="alignright"><fmt:formatDate value="${film.released}" pattern="yyyy"/></td>
             <td class="alignright lowPriority"><fmt:formatNumber value="${film.imdbVotes}" pattern="#,###"/></td>
             <td class="lowPriority">${film.language}</td>
             <td class="lowPriority">${film.genre}</td>
+        </tr>
+
+        <tr id="${film.imdbID}_secondRow" style="display: none">
+            <td colspan="100" class="aligncenter" style="height: 200px; padding: 1px 3px;">
+                <div id="${film.imdbID}_animatedDiv" style="display: none;max-width: 700px; margin: 0 auto;">
+                    <div style="float: left; padding-right: 10pt">
+                        <img id="${film.imdbID}_posterUrl" src="" style="margin: 0 auto;"/>
+                    </div>
+                    <div style="width: 100%; text-align: left;">
+                        <div><b>Running Time: </b></div>
+                        <div>${film.runtime}</div>
+                        <div><b>Director: </b></div>
+                        <div>${film.director}</div>
+                        <div><b>Actors: </b></div>
+                        <div>${film.actors}</div>
+                        <div><b>Tomato Critic Consensus: </b></div>
+                        <div>${film.tomatoConsensus}</div>
+                        <div><b>Plot: </b></div>
+                        <div>${film.plot}</div>
+                    </div>
+                </div>
+            </td>
         </tr>
 
         <c:if test="${rowToggle}"><c:set var="rowStyle" value="listroweven"/></c:if>
@@ -485,19 +510,5 @@
         </td>
     </tr>
 </table>
-
-<%-- Plot Dialog --%>
-<div style="display:none;">
-    <div id="dialog-plot" title="Plot" style="text-align: justify;">
-        <div style="float: left; padding-right: 10pt">
-            <img id="posterUrl" src="" style="max-width: 400px;"/>
-        </div>
-        <span id="dialogDirector"></span>
-        <span id="dialogActors"></span>
-        <span id="dialogRuntime"></span>
-        <span id="dialogTomatoConsensus"></span>
-        <span id="dialogPlot"></span>
-    </div>
-</div>
 </body>
 </html>

@@ -149,16 +149,21 @@ public class Film implements Serializable
         return average.intValue();
     }
 
-    public String getShortFullPlot()
+    public String getPrettyPlot()
     {
+        String plot = fullPlot;
+        if (plot == null || plot.length() == 0)
+            plot = this.plot;
+        if (plot == null || plot.length() == 0)
+            return "";
+
         int maxLength = 768;
-        if (fullPlot == null) return "";
-        if (fullPlot.length() > maxLength)
+        if (plot.length() > maxLength)
         {
-            int lastSpace = fullPlot.substring(0, maxLength).lastIndexOf(" ");
-            return fullPlot.substring(0, lastSpace) + "...";
+            int lastSpace = plot.substring(0, maxLength).lastIndexOf(" ");
+            return plot.substring(0, lastSpace) + "...";
         }
-        return fullPlot;
+        return plot;
     }
 
     public static List<Film> getAllFilms()

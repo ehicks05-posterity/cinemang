@@ -2,10 +2,18 @@ package com.hicks;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 
-import javax.json.*;
+import javax.imageio.ImageIO;
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonObject;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URL;
@@ -13,6 +21,7 @@ import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.List;
 
 public class FilmsHandler
 {
@@ -22,7 +31,7 @@ public class FilmsHandler
         if (filmSearchResult == null)
         {
             // set some defaults
-            FilmsForm filmsForm = new FilmsForm("1000", "", "0-10", "", "", "English", "");
+            FilmsForm filmsForm = new FilmsForm("1000", "", "0-100", "", "", "English", "");
             request.getSession().setAttribute("filmsForm", filmsForm);
 
             filmSearchResult = performSearch(request, filmsForm);
@@ -44,6 +53,9 @@ public class FilmsHandler
         try
         {
             imageResponse = IOUtil.getBytesFromUrlConnection(url);
+            boolean transparent = Common.getSafeString(request.getParameter("transparent")).equals("true");
+            if (transparent)
+                imageResponse = getTransparentPoster(imageResponse);
         }
         catch (Exception e)
         {
@@ -54,6 +66,27 @@ public class FilmsHandler
         String base64Image = Base64.getEncoder().encodeToString(imageResponse);
         ServletOutputStream outputStream = response.getOutputStream();
         outputStream.print("data:image/jpeg;base64," + base64Image);
+    }
+
+    public static byte[] getTransparentPoster(byte[] imageData) throws ParseException, IOException
+    {
+        BufferedImage img = ImageIO.read(new ByteArrayInputStream(imageData));
+        double scaling = 2;
+        int scaledWidth = (int) (img.getWidth() * scaling);
+        int scaledHeight = (int) (img.getHeight() * scaling);
+        BufferedImage tran = new BufferedImage(scaledWidth, scaledHeight, BufferedImage.TYPE_INT_ARGB);
+
+        float opacity = 0.1f;
+        Graphics2D g2d = tran.createGraphics();
+        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
+        g2d.scale(scaling, scaling);
+        g2d.drawImage(img, null, 0, 0);
+        g2d.dispose();
+
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        ImageIO.write(tran, "png", os);
+
+        return os.toByteArray();
     }
 
     public static void filterFilms(HttpServletRequest request, HttpServletResponse response) throws IOException, ParseException
@@ -111,7 +144,7 @@ public class FilmsHandler
             JsonObject jsonObject = Json.createObjectBuilder()
                     .add("imdbId", film.getImdbID())
                     .add("title", escapeHtml(title))
-                    .add("shortFullPlot", escapeHtml(film.getShortFullPlot()))
+                    .add("prettyPlot", escapeHtml(film.getPrettyPlot()))
                     .add("director", escapeHtml(film.getDirector()))
                     .add("actors", escapeHtml(film.getActors()))
                     .add("runtime", film.getRuntime())
@@ -325,9 +358,10 @@ public class FilmsHandler
                     continue;
             }
 
-            if (minimumRating.compareTo(BigDecimal.ZERO) > 0 || maximumRating.compareTo(BigDecimal.TEN) < 0)
+            if (minimumRating.compareTo(BigDecimal.ZERO) > 0 || maximumRating.compareTo(BigDecimal.valueOf(100)) < 0)
             {
-                BigDecimal rating = film.getImdbRating();
+                int cinemangRating = film.getCinemangRating() == null ? 0 : film.getCinemangRating();
+                BigDecimal rating = new BigDecimal(cinemangRating);
                 boolean validRating = rating.compareTo(minimumRating) >= 0 && rating.compareTo(maximumRating) <= 0;
                 if (!validRating)
                     continue;
