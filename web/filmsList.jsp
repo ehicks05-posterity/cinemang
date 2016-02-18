@@ -414,7 +414,7 @@
                 <c:if test="${filmSearchResult.sortColumn eq 'imdbRating' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
             </span>
         </td>
-        <td class="sortableHeader alignright" onclick="sortFilms(this, 'released')">Released
+        <td class="sortableHeader alignright" onclick="sortFilms(this, 'released')">Year
             <span>
                 <c:if test="${filmSearchResult.sortColumn eq 'released' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
                 <c:if test="${filmSearchResult.sortColumn eq 'released' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
