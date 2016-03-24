@@ -13,7 +13,7 @@
 
         <properties>
             <property name="javax.persistence.jdbc.driver" value="oracle.jdbc.OracleDriver" />
-            <property name="javax.persistence.jdbc.url" value="jdbc:oracle:thin:@hoth:1521/orcl" />
+            <property name="javax.persistence.jdbc.url" value="jdbc:oracle:thin:@***REMOVED***:1521/orcl" />
             <property name="javax.persistence.jdbc.user" value=***REMOVED*** />
             <property name="javax.persistence.jdbc.password" value=***REMOVED*** />
 

@@ -47,7 +47,7 @@ public class DatabasePopulator
     {
         FTPClient ftp = IOUtil.prepareFtpClient("***REMOVED***", "***REMOVED***", "");
 
-        InputStream inputStream = ftp.retrieveFileStream("omdbFull1115.zip");
+        InputStream inputStream = ftp.retrieveFileStream("omdb0216.zip");
         ZipInputStream zipIn = new ZipInputStream(inputStream);
 
         List<Film> films = readZipInputStream(zipIn);
@@ -62,29 +62,31 @@ public class DatabasePopulator
 
         for (ZipEntry e; (e = zipIn.getNextEntry()) != null;)
         {
-            System.out.println("reading " + e.getName() + " (" + (e.getSize() / (1024 * 1024)) + "MB)");
+            String zipEntryName = e.getName();
+            String entryMBs = " (" + (e.getSize() / (1024 * 1024)) + "MB)";
+            System.out.println("reading " + zipEntryName + entryMBs);
             BufferedReader br = new BufferedReader(new InputStreamReader(zipIn));
             br.readLine(); // skip the header
             String line;
             while ((line = br.readLine()) != null)
             {
                 Film newFilm = null;
-                if (e.getName().equals("omdbFull.txt"))
+                if (zipEntryName.equals("omdbMovies.txt"))
                     newFilm = readMovieLine(line);
-                if (e.getName().equals("tomatoes.txt"))
+                if (zipEntryName.equals("tomatoes.txt"))
                     newFilm = readRottenLine(line);
-                if (!Arrays.asList("omdbFull.txt", "tomatoes.txt").contains(e.getName()))
+                if (!Arrays.asList("omdbMovies.txt", "tomatoes.txt").contains(zipEntryName))
                     break;
 
                 if (newFilm != null)
                 {
                     Film existing = filmMap.get(newFilm.getImdbID());
-                    if (existing == null && e.getName().equals("omdbFull.txt"))
+                    if (existing == null && zipEntryName.equals("omdbMovies.txt"))
                     {
                         if (newFilm.getImdbVotes() >= 1000)
                             filmMap.put(newFilm.getImdbID(), newFilm);
                     }
-                    if (existing != null && e.getName().equals("tomatoes.txt"))
+                    if (existing != null && zipEntryName.equals("tomatoes.txt"))
                     {
                         Film mergedFilm = mergeRottenDataIntoFilmData(existing, newFilm);
                         mergedFilm.setCinemangRating(mergedFilm.calculateCinemangRating());
