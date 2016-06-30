@@ -14,13 +14,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset="utf-8" />
 
-    <script src="js/jquery-2.1.1.min.js"></script>
-    <script src="js/jquery-ui.min.js"></script>
-    <script src="js/jquery.ui.touch-punch.min.js"></script>
-    <link rel="stylesheet" href="styles/jquery-ui.min.css" />
-    <link rel="shortcut icon" href="images/spaceCat.png">
+    <script src="../../js/jquery-2.1.1.min.js"></script>
+    <script src="../../js/jquery-ui.min.js"></script>
+    <script src="../../js/jquery.ui.touch-punch.min.js"></script>
+    <link rel="stylesheet" href="../../styles/jquery-ui.min.css" />
+    <link rel="shortcut icon" href="../../images/spaceCat.png">
     <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type="text/css" href="styles/cinemang.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../../styles/cinemang.css" media="screen" />
 
     <style>#ratingSlider { margin: 10px; }	</style>
     <script>
@@ -73,6 +73,21 @@
 
         function sortFilms(element, column)
         {
+//            var chars = column.split("");
+//            var converted = [];
+//            for (var i = 0; i < chars.length; i++)
+//            {
+//                if (chars[i] == chars[i].toUpperCase())
+//                {
+//                    converted.push('_');
+//                    converted.push(chars[i].toLowerCase());
+//                }
+//                else
+//                    converted.push(chars[i]);
+//            }
+//
+//            column = converted;
+
             var previousColumn = sortColumn;
             var previousDirection = sortDirection;
             var direction = 'desc';
@@ -201,7 +216,7 @@
 
                                 var freshImage = "";
                                 if (value.tomatoImage == 'fresh')
-                                    freshImage = "<img src='images/certified_logo.png' style='vertical-align: middle' height='16px'/>";
+                                    freshImage = "<img src='../../images/certified_logo.png' style='vertical-align: middle' height='16px'/>";
 
                                 row += "  <td><span onclick=" + onclickValue + " style=" + styleValue + ">" + value.title + freshImage + "</span></td>";
 
@@ -280,7 +295,7 @@
 <table style="margin: 0 auto; width: 100%; max-width: 1000px" class="list">
     <tr>
         <td style="width: 100%;">
-            <h1 style="text-align: center;margin: 0;padding: 0;">CINEMANG <img src="images/spaceCat.png" style="height: 30px;vertical-align: middle"></h1>
+            <h1 style="text-align: center;margin: 0;padding: 0;">CINEMANG <img src="../../images/spaceCat.png" style="height: 30px;vertical-align: middle"></h1>
         </td>
     </tr>
 </table>
@@ -386,32 +401,32 @@
                 <c:if test="${filmSearchResult.sortColumn eq 'title' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
             </span>
         </td>
-        <td class="sortableHeader alignright" onclick="sortFilms(this, 'cinemangRating')">
-            <img src="images/spaceCat.png" title="Cinemang Rating: Combines imdb Rating, Tomato Meter, and Tomato User Meter" style="height:24px;vertical-align: middle"/>
+        <td class="sortableHeader alignright" onclick="sortFilms(this, 'cinemang_rating')">
+            <img src="../../images/spaceCat.png" title="Cinemang Rating: Combines imdb Rating, Tomato Meter, and Tomato User Meter" style="height:24px;vertical-align: middle"/>
             <span>
-                <c:if test="${filmSearchResult.sortColumn eq 'cinemangRating' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
-                <c:if test="${filmSearchResult.sortColumn eq 'cinemangRating' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
+                <c:if test="${filmSearchResult.sortColumn eq 'cinemang_rating' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
+                <c:if test="${filmSearchResult.sortColumn eq 'cinemang_rating' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
             </span>
         </td>
-        <td class="sortableHeader mediumPriority alignright" onclick="sortFilms(this, 'tomatoMeter')">
-            <img src="images/rottenTomatoes_logo.png" title="Tomato Meter" style="height:24px;vertical-align: middle"/>
+        <td class="sortableHeader mediumPriority alignright" onclick="sortFilms(this, 'tomato_meter')">
+            <img src="../../images/rottenTomatoes_logo.png" title="Tomato Meter" style="height:24px;vertical-align: middle"/>
             <span>
-                <c:if test="${filmSearchResult.sortColumn eq 'tomatoMeter' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
-                <c:if test="${filmSearchResult.sortColumn eq 'tomatoMeter' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
+                <c:if test="${filmSearchResult.sortColumn eq 'tomato_meter' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
+                <c:if test="${filmSearchResult.sortColumn eq 'tomato_meter' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
             </span>
         </td>
-        <td class="sortableHeader mediumPriority alignright" onclick="sortFilms(this, 'tomatoUserMeter')">
-            <img src="images/rottenTomatoes_user_logo.png" title="Tomato User Meter" style="height:24px;vertical-align: middle"/>
+        <td class="sortableHeader mediumPriority alignright" onclick="sortFilms(this, 'tomato_user_meter')">
+            <img src="../../images/rottenTomatoes_user_logo.png" title="Tomato User Meter" style="height:24px;vertical-align: middle"/>
             <span>
-                <c:if test="${filmSearchResult.sortColumn eq 'tomatoUserMeter' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
-                <c:if test="${filmSearchResult.sortColumn eq 'tomatoUserMeter' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
+                <c:if test="${filmSearchResult.sortColumn eq 'tomato_user_meter' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
+                <c:if test="${filmSearchResult.sortColumn eq 'tomato_user_meter' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
             </span>
         </td>
-        <td class="sortableHeader mediumPriority alignright" onclick="sortFilms(this, 'imdbRating')">
-            <img src="images/imdb_logo.png" title="IMDb Rating" style="height:24px;vertical-align: middle"/>
+        <td class="sortableHeader mediumPriority alignright" onclick="sortFilms(this, 'imdb_rating')">
+            <img src="../../images/imdb_logo.png" title="IMDb Rating" style="height:24px;vertical-align: middle"/>
             <span>
-                <c:if test="${filmSearchResult.sortColumn eq 'imdbRating' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
-                <c:if test="${filmSearchResult.sortColumn eq 'imdbRating' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
+                <c:if test="${filmSearchResult.sortColumn eq 'imdb_rating' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
+                <c:if test="${filmSearchResult.sortColumn eq 'imdb_rating' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
             </span>
         </td>
         <td class="sortableHeader alignright" onclick="sortFilms(this, 'released')">Year
@@ -420,10 +435,10 @@
                 <c:if test="${filmSearchResult.sortColumn eq 'released' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
             </span>
         </td>
-        <td class="sortableHeader lowPriority alignright" onclick="sortFilms(this, 'imdbVotes')">IMDb Votes
+        <td class="sortableHeader lowPriority alignright" onclick="sortFilms(this, 'imdb_votes')">IMDb Votes
             <span>
-                <c:if test="${filmSearchResult.sortColumn eq 'imdbVotes' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
-                <c:if test="${filmSearchResult.sortColumn eq 'imdbVotes' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
+                <c:if test="${filmSearchResult.sortColumn eq 'imdb_votes' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</c:if>
+                <c:if test="${filmSearchResult.sortColumn eq 'imdb_votes' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</c:if>
             </span>
         </td>
         <td class="sortableHeader lowPriority" onclick="sortFilms(this, 'language')">Language
@@ -449,7 +464,7 @@
                     <c:set var="filmTitle" value="${film.title}"/>
                     <c:if test="${fn:length(film.title) > 50}"><c:set var="filmTitle" value="${fn:substring(film.title, 0, 50)}..."/></c:if>
                     ${filmTitle}
-                    <c:if test="${film.tomatoImage=='fresh'}"><img src="images/certified_logo.png" style="vertical-align: middle" height="16px"/></c:if>
+                    <c:if test="${film.tomatoImage=='fresh'}"><img src="../../images/certified_logo.png" style="vertical-align: middle" height="16px"/></c:if>
                 </span>
             </td>
             <td class="alignright">${film.cinemangRating}</td>

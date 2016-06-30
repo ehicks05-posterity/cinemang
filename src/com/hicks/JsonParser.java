@@ -1,5 +1,7 @@
 package com.hicks;
 
+import com.hicks.beans.Film;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

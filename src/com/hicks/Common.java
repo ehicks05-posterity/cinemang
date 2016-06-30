@@ -3,12 +3,24 @@ package com.hicks;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 
 public class Common
 {
     private static SimpleDateFormat mmddyyyy = new SimpleDateFormat("MM/dd/yyyy");
     private static SimpleDateFormat yyyymmdd = new SimpleDateFormat("yyyy-MM-dd");
+
+    public static java.sql.Date utilDatetoSQLDate(Date utilDate)
+    {
+        java.util.Calendar cal = Calendar.getInstance();
+        cal.setTime(utilDate);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return new java.sql.Date(cal.getTime().getTime()); // your sql date
+    }
 
     public static Date stringToDate(String input)
     {

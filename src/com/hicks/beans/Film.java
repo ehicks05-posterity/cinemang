@@ -1,4 +1,8 @@
-package com.hicks;
+package com.hicks.beans;
+
+import com.hicks.Common;
+import com.hicks.EOI;
+import com.hicks.Hibernate;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -11,9 +15,9 @@ import java.util.List;
 @Table(name = "films")
 public class Film implements Serializable
 {
-    @Version
-    @Column(name = "version")
-    private Long version;
+//    @Version
+//    @Column(name = "version")
+//    private Long version;
 
     @Id
     @Column(name = "imdb_ID", updatable = false, nullable = false)
@@ -120,7 +124,7 @@ public class Film implements Serializable
 
     public String toString()
     {
-        return title;
+        return "Film " + imdbID;
     }
 
     // --------
@@ -168,24 +172,26 @@ public class Film implements Serializable
 
     public static List<Film> getAllFilms()
     {
-        return Hibernate.executeQuery("select f from Film f");
+//        return Hibernate.executeQuery("select f from Film f");
+        return EOI.executeQuery("select * from films");
     }
 
     public static List<Film> getAllFilmsWithManyVotes()
     {
-        return Hibernate.executeQuery("select f from Film f where f.imdbVotes >= 1000");
+//        return Hibernate.executeQuery("select f from Film f where f.imdbVotes >= 1000");
+        return EOI.executeQuery("select * from films where imdb_votes >= 1000");
     }
     // -------- Getters / Setters ----------
 
-    public Long getVersion()
-    {
-        return version;
-    }
+//    public Long getVersion()
+//    {
+//        return version;
+//    }
 
-    public void setVersion(Long version)
-    {
-        this.version = version;
-    }
+//    public void setVersion(Long version)
+//    {
+//        this.version = version;
+//    }
 
     public String getImdbID()
     {

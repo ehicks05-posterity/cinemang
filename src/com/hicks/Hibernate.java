@@ -1,5 +1,7 @@
 package com.hicks;
 
+import com.hicks.beans.Film;
+
 import javax.persistence.*;
 import java.util.Collections;
 import java.util.Date;
@@ -15,7 +17,7 @@ public class Hibernate
     {
         try
         {
-            emf = Persistence.createEntityManagerFactory("oracle-ds");
+            emf = Persistence.createEntityManagerFactory("h2-ds");
             em = emf.createEntityManager();
         }
         catch (Exception e)
@@ -28,6 +30,25 @@ public class Hibernate
     {
         if (em != null) em.close();
         if (emf != null) emf.close();
+    }
+
+    private static void saveFilmsWithHibernate(List<Film> films)
+    {
+        int persistIndex = 0;
+        EntityTransaction transaction = Hibernate.startTransaction();
+        for (Film film : films)
+        {
+            if (film.getImdbVotes() < 1000)
+                continue;
+
+            Hibernate.persistAsPartOfTransaction(film);
+            persistIndex++;
+            if (persistIndex % 10_000 == 0)
+                System.out.println(persistIndex + "/" + films.size());
+        }
+        System.out.println(persistIndex + "/" + films.size());
+        System.out.println("committing transaction...");
+        Hibernate.commitTransaction(transaction);
     }
 
     public static List executeQuery(String queryString)

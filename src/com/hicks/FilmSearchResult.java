@@ -1,5 +1,7 @@
 package com.hicks;
 
+import com.hicks.beans.Film;
+
 import java.text.DecimalFormat;
 import java.util.List;
 

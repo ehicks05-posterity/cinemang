@@ -19,13 +19,14 @@ public class GenreLoader
     private static List<String> identifyUniqueGenres()
     {
         Map<String, Genre> genreMap = new HashMap<>();
-        List<Object[]> results = Hibernate.executeQuery("select count(f.genre), genre from Film f where f.genre is not null group by f.genre");
+//        List<Object[]> results = Hibernate.executeQuery("select count(f.genre), genre from Film f where f.genre is not null group by f.genre");
+        List<List<Object>> results = EOI.executeQuery("select count(genre), genre from films where genre is not null group by genre");
         String[] genreTokens;
 
-        for (Object[] result : results)
+        for (List<Object> row : results)
         {
-            Long count = (Long)result[0];
-            String genreField = (String)result[1];
+            Long count = (Long)row.get(0);
+            String genreField = (String) row.get(1);
 
             if (genreField.length() == 0) continue;
 

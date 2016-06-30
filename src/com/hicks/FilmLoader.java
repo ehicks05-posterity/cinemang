@@ -1,5 +1,7 @@
 package com.hicks;
 
+import com.hicks.beans.Film;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,7 +18,8 @@ public class FilmLoader
     {
         try
         {
-            films = Film.getAllFilmsWithManyVotes();
+//            films = Film.getAllFilmsWithManyVotes();
+            films = Film.getAllFilms();
             if (films.size() == 0)
                 films = DatabasePopulator.populateDatabase();
 

@@ -10,11 +10,11 @@ public class FilmsForm
     private String language;
     private String genre;
 
-    public FilmsForm(String minimumVotesParam, String titleParam, String ratingParam, String fromReleaseDate, String toReleaseDate, String language, String genre)
+    public FilmsForm(String minVotes, String title, String rating, String fromReleaseDate, String toReleaseDate, String language, String genre)
     {
-        this.minimumVotesParam = minimumVotesParam;
-        this.titleParam = titleParam;
-        this.ratingParam = ratingParam;
+        this.minimumVotesParam = minVotes;
+        this.titleParam = title;
+        this.ratingParam = rating;
         this.fromReleaseDate = fromReleaseDate;
         this.toReleaseDate = toReleaseDate;
         this.language = language;

@@ -1,8 +1,8 @@
 package com.hicks;
 
+import com.hicks.beans.Film;
 import org.apache.commons.net.ftp.FTPClient;
 
-import javax.persistence.EntityTransaction;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,40 +14,39 @@ import java.util.zip.ZipInputStream;
 
 public class DatabasePopulator
 {
+    private static final boolean LOAD_SUB_1000_VOTE_MOVIES = true;
     private static int unreadableRows = 0;
 
     public static List<Film> populateDatabase() throws IOException
     {
+        long start = System.currentTimeMillis();
         List<Film> films = loadFromDumpToRam();
+        System.out.println("Parsed data files in " + (System.currentTimeMillis() - start) + "ms");
 
         DecimalFormat df = new DecimalFormat("#,###");
         System.out.println("Films Found: " + df.format(films.size()));
         System.out.println("Unreadable Rows: " + df.format(unreadableRows));
 
-        int persistIndex = 0;
-        EntityTransaction transaction = Hibernate.startTransaction();
-        for (Film film : films)
-        {
-            if (film.getImdbVotes() < 1000)
-                continue;
-
-            Hibernate.persistAsPartOfTransaction(film);
-            persistIndex++;
-            if (persistIndex % 10_000 == 0)
-                System.out.println(persistIndex + "/" + films.size());
-        }
-        System.out.println(persistIndex + "/" + films.size());
-        System.out.println("committing transaction...");
-        Hibernate.commitTransaction(transaction);
+        start = System.currentTimeMillis();
+//        saveFilmsWithHibernate(films);
+        saveFilmsWithEOI(films);
+        System.out.println("Films persisted in " + (System.currentTimeMillis() - start) + "ms");
 
         return films;
+    }
+
+    private static void saveFilmsWithEOI(List<Film> films)
+    {
+        EOI.insert(films);
     }
 
     private static List<Film> loadFromDumpToRam() throws IOException
     {
         FTPClient ftp = IOUtil.prepareFtpClient("***REMOVED***", "***REMOVED***", "");
 
-        InputStream inputStream = ftp.retrieveFileStream("omdb0216.zip");
+        String omdbFilename = SystemInfo.getProperties().getProperty("omdbZipFileName");
+
+        InputStream inputStream = ftp.retrieveFileStream(omdbFilename);
         ZipInputStream zipIn = new ZipInputStream(inputStream);
 
         List<Film> films = readZipInputStream(zipIn);
@@ -68,8 +67,13 @@ public class DatabasePopulator
             BufferedReader br = new BufferedReader(new InputStreamReader(zipIn));
             br.readLine(); // skip the header
             String line;
+            int index = 0;
             while ((line = br.readLine()) != null)
             {
+                index++;
+                if (index % 100000 == 0)
+                    System.out.println("read " + index + " rows...");
+
                 Film newFilm = null;
                 if (zipEntryName.equals("omdbMovies.txt"))
                     newFilm = readMovieLine(line);
@@ -83,7 +87,7 @@ public class DatabasePopulator
                     Film existing = filmMap.get(newFilm.getImdbID());
                     if (existing == null && zipEntryName.equals("omdbMovies.txt"))
                     {
-                        if (newFilm.getImdbVotes() >= 1000)
+                        if (LOAD_SUB_1000_VOTE_MOVIES || newFilm.getImdbVotes() >= 1000)
                             filmMap.put(newFilm.getImdbID(), newFilm);
                     }
                     if (existing != null && zipEntryName.equals("tomatoes.txt"))
@@ -91,7 +95,7 @@ public class DatabasePopulator
                         Film mergedFilm = mergeRottenDataIntoFilmData(existing, newFilm);
                         mergedFilm.setCinemangRating(mergedFilm.calculateCinemangRating());
 
-                        if (mergedFilm.getImdbVotes() >= 1000)
+                        if (LOAD_SUB_1000_VOTE_MOVIES || mergedFilm.getImdbVotes() >= 1000)
                             filmMap.put(newFilm.getImdbID(), mergedFilm);
                     }
                 }
@@ -162,6 +166,7 @@ public class DatabasePopulator
         }
         catch (Exception e)
         {
+            System.out.println(e.getMessage());
             unreadableRows++;
         }
 

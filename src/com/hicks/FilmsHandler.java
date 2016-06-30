@@ -1,5 +1,6 @@
 package com.hicks;
 
+import com.hicks.beans.Film;
 import org.apache.commons.lang3.StringEscapeUtils;
 
 import javax.imageio.ImageIO;
@@ -41,7 +42,7 @@ public class FilmsHandler
         request.setAttribute("uniqueLanguages", LanguageLoader.getUniqueLanguages());
         request.setAttribute("uniqueGenres", GenreLoader.getUniqueGenres());
 
-        return "filmsList.jsp";
+        return "/WEB-INF/webroot/filmsList.jsp";
     }
 
     public static void getPoster(HttpServletRequest request, HttpServletResponse response) throws ParseException, IOException
@@ -68,7 +69,7 @@ public class FilmsHandler
         outputStream.print("data:image/jpeg;base64," + base64Image);
     }
 
-    public static byte[] getTransparentPoster(byte[] imageData) throws ParseException, IOException
+    private static byte[] getTransparentPoster(byte[] imageData) throws ParseException, IOException
     {
         BufferedImage img = ImageIO.read(new ByteArrayInputStream(imageData));
         double scaling = 2;
@@ -207,7 +208,8 @@ public class FilmsHandler
         String sortDirection = null;
         if (request.getParameter("sortColumn") == null)
         {
-            sortColumn = "cinemangRating";
+//            sortColumn = "cinemangRating";
+            sortColumn = "cinemang_rating";
             sortDirection = "desc";
         }
         else
@@ -216,8 +218,8 @@ public class FilmsHandler
         String directionParam = request.getParameter("sortDirection");
         if (sortDirection == null) sortDirection = directionParam == null ? "asc" : directionParam;
 
-        boolean loadFromDb = false;
-        boolean loadFromMemory = true;
+        boolean loadFromDb = true;
+        boolean loadFromMemory = !loadFromDb;
 
         String page = request.getParameter("page");
         if (page == null) page = "1";
@@ -227,7 +229,8 @@ public class FilmsHandler
         {
             SQLQuery filmQuery = buildFilmSQLQuery(filmsForm, minimumVotes, fromDate, toDate, minimumRating, maximumRating, sortColumn, sortDirection);
 
-            filteredFilms = Hibernate.executeQuery(filmQuery.queryString, filmQuery.args);
+//            filteredFilms = Hibernate.executeQuery(filmQuery.queryString, filmQuery.args);
+            filteredFilms = EOI.executeQueryWithPS(filmQuery.queryString, filmQuery.args);
             return new FilmSearchResult(page, filteredFilms, sortColumn, sortDirection);
         }
 
@@ -243,9 +246,21 @@ public class FilmsHandler
     private static class SQLQuery
     {
         public String queryString;
+        public List<Object> args = new ArrayList<>();
+
+        public SQLQuery(String queryString, List<Object> args)
+        {
+            this.queryString = queryString;
+            this.args = args;
+        }
+    }
+
+    private static class HQLQuery
+    {
+        public String queryString;
         public Map<String, Object> args = new HashMap<>();
 
-        public SQLQuery(String queryString, Map<String, Object> args)
+        public HQLQuery(String queryString, Map<String, Object> args)
         {
             this.queryString = queryString;
             this.args = args;
@@ -253,6 +268,78 @@ public class FilmsHandler
     }
 
     private static SQLQuery buildFilmSQLQuery(FilmsForm filmsForm, int minimumVotes, Date fromDate, Date toDate, BigDecimal minimumRating, BigDecimal maximumRating, String sortColumn, String sortDirection)
+    {
+        List<Object> args = new ArrayList<>();
+        String selectClause = "select * from films where ";
+        String whereClause = "";
+
+        if (filmsForm.getTitleParam().length() > 0)
+        {
+            if (whereClause.length() > 0) whereClause += " and ";
+            whereClause += " lower(title) like ? ";
+            args.add(filmsForm.getTitleParam().toLowerCase().replaceAll("\\*","%"));
+        }
+
+        if (minimumVotes > 0)
+        {
+            if (whereClause.length() > 0) whereClause += " and ";
+            whereClause += " imdb_votes >= ? ";
+            args.add(minimumVotes);
+        }
+
+        if (filmsForm.getLanguage().length() > 0)
+        {
+            if (whereClause.length() > 0) whereClause += " and ";
+            whereClause += " language = ? ";
+            args.add(filmsForm.getLanguage());
+        }
+
+        if (filmsForm.getGenre().length() > 0)
+        {
+            if (whereClause.length() > 0) whereClause += " and ";
+            whereClause += " genre like ? ";
+            args.add("%" + filmsForm.getGenre() + "%");
+        }
+
+        if (fromDate != null)
+        {
+            if (whereClause.length() > 0) whereClause += " and ";
+            whereClause += " released >= ? ";
+            args.add(fromDate);
+        }
+        if (toDate != null)
+        {
+            if (whereClause.length() > 0) whereClause += " and ";
+            whereClause += " released <= ? ";
+            args.add(toDate);
+        }
+
+        if (minimumRating.compareTo(BigDecimal.ZERO) > 0)
+        {
+            if (whereClause.length() > 0) whereClause += " and ";
+            whereClause += " imdb_rating >= ? ";
+            args.add(minimumRating);
+        }
+        if (maximumRating.compareTo(BigDecimal.TEN) < 0)
+        {
+            if (whereClause.length() > 0) whereClause += " and ";
+            whereClause += " imdb_rating <= ? ";
+            args.add(maximumRating);
+        }
+
+        if (args.size() == 0) selectClause = selectClause.replace("where", "");
+
+        String orderByClause = "";
+        if (sortColumn.length() > 0)
+        {
+            orderByClause += " order by " + sortColumn + " " + sortDirection + " nulls last " ;
+        }
+
+        String completeQuery = selectClause + whereClause + orderByClause;
+        return new SQLQuery(completeQuery, args);
+    }
+
+    private static HQLQuery buildFilmSQLQueryHQL(FilmsForm filmsForm, int minimumVotes, Date fromDate, Date toDate, BigDecimal minimumRating, BigDecimal maximumRating, String sortColumn, String sortDirection)
     {
         Map<String, Object> args = new HashMap<>();
         String selectClause = "select f from Film f where ";
@@ -321,7 +408,7 @@ public class FilmsHandler
         }
 
         String completeQuery = selectClause + whereClause + orderByClause;
-        return new SQLQuery(completeQuery, args);
+        return new HQLQuery(completeQuery, args);
     }
 
     private static List<Film> searchFilmsInMemory(String titleParam, String language, String genre, int minimumVotes, BigDecimal minimumRating, BigDecimal maximumRating, Date fromDate, Date toDate)
@@ -408,27 +495,27 @@ public class FilmsHandler
                     value1 = o1.getMetascore();
                     value2 = o2.getMetascore();
                 }
-                if (sortColumn.equals("cinemangRating"))
+                if (sortColumn.equals("cinemangRating") || sortColumn.equals("cinemang_rating"))
                 {
                     value1 = o1.getCinemangRating();
                     value2 = o2.getCinemangRating();
                 }
-                if (sortColumn.equals("tomatoMeter"))
+                if (sortColumn.equals("tomatoMeter") || sortColumn.equals("tomato_meter"))
                 {
                     value1 = o1.getTomatoMeter();
                     value2 = o2.getTomatoMeter();
                 }
-                if (sortColumn.equals("tomatoUserMeter"))
+                if (sortColumn.equals("tomatoUserMeter") || sortColumn.equals("tomato_user_meter"))
                 {
                     value1 = o1.getTomatoUserMeter();
                     value2 = o2.getTomatoUserMeter();
                 }
-                if (sortColumn.equals("imdbVotes"))
+                if (sortColumn.equals("imdbVotes") || sortColumn.equals("imdb_votes"))
                 {
                     value1 = o1.getImdbVotes();
                     value2 = o2.getImdbVotes();
                 }
-                if (sortColumn.equals("imdbRating"))
+                if (sortColumn.equals("imdbRating") || sortColumn.equals("imdb_rating"))
                 {
                     value1 = o1.getImdbRating();
                     value2 = o2.getImdbRating();
