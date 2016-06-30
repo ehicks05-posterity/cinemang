@@ -1,5 +1,7 @@
 package com.hicks;
 
+import org.h2.engine.Database;
+
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -9,6 +11,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.management.ManagementFactory;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.List;
@@ -18,7 +22,7 @@ import java.util.Properties;
 public class Controller extends HttpServlet
 {
     private static final boolean DEBUG = false;
-    private static final boolean DROP_TABLES = false;
+    private static final boolean DROP_TABLES = true;
 
     @Override
     public void init() throws ServletException
@@ -42,7 +46,11 @@ public class Controller extends HttpServlet
 
         subTaskStart = System.currentTimeMillis();
         for (DBMap dbMap : DBMap.dbMaps)
-            ensureTableExists(dbMap);
+            if (!EOI.isTableExists(dbMap))
+            {
+                String createTableStatement = SQLGenerator.getCreateTableStatement(dbMap);
+                EOI.executeUpdate(createTableStatement);
+            }
         System.out.println("Made sure all tables exist (recreating if necessary) in " + (System.currentTimeMillis() - subTaskStart) + "ms");
 
         if (DEBUG)
@@ -53,21 +61,9 @@ public class Controller extends HttpServlet
 
         loadProperties();
 
-//        FilmLoader.initFilms();
+        FilmLoader.initFilms();
         long startupTime = System.currentTimeMillis() - controllerStart;
-        System.out.println("Cinemang started in " + startupTime + " ms");
-    }
-
-    private static void ensureTableExists(DBMap dbMap)
-    {
-        String query = "SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='PUBLIC' AND TABLE_NAME='" + dbMap.tableName.toUpperCase() + "';";
-        List result = (List) EOI.executeQuery(query);
-
-        if (result.size() > 0)
-            return;
-
-        String createTableStatement = SQLGenerator.getCreateTableStatement(dbMap);
-        EOI.executeUpdate(createTableStatement);
+        System.out.println("Controller.init ran in " + startupTime + " ms");
     }
 
     private void loadProperties()
@@ -138,6 +134,6 @@ public class Controller extends HttpServlet
         RequestDispatcher dispatcher = request.getRequestDispatcher(viewJsp);
         dispatcher.forward(request, response);
 
-        System.out.println(System.currentTimeMillis() - start + " ms for last request " + request.getQueryString());
+        System.out.println((System.currentTimeMillis() - start) + " ms for last request " + request.getQueryString());
     }
 }

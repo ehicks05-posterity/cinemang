@@ -14,7 +14,7 @@ import java.util.zip.ZipInputStream;
 
 public class DatabasePopulator
 {
-    private static final boolean LOAD_SUB_1000_VOTE_MOVIES = true;
+    private static final boolean LOAD_SUB_1000_VOTE_MOVIES = false;
     private static int unreadableRows = 0;
 
     public static List<Film> populateDatabase() throws IOException

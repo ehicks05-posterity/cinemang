@@ -289,4 +289,29 @@ public class EOI
         }
     }
 
+    public static boolean isTableExists(DBMap dbMap)
+    {
+        try (Connection connection = getConnection();)
+        {
+            DatabaseMetaData databaseMetaData = connection.getMetaData();
+            try (ResultSet resultSet = databaseMetaData.getTables(connection.getCatalog(), null, null, null);)
+            {
+                while (resultSet.next())
+                {
+                    String tableName = resultSet.getString("TABLE_NAME");
+                    if (tableName.toUpperCase().equals(dbMap.tableName.toUpperCase()))
+                        return true;
+                }
+            }
+            catch (Exception e)
+            {
+                System.out.println(e.getMessage());
+            }
+        }
+        catch (Exception e)
+        {
+            System.out.println(e.getMessage());
+        }
+        return false;
+    }
 }
