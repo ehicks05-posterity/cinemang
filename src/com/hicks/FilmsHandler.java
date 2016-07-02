@@ -108,25 +108,37 @@ public class FilmsHandler
         response.sendRedirect("view?action=form");
     }
 
-    public static void getNewPage(HttpServletRequest request, HttpServletResponse response) throws IOException, ParseException
+    public static void ajaxGetNewPage(HttpServletRequest request, HttpServletResponse response) throws IOException, ParseException
     {
         String newPage = request.getParameter("page");
         String newSortColumn = request.getParameter("sortColumn");
         String newSortDirection = request.getParameter("sortDirection");
 
-        FilmSearchResult filmSearchResult = (FilmSearchResult) request.getSession().getAttribute("filmSearchResult");
+        FilmSearchResult filmSearchResult;
+        if (SystemInfo.isLoadDbToRam())
+        {
+            filmSearchResult = (FilmSearchResult) request.getSession().getAttribute("filmSearchResult");
 
-        boolean resort = (newSortColumn != null && !newSortColumn.equals(filmSearchResult.getSortColumn())) ||
-                (newSortDirection != null && !newSortDirection.equals(filmSearchResult.getSortDirection()));
+            boolean resort = (newSortColumn != null && !newSortColumn.equals(filmSearchResult.getSortColumn())) ||
+                    (newSortDirection != null && !newSortDirection.equals(filmSearchResult.getSortDirection()));
 
-        if (newPage != null) filmSearchResult.setPage(newPage);
-        if (newSortColumn != null) filmSearchResult.setSortColumn(newSortColumn);
-        if (newSortDirection != null) filmSearchResult.setSortDirection(newSortDirection);
+            if (newPage != null) filmSearchResult.setPage(newPage);
+            if (newSortColumn != null) filmSearchResult.setSortColumn(newSortColumn);
+            if (newSortDirection != null) filmSearchResult.setSortDirection(newSortDirection);
 
+            if (resort)
+                filmSearchResult.setSearchResults(sortFilmsInMemory(filmSearchResult.getSearchResults(), filmSearchResult.getSortColumn(), filmSearchResult.getSortDirection()));
+        }
+        else
+        {
+            FilmsForm filmsForm = (FilmsForm) request.getSession().getAttribute("filmsForm");
+            if (newSortColumn != null) filmsForm.setSortColumn(newSortColumn);
+            if (newSortDirection != null) filmsForm.setSortDirection(newSortDirection);
+            if (newPage != null) filmsForm.setPage(newPage);
+            request.getSession().setAttribute("filmsForm", filmsForm);
 
-
-        if (resort)
-            filmSearchResult.setSearchResults(sortFilmsInMemory(filmSearchResult.getSearchResults(), filmSearchResult.getSortColumn(), filmSearchResult.getSortDirection()));
+            filmSearchResult = performSearch(request, filmsForm);
+        }
 
         request.getSession().setAttribute("filmSearchResult", filmSearchResult);
 
@@ -204,16 +216,18 @@ public class FilmsHandler
         }
 
         // parse sorting fields
-        String sortColumn;
-        String sortDirection = null;
-        if (request.getParameter("sortColumn") == null)
+        String sortColumn = filmsForm.getSortColumn();
+        String sortDirection = filmsForm.getSortDirection();
+        if (sortColumn == null)
         {
-//            sortColumn = "cinemangRating";
-            sortColumn = "cinemang_rating";
-            sortDirection = "desc";
+            if (request.getParameter("sortColumn") == null)
+            {
+                sortColumn = "cinemang_rating";
+                sortDirection = "desc";
+            }
+            else
+                sortColumn = request.getParameter("sortColumn");
         }
-        else
-            sortColumn = request.getParameter("sortColumn");
 
         String directionParam = request.getParameter("sortDirection");
         if (sortDirection == null) sortDirection = directionParam == null ? "asc" : directionParam;
@@ -221,17 +235,24 @@ public class FilmsHandler
         boolean loadFromDb = true;
         boolean loadFromMemory = !loadFromDb;
 
-        String page = request.getParameter("page");
-        if (page == null) page = "1";
+        String page = filmsForm.getPage();
+        if (page == null)
+        {
+            page = request.getParameter("page");
+            if (page == null) page = "1";
+        }
 
         List<Film> filteredFilms = new ArrayList<>();
         if (loadFromDb)
         {
-            SQLQuery filmQuery = buildFilmSQLQuery(filmsForm, minimumVotes, fromDate, toDate, minimumRating, maximumRating, sortColumn, sortDirection);
+            SQLQuery filmQuery = buildFilmSQLQuery(filmsForm, minimumVotes, fromDate, toDate, minimumRating, maximumRating, sortColumn, sortDirection, page);
+            String countVersionOfQuery = SQLGenerator.getCountVersionOfQuery(filmQuery.queryString);
 
-//            filteredFilms = Hibernate.executeQuery(filmQuery.queryString, filmQuery.args);
+            List result = EOI.executeQueryWithPSOneResult(countVersionOfQuery, filmQuery.args);
+            long resultSize = (Long) result.get(0);
+            // build count(*) query
             filteredFilms = EOI.executeQueryWithPS(filmQuery.queryString, filmQuery.args);
-            return new FilmSearchResult(page, filteredFilms, sortColumn, sortDirection);
+            return new FilmSearchResult(page, filteredFilms, sortColumn, sortDirection, resultSize);
         }
 
         if (loadFromMemory)
@@ -267,7 +288,8 @@ public class FilmsHandler
         }
     }
 
-    private static SQLQuery buildFilmSQLQuery(FilmsForm filmsForm, int minimumVotes, Date fromDate, Date toDate, BigDecimal minimumRating, BigDecimal maximumRating, String sortColumn, String sortDirection)
+    private static SQLQuery buildFilmSQLQuery(FilmsForm filmsForm, int minimumVotes, Date fromDate, Date toDate, BigDecimal minimumRating,
+                                              BigDecimal maximumRating, String sortColumn, String sortDirection, String page)
     {
         List<Object> args = new ArrayList<>();
         String selectClause = "select * from films where ";
@@ -335,7 +357,11 @@ public class FilmsHandler
             orderByClause += " order by " + sortColumn + " " + sortDirection + " nulls last " ;
         }
 
-        String completeQuery = selectClause + whereClause + orderByClause;
+        String limit = "100";
+        String offset = String.valueOf((Integer.valueOf(page) - 1) * 50);
+        String paginationClause = " limit " + limit + " offset " + offset;
+
+        String completeQuery = selectClause + whereClause + orderByClause + paginationClause;
         return new SQLQuery(completeQuery, args);
     }
 

@@ -1,108 +1,93 @@
 package com.hicks;
 
 import com.hicks.beans.Film;
-import org.apache.commons.net.ftp.FTPClient;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.util.zip.ZipFile;
 
 public class DatabasePopulator
 {
     private static final boolean LOAD_SUB_1000_VOTE_MOVIES = false;
+
+    private static int filmsInsertedFromMoviesFile = 0;
+    private static int filmsUpdatedFromTomatoesFile = 0;
+    private static int films = 0;
     private static int unreadableRows = 0;
 
-    public static List<Film> populateDatabase() throws IOException
+    public static void populateDatabase() throws IOException
     {
         long start = System.currentTimeMillis();
-        List<Film> films = loadFromDumpToRam();
-        System.out.println("Parsed data files in " + (System.currentTimeMillis() - start) + "ms");
-
-        DecimalFormat df = new DecimalFormat("#,###");
-        System.out.println("Films Found: " + df.format(films.size()));
-        System.out.println("Unreadable Rows: " + df.format(unreadableRows));
-
-        start = System.currentTimeMillis();
-//        saveFilmsWithHibernate(films);
-        saveFilmsWithEOI(films);
-        System.out.println("Films persisted in " + (System.currentTimeMillis() - start) + "ms");
-
-        return films;
-    }
-
-    private static void saveFilmsWithEOI(List<Film> films)
-    {
-        EOI.insert(films);
-    }
-
-    private static List<Film> loadFromDumpToRam() throws IOException
-    {
-        FTPClient ftp = IOUtil.prepareFtpClient("***REMOVED***", "***REMOVED***", "");
 
         String omdbFilename = SystemInfo.getProperties().getProperty("omdbZipFileName");
 
-        InputStream inputStream = ftp.retrieveFileStream(omdbFilename);
-        ZipInputStream zipIn = new ZipInputStream(inputStream);
+        ZipFile zipFile = new ZipFile("C:" + File.separator + "temp" + File.separator + omdbFilename);
 
-        List<Film> films = readZipInputStream(zipIn);
-        ftp.logout();
-        ftp.disconnect();
-        return films;
+        ZipEntry e = zipFile.getEntry("omdbMovies.txt");
+        readZipEntry(zipFile, e);
+
+        e = zipFile.getEntry("tomatoes.txt");
+        readZipEntry(zipFile, e);
+
+        DecimalFormat df = new DecimalFormat("#,###");
+        System.out.println("Films Found: " + df.format(films));
+        System.out.println("Films inserted from omdbMovies: " + df.format(filmsInsertedFromMoviesFile));
+        System.out.println("Films updated with data from tomatoes: " + df.format(filmsUpdatedFromTomatoesFile));
+        System.out.println("Unreadable Rows: " + df.format(unreadableRows));
+
+        System.out.println("Parsed data files and Films persisted in " + (System.currentTimeMillis() - start) + "ms");
     }
 
-    private static List<Film> readZipInputStream(ZipInputStream zipIn) throws IOException
+    private static void readZipEntry(ZipFile zipFile, ZipEntry e) throws IOException
     {
-        Map<String, Film> filmMap = new HashMap<>();
+        String zipEntryName = e.getName();
+        String entryMBs = " (" + (e.getSize() / (1024 * 1024)) + "MB)";
+        System.out.println("reading " + zipEntryName + entryMBs);
 
-        for (ZipEntry e; (e = zipIn.getNextEntry()) != null;)
+        BufferedReader br = new BufferedReader(new InputStreamReader(zipFile.getInputStream(e)));
+        br.readLine(); // skip the header
+        String line;
+        int index = 0;
+        while ((line = br.readLine()) != null)
         {
-            String zipEntryName = e.getName();
-            String entryMBs = " (" + (e.getSize() / (1024 * 1024)) + "MB)";
-            System.out.println("reading " + zipEntryName + entryMBs);
-            BufferedReader br = new BufferedReader(new InputStreamReader(zipIn));
-            br.readLine(); // skip the header
-            String line;
-            int index = 0;
-            while ((line = br.readLine()) != null)
+            index++;
+            if (index % 10_000 == 0)
+                System.out.println("read " + index + " rows...");
+
+            Film newFilm = null;
+            if (zipEntryName.equals("omdbMovies.txt"))
+                newFilm = readMovieLine(line);
+            if (zipEntryName.equals("tomatoes.txt"))
+                newFilm = readRottenLine(line);
+            if (!Arrays.asList("omdbMovies.txt", "tomatoes.txt").contains(zipEntryName))
+                break;
+
+            if (newFilm != null)
             {
-                index++;
-                if (index % 100000 == 0)
-                    System.out.println("read " + index + " rows...");
-
-                Film newFilm = null;
                 if (zipEntryName.equals("omdbMovies.txt"))
-                    newFilm = readMovieLine(line);
-                if (zipEntryName.equals("tomatoes.txt"))
-                    newFilm = readRottenLine(line);
-                if (!Arrays.asList("omdbMovies.txt", "tomatoes.txt").contains(zipEntryName))
-                    break;
-
-                if (newFilm != null)
                 {
-                    Film existing = filmMap.get(newFilm.getImdbID());
-                    if (existing == null && zipEntryName.equals("omdbMovies.txt"))
+                    if (LOAD_SUB_1000_VOTE_MOVIES || newFilm.getImdbVotes() >= 1000)
                     {
-                        if (LOAD_SUB_1000_VOTE_MOVIES || newFilm.getImdbVotes() >= 1000)
-                            filmMap.put(newFilm.getImdbID(), newFilm);
+                        EOI.insert(newFilm);
+                        films++;
+                        filmsInsertedFromMoviesFile++;
                     }
-                    if (existing != null && zipEntryName.equals("tomatoes.txt"))
+                }
+                if (zipEntryName.equals("tomatoes.txt"))
+                {
+                    Film existing = Film.getByImdbId(newFilm.getImdbID());
+                    if (existing != null)
                     {
                         Film mergedFilm = mergeRottenDataIntoFilmData(existing, newFilm);
                         mergedFilm.setCinemangRating(mergedFilm.calculateCinemangRating());
-
-                        if (LOAD_SUB_1000_VOTE_MOVIES || mergedFilm.getImdbVotes() >= 1000)
-                            filmMap.put(newFilm.getImdbID(), mergedFilm);
+                        EOI.update(mergedFilm);
+                        filmsUpdatedFromTomatoesFile++;
                     }
                 }
             }
         }
-
-        return new ArrayList<>(filmMap.values());
     }
 
     private static Film mergeRottenDataIntoFilmData(Film f1, Film f2)
@@ -110,23 +95,45 @@ public class DatabasePopulator
         Film movieData = f1.getLastUpdated().length() > 0 ? f1 : f2;
         Film rottenData = f1.getLastUpdated().length() > 0 ? f2 : f1;
 
-        movieData.setTomatoImage(rottenData.getTomatoImage());
-        movieData.setTomatoRating(rottenData.getTomatoRating());
-        movieData.setTomatoMeter(rottenData.getTomatoMeter());
-        movieData.setTomatoReviews(rottenData.getTomatoReviews());
-        movieData.setTomatoFresh(rottenData.getTomatoFresh());
-        movieData.setTomatoRotten(rottenData.getTomatoRotten());
-        movieData.setTomatoConsensus(rottenData.getTomatoConsensus());
-        movieData.setTomatoUserMeter(rottenData.getTomatoUserMeter());
-        movieData.setTomatoUserRating(rottenData.getTomatoUserRating());
-        movieData.setTomatoUserReviews(rottenData.getTomatoUserReviews());
-        movieData.setDvd(rottenData.getDvd());
-        movieData.setBoxOffice(rottenData.getBoxOffice());
-        movieData.setProduction(rottenData.getProduction());
-        movieData.setWebsite(rottenData.getWebsite());
-        movieData.setRottenDataLastUpdated(rottenData.getRottenDataLastUpdated());
+        Film mergedData = new Film();
+        mergedData.setImdbID(movieData.getImdbID());
+        mergedData.setTitle(movieData.getTitle());
+        mergedData.setYear(movieData.getYear());
+        mergedData.setRated(movieData.getRated());
+        mergedData.setRuntime(movieData.getRuntime());
+        mergedData.setGenre(movieData.getGenre());
+        mergedData.setReleased(movieData.getReleased());
+        mergedData.setDirector(movieData.getDirector());
+        mergedData.setWriter(movieData.getWriter());
+        mergedData.setActors(movieData.getActors());
+        mergedData.setMetascore(movieData.getMetascore());
+        mergedData.setImdbRating(movieData.getImdbRating());
+        mergedData.setImdbVotes(movieData.getImdbVotes());
+        mergedData.setPoster(movieData.getPoster());
+        mergedData.setPlot(movieData.getPlot());
+        mergedData.setFullPlot(movieData.getFullPlot());
+        mergedData.setLanguage(movieData.getLanguage());
+        mergedData.setCountry(movieData.getCountry());
+        mergedData.setAwards(movieData.getAwards());
+        mergedData.setLastUpdated(movieData.getLastUpdated());
 
-        return movieData;
+        mergedData.setTomatoImage(rottenData.getTomatoImage());
+        mergedData.setTomatoRating(rottenData.getTomatoRating());
+        mergedData.setTomatoMeter(rottenData.getTomatoMeter());
+        mergedData.setTomatoReviews(rottenData.getTomatoReviews());
+        mergedData.setTomatoFresh(rottenData.getTomatoFresh());
+        mergedData.setTomatoRotten(rottenData.getTomatoRotten());
+        mergedData.setTomatoConsensus(rottenData.getTomatoConsensus());
+        mergedData.setTomatoUserMeter(rottenData.getTomatoUserMeter());
+        mergedData.setTomatoUserRating(rottenData.getTomatoUserRating());
+        mergedData.setTomatoUserReviews(rottenData.getTomatoUserReviews());
+        mergedData.setDvd(rottenData.getDvd());
+        mergedData.setBoxOffice(rottenData.getBoxOffice());
+        mergedData.setProduction(rottenData.getProduction());
+        mergedData.setWebsite(rottenData.getWebsite());
+        mergedData.setRottenDataLastUpdated(rottenData.getRottenDataLastUpdated());
+
+        return mergedData;
     }
 
     private static Film readMovieLine(String line)

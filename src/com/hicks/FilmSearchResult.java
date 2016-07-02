@@ -8,44 +8,63 @@ import java.util.List;
 public class FilmSearchResult
 {
     private List<Film> searchResults;
-
+    private long size;
     private String page;
     private String sortColumn;
     private String sortDirection;
 
     public FilmSearchResult(String pageParam, List<Film> searchResults, String sortColumn, String sortDirection)
     {
+        this(pageParam, searchResults, sortColumn, sortDirection, 0);
+    }
+
+    public FilmSearchResult(String pageParam, List<Film> searchResults, String sortColumn, String sortDirection, long size)
+    {
         this.page = pageParam;
         this.searchResults = searchResults;
         this.sortColumn = sortColumn;
         this.sortDirection = sortDirection;
+        this.size = size;
     }
 
     // Derived values
     public List<Film> getPageOfResults()
     {
-        if (page == null || Integer.valueOf(page) > getPages())
-            page = "1";
+        if (SystemInfo.isLoadDbToRam())
+        {
+            if (page == null || Integer.valueOf(page) > getPages())
+                page = "1";
 
-        int from = (Integer.valueOf(page) - 1) * 100;
-        int to = from + 100;
-        if (to > getSearchResultsSize())
-            to = getSearchResultsSize();
+            int from = (Integer.valueOf(page) - 1) * 100;
+            int to = from + 100;
+            if (to > getSearchResultsSize())
+                to = (int) getSearchResultsSize();
 
-        return searchResults.subList(from, to);
+            return searchResults.subList(from, to);
+        }
+        else
+        {
+            return searchResults;
+        }
     }
 
-    public int getSearchResultsSize()
+    public long getSearchResultsSize()
     {
-        return searchResults.size();
+        if (SystemInfo.isLoadDbToRam())
+            return searchResults.size();
+        else
+            return size;
     }
 
     public String getPrettySearchResultsSize()
     {
-        return new DecimalFormat("#,###").format(searchResults.size());
+        if (SystemInfo.isLoadDbToRam())
+            return new DecimalFormat("#,###").format(searchResults.size());
+        else
+            return new DecimalFormat("#,###").format(size);
     }
 
-    public int getPages()
+    public long getPages()
     {
         return 1 + ((getSearchResultsSize() - 1) / 100);
     }
@@ -69,6 +88,16 @@ public class FilmSearchResult
     public void setSearchResults(List<Film> searchResults)
     {
         this.searchResults = searchResults;
+    }
+
+    public long getSize()
+    {
+        return size;
+    }
+
+    public void setSize(long size)
+    {
+        this.size = size;
     }
 
     public String getPage()

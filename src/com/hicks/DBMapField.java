@@ -23,6 +23,11 @@ public class DBMapField
     public boolean primaryKey;
     public String declaredColumnDefinition = "";
 
+    public String toString()
+    {
+        return className + ":" + fieldName;
+    }
+
     public String getColumnDefinition()
     {
         if (declaredColumnDefinition.length() > 0)

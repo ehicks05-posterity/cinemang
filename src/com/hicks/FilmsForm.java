@@ -10,6 +10,10 @@ public class FilmsForm
     private String language;
     private String genre;
 
+    private String sortColumn;
+    private String sortDirection;
+    private String page;
+
     public FilmsForm(String minVotes, String title, String rating, String fromReleaseDate, String toReleaseDate, String language, String genre)
     {
         this.minimumVotesParam = minVotes;
@@ -20,7 +24,6 @@ public class FilmsForm
         this.language = language;
         this.genre = genre;
     }
-
 
     // Getter / Setter
     public String getMinimumVotesParam()
@@ -91,5 +94,35 @@ public class FilmsForm
     public void setGenre(String genre)
     {
         this.genre = genre;
+    }
+
+    public String getSortColumn()
+    {
+        return sortColumn;
+    }
+
+    public void setSortColumn(String sortColumn)
+    {
+        this.sortColumn = sortColumn;
+    }
+
+    public String getSortDirection()
+    {
+        return sortDirection;
+    }
+
+    public void setSortDirection(String sortDirection)
+    {
+        this.sortDirection = sortDirection;
+    }
+
+    public String getPage()
+    {
+        return page;
+    }
+
+    public void setPage(String page)
+    {
+        this.page = page;
     }
 }

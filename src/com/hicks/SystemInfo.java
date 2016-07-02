@@ -7,6 +7,7 @@ public class SystemInfo
 {
     private static Properties properties;
     private static ServletContext servletContext;
+    private static boolean loadDbToRam;
 
     public static Properties getProperties()
     {
@@ -26,5 +27,15 @@ public class SystemInfo
     public static void setServletContext(ServletContext servletContext)
     {
         SystemInfo.servletContext = servletContext;
+    }
+
+    public static boolean isLoadDbToRam()
+    {
+        return loadDbToRam;
+    }
+
+    public static void setLoadDbToRam(boolean loadDbToRam)
+    {
+        SystemInfo.loadDbToRam = loadDbToRam;
     }
 }

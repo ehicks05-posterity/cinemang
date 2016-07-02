@@ -12,21 +12,6 @@ import java.util.List;
 
 public class EOI
 {
-//    private static Connection getConnection()
-//    {
-//        try
-//        {
-//            Class.forName("org.h2.Driver");
-//            return DriverManager.getConnection("jdbc:h2:~/test", "", "");
-//        }
-//        catch (Exception e)
-//        {
-//            System.out.println(e.getMessage());
-//        }
-//
-//        return null;
-//    }
-
     private static JdbcConnectionPool cp;
 
     public static void init()
@@ -67,6 +52,59 @@ public class EOI
         }
     }
 
+    public static void update(Object object)
+    {
+        if (object instanceof List)
+            _updateFromList((List) object);
+        else
+            _update(object);
+    }
+
+    private static void _updateFromList(List<?> objects)
+    {
+        int success = 0;
+        int fail = 0;
+        for (Object object : objects)
+        {
+            int result = _update(object);
+            if (result == 1)
+                success++;
+            else
+                fail++;
+        }
+        System.out.println("Finished mass update: " + success + " succeeded, " + fail + " failed");
+    }
+
+    private static int _update(Object object)
+    {
+        PSIngredients psIngredients = SQLGenerator.getUpdateStatement(object);
+        if (psIngredients == null)
+            return 0;
+
+        String queryString = psIngredients.query;
+        List<Object> args = psIngredients.args;
+
+        try (Connection connection = getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(queryString);)
+        {
+            int argIndex = 1;
+            for (Object arg : args)
+                setPreparedStatementParameter(preparedStatement, argIndex++, arg);
+
+            int result = preparedStatement.executeUpdate();
+            if (result == 1)
+            {
+                EOICache.set(object);
+            }
+        }
+        catch (Exception e)
+        {
+            System.out.println(e.getMessage());
+        }
+
+        return 0;
+    }
+
     public static void insert(Object object)
     {
         if (object instanceof List)
@@ -94,42 +132,22 @@ public class EOI
     {
         String insertStatement = SQLGenerator.getInsertStatement(object);
 
-//        try (PreparedStatement preparedStatement = getConnection().prepareStatement(insertStatement);)
         try (Connection connection = getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(insertStatement);)
         {
             DBMap dbMap = DBMap.getDBMapByClass(object.getClass());
             for (DBMapField dbMapField : dbMap.fields)
             {
-                int index = dbMap.fields.indexOf(dbMapField) + 1;
+                int argIndex = dbMap.fields.indexOf(dbMapField) + 1;
+
                 Object value = dbMapField.getValue(object);
-
-                if (value == null && dbMapField.type.equals(DBMapField.TIMESTAMP))
+                if (value == null)
                 {
-                    preparedStatement.setNull(index, Types.TIMESTAMP);
-                    continue;
-                }
-                if (value == null && dbMapField.type.equals(DBMapField.INTEGER))
-                {
-                    preparedStatement.setNull(index, Types.TIMESTAMP);
-                    continue;
-                }
-                if (value == null && dbMapField.type.equals(DBMapField.DECIMAL))
-                {
-                    preparedStatement.setNull(index, Types.DECIMAL);
+                    preparedStatement.setNull(argIndex, Types.NULL);
                     continue;
                 }
 
-                if (dbMapField.type.equals(DBMapField.STRING))
-                    preparedStatement.setString(index, (String) value);
-                if (dbMapField.type.equals(DBMapField.INTEGER))
-                    preparedStatement.setInt(index, (Integer) value);
-                if (dbMapField.type.equals(DBMapField.LONG))
-                    preparedStatement.setLong(index, (Long) value);
-                if (dbMapField.type.equals(DBMapField.DECIMAL))
-                    preparedStatement.setBigDecimal(index, (BigDecimal) value);
-                if (dbMapField.type.equals(DBMapField.TIMESTAMP))
-                    preparedStatement.setDate(index, Common.utilDatetoSQLDate((Date) value));
+                setPreparedStatementParameter(preparedStatement, argIndex, value);
             }
             return preparedStatement.executeUpdate();
         }
@@ -140,7 +158,29 @@ public class EOI
         return 0;
     }
 
+    private static void setPreparedStatementParameter(PreparedStatement ps, int argIndex, Object obj)
+    {
+        try
+        {
+            if (obj instanceof String) ps.setString(argIndex, (String) obj);
+            if (obj instanceof Integer) ps.setInt(argIndex, (Integer) obj);
+            if (obj instanceof Long) ps.setLong(argIndex, (Long) obj);
+            if (obj instanceof BigDecimal) ps.setBigDecimal(argIndex, (BigDecimal) obj);
+            if (obj instanceof Date) ps.setDate(argIndex, Common.utilDatetoSQLDate((Date) obj));
+        }
+        catch (SQLException e)
+        {
+            System.out.println(e.getMessage());
+        }
+    }
 
+    public static <T> T executeQueryWithPSOneResult(String queryString, List<Object> args)
+    {
+        List<T> results = executeQueryWithPS(queryString, args);
+        if (results != null && results.size() > 0)
+            return results.get(0);
+        return null;
+    }
 
     public static <T> List<T> executeQueryWithPS(String queryString, List<Object> args)
     {
@@ -149,14 +189,7 @@ public class EOI
         {
             int argIndex = 1;
             for (Object arg : args)
-            {
-                if (arg instanceof String) preparedStatement.setString(argIndex, (String) arg);
-                if (arg instanceof Integer) preparedStatement.setInt(argIndex, (Integer) arg);
-                if (arg instanceof Long) preparedStatement.setLong(argIndex, (Long) arg);
-                if (arg instanceof BigDecimal) preparedStatement.setBigDecimal(argIndex, (BigDecimal) arg);
-                if (arg instanceof Date) preparedStatement.setDate(argIndex, Common.utilDatetoSQLDate((Date) arg));
-                argIndex++;
-            }
+                setPreparedStatementParameter(preparedStatement, argIndex++, arg);
 
             ResultSet resultSet = preparedStatement.executeQuery();
             return parseResultSet(queryString, resultSet);
@@ -168,6 +201,7 @@ public class EOI
 
         return null;
     }
+
     public static <T> List<T> executeQuery(String queryString)
     {
         try (Connection connection = getConnection();
@@ -204,13 +238,11 @@ public class EOI
 
         if (queryString.startsWith("select *"))
         {
-//            long start = System.currentTimeMillis();
             while (resultSet.next())
             {
                 Object object = getEOIObjectFromResultSet(resultSet, dbMap);
                 results.add((T) object);
             }
-//            System.out.println("loaded " + results.size() + " objects in " + (System.currentTimeMillis() - start) + "ms");
         }
         else
         {

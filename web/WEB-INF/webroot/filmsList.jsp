@@ -73,21 +73,6 @@
 
         function sortFilms(element, column)
         {
-//            var chars = column.split("");
-//            var converted = [];
-//            for (var i = 0; i < chars.length; i++)
-//            {
-//                if (chars[i] == chars[i].toUpperCase())
-//                {
-//                    converted.push('_');
-//                    converted.push(chars[i].toLowerCase());
-//                }
-//                else
-//                    converted.push(chars[i]);
-//            }
-//
-//            column = converted;
-
             var previousColumn = sortColumn;
             var previousDirection = sortDirection;
             var direction = 'desc';
@@ -191,7 +176,7 @@
         // todo: find a way to avoid having to keep this in sync
         function ajaxFilms(newPage, newSortColumn, newSortDirection)
         {
-            var myUrl = '${pageContext.request.contextPath}/view?tab1=home&action=getNewPage';
+            var myUrl = '${pageContext.request.contextPath}/view?tab1=home&action=ajaxGetNewPage';
             var params = {};
             if (newPage) params.page = newPage;
             if (newSortColumn) params.sortColumn = newSortColumn;

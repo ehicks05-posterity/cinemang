@@ -8,6 +8,7 @@ import javax.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -174,6 +175,11 @@ public class Film implements Serializable
     {
 //        return Hibernate.executeQuery("select f from Film f");
         return EOI.executeQuery("select * from films");
+    }
+
+    public static Film getByImdbId(String imdbId)
+    {
+        return EOI.executeQueryWithPSOneResult("select * from films where imdb_id=?", Arrays.asList(imdbId));
     }
 
     public static List<Film> getAllFilmsWithManyVotes()

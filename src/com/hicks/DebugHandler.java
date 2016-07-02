@@ -10,7 +10,7 @@ public class DebugHandler
 {
     public static void getDebugInfo(HttpServletRequest request, HttpServletResponse response) throws ParseException, IOException
     {
-        String info = "['" + EOICache.hits.toString() + "','" + EOICache.misses.toString() + "']";
+        String info = "['" + "cacheSize:" + EOICache.cache.keySet().size() + "','" + "hits:" + EOICache.hits.toString() + "','" + "misses:" + EOICache.misses.toString() + "']";
 
         ServletOutputStream outputStream = response.getOutputStream();
         outputStream.print(info);

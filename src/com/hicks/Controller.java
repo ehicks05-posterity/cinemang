@@ -1,7 +1,5 @@
 package com.hicks;
 
-import org.h2.engine.Database;
-
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -11,18 +9,16 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.management.ManagementFactory;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.text.DecimalFormat;
 import java.text.ParseException;
-import java.util.List;
 import java.util.Properties;
 
 @WebServlet("/view")
 public class Controller extends HttpServlet
 {
     private static final boolean DEBUG = false;
-    private static final boolean DROP_TABLES = true;
+    private static final boolean DROP_TABLES = false;
+    private static final boolean LOAD_DB_TO_RAM = false;
 
     @Override
     public void init() throws ServletException
@@ -31,6 +27,7 @@ public class Controller extends HttpServlet
 
         EOI.init();
         SystemInfo.setServletContext(getServletContext());
+        SystemInfo.setLoadDbToRam(LOAD_DB_TO_RAM);
 
         long subTaskStart = System.currentTimeMillis();
         DBMap.loadDbMaps();
@@ -110,9 +107,9 @@ public class Controller extends HttpServlet
                 FilmsHandler.filterFilms(request, response);
                 return;
             }
-            if (action.equals("getNewPage"))
+            if (action.equals("ajaxGetNewPage"))
             {
-                FilmsHandler.getNewPage(request, response);
+                FilmsHandler.ajaxGetNewPage(request, response);
                 return;
             }
             if (action.equals("getPoster"))
