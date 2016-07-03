@@ -15,6 +15,7 @@ public class DatabasePopulator
     private static int filmsInsertedFromMoviesFile = 0;
     private static int filmsUpdatedFromTomatoesFile = 0;
     private static int films = 0;
+    private static int filmsSkipped = 0;
     private static int unreadableRows = 0;
 
     public static void populateDatabase() throws IOException
@@ -36,6 +37,7 @@ public class DatabasePopulator
         System.out.println("Films inserted from omdbMovies: " + df.format(filmsInsertedFromMoviesFile));
         System.out.println("Films updated with data from tomatoes: " + df.format(filmsUpdatedFromTomatoesFile));
         System.out.println("Unreadable Rows: " + df.format(unreadableRows));
+        System.out.println("Films Skipped from omdb file: " + df.format(filmsSkipped));
 
         System.out.println("Parsed data files and Films persisted in " + (System.currentTimeMillis() - start) + "ms");
     }
@@ -74,6 +76,8 @@ public class DatabasePopulator
                         films++;
                         filmsInsertedFromMoviesFile++;
                     }
+                    else
+                        filmsSkipped++;
                 }
                 if (zipEntryName.equals("tomatoes.txt"))
                 {

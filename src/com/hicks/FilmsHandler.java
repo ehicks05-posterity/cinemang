@@ -101,6 +101,9 @@ public class FilmsHandler
         String genre = request.getParameter("fldGenre");
 
         FilmsForm filmsForm = new FilmsForm(minimumVotes, title, rating, fromReleaseDate, toReleaseDate, language, genre);
+        if (request.getParameter("resetPage").equals("yes"))
+            filmsForm.setPage("1");
+
         FilmSearchResult filmSearchResult = performSearch(request, filmsForm);
         request.getSession().setAttribute("filmsForm", filmsForm);
         request.getSession().setAttribute("filmSearchResult", filmSearchResult);
@@ -354,11 +357,11 @@ public class FilmsHandler
         String orderByClause = "";
         if (sortColumn.length() > 0)
         {
-            orderByClause += " order by " + sortColumn + " " + sortDirection + " nulls last " ;
+            orderByClause += " order by " + sortColumn + " " + sortDirection + ", imdb_id nulls last " ;
         }
 
         String limit = "100";
-        String offset = String.valueOf((Integer.valueOf(page) - 1) * 50);
+        String offset = String.valueOf((Integer.valueOf(page) - 1) * 100);
         String paginationClause = " limit " + limit + " offset " + offset;
 
         String completeQuery = selectClause + whereClause + orderByClause + paginationClause;
