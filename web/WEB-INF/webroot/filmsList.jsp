@@ -50,7 +50,7 @@
                 buttonImage: '../images/calendar.gif',
                 buttonImageOnly: true,
                 changeYear: true,
-                yearRange: '1888:2015'
+                yearRange: '1888:2016'
             });
 
             $("#toReleaseDateDatepicker").datepicker({
@@ -58,7 +58,7 @@
                 buttonImage: '../images/calendar.gif',
                 buttonImageOnly: true,
                 changeYear: true,
-                yearRange: '1888:2015'
+                yearRange: '1888:2016'
             });
         }
 

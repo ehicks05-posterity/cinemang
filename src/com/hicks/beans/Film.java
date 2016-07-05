@@ -173,7 +173,6 @@ public class Film implements Serializable
 
     public static List<Film> getAllFilms()
     {
-//        return Hibernate.executeQuery("select f from Film f");
         return EOI.executeQuery("select * from films");
     }
 
@@ -182,11 +181,6 @@ public class Film implements Serializable
         return EOI.executeQueryWithPSOneResult("select * from films where imdb_id=?", Arrays.asList(imdbId));
     }
 
-    public static List<Film> getAllFilmsWithManyVotes()
-    {
-//        return Hibernate.executeQuery("select f from Film f where f.imdbVotes >= 1000");
-        return EOI.executeQuery("select * from films where imdb_votes >= 1000");
-    }
     // -------- Getters / Setters ----------
 
 //    public Long getVersion()

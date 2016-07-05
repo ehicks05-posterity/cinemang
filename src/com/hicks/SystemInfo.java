@@ -38,4 +38,11 @@ public class SystemInfo
     {
         SystemInfo.loadDbToRam = loadDbToRam;
     }
+
+    public static long getFreeRamMb()
+    {
+        long maxMemory = Runtime.getRuntime().maxMemory() ;
+        long allocatedMemory = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
+        return (maxMemory - allocatedMemory);
+    }
 }

@@ -18,20 +18,18 @@ public class FilmLoader
     {
         try
         {
+            long filmCount;
             if (SystemInfo.isLoadDbToRam())
             {
                 films = Film.getAllFilms();
-                System.out.println("DB holds " + films.size() + " films.");
-                if (films.size() == 0)
-                    DatabasePopulator.populateDatabase();
+                filmCount = films.size();
             }
             else
-            {
-                long films = EOI.executeQueryWithPSOneResult("select count(*) from films;", new ArrayList<>());
-                System.out.println("DB holds " + films + " films.");
-                if (films == 0)
-                    DatabasePopulator.populateDatabase();
-            }
+                filmCount = EOI.executeQueryWithPSOneResult("select count(*) from films;", new ArrayList<>());
+
+            System.out.println("DB holds " + films + " films.");
+            if (filmCount == 0)
+                DatabasePopulator.populateDatabase();
 
             GenreLoader.getUniqueGenres();
             LanguageLoader.getUniqueLanguages();

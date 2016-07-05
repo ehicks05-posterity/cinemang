@@ -3,28 +3,8 @@
              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.0"
              xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd">
 
-    <!--<persistence-unit name="oracle-ds" transaction-type="RESOURCE_LOCAL">-->
-        <!--<description>Oracle Persistence Unit</description>-->
-        <!--<provider>org.hibernate.ejb.HibernatePersistence</provider>-->
-
-        <!--&lt;!&ndash; This is where we tell JPA/Hibernate about our @Entity objects &ndash;&gt;-->
-        <!--<class>com.hicks.beans.Film</class>-->
-
-        <!--<properties>-->
-            <!--<property name="javax.persistence.jdbc.driver" value="oracle.jdbc.OracleDriver" />-->
-            <!--<property name="javax.persistence.jdbc.url" value="jdbc:oracle:thin:@***REMOVED***:1521/orcl" />-->
-            <!--<property name="javax.persistence.jdbc.user" value=***REMOVED*** />-->
-            <!--<property name="javax.persistence.jdbc.password" value=***REMOVED*** />-->
-
-            <!--<property name="hibernate.dialect" value="org.hibernate.dialect.Oracle10gDialect"/>-->
-            <!--<property name="hibernate.hbm2ddl.auto" value="update"/>-->
-            <!--<property name="hibernate.show_sql" value="true" />-->
-            <!--<property name="hibernate.format_sql" value="true" />-->
-            <!--<property name="hibernate.ejb.interceptor" value="com.hicks.NullInterceptor" />-->
-        <!--</properties>-->
-    <!--</persistence-unit>-->
     <persistence-unit name="h2-ds" transaction-type="RESOURCE_LOCAL">
-        <description>Oracle Persistence Unit</description>
+        <description>H2 Persistence Unit</description>
         <provider>org.hibernate.ejb.HibernatePersistence</provider>
 
         <!-- This is where we tell JPA/Hibernate about our @Entity objects -->
