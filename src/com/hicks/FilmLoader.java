@@ -1,7 +1,9 @@
 package com.hicks;
 
 import com.hicks.beans.Film;
+import com.hicks.orm.EOI;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,9 +27,9 @@ public class FilmLoader
                 filmCount = films.size();
             }
             else
-                filmCount = EOI.executeQueryWithPSOneResult("select count(*) from films;", new ArrayList<>());
+                filmCount = EOI.executeQueryOneResult("select count(*) from films;", new ArrayList<>());
 
-            System.out.println("DB holds " + films + " films.");
+            System.out.println("DB holds " + new DecimalFormat("#,###").format(filmCount) + " films.");
             if (filmCount == 0)
                 DatabasePopulator.populateDatabase();
 

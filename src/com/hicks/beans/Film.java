@@ -1,8 +1,7 @@
 package com.hicks.beans;
 
 import com.hicks.Common;
-import com.hicks.EOI;
-import com.hicks.Hibernate;
+import com.hicks.orm.EOI;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -178,7 +177,7 @@ public class Film implements Serializable
 
     public static Film getByImdbId(String imdbId)
     {
-        return EOI.executeQueryWithPSOneResult("select * from films where imdb_id=?", Arrays.asList(imdbId));
+        return EOI.executeQueryOneResult("select * from films where imdb_id=?", Arrays.asList(imdbId));
     }
 
     // -------- Getters / Setters ----------

@@ -1,6 +1,7 @@
 package com.hicks;
 
 import com.hicks.beans.Film;
+import com.hicks.orm.EOICache;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;

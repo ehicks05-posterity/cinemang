@@ -1,4 +1,4 @@
-package com.hicks;
+package com.hicks.orm;
 
 import java.lang.ref.SoftReference;
 import java.util.concurrent.ConcurrentHashMap;

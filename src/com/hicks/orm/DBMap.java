@@ -1,4 +1,6 @@
-package com.hicks;
+package com.hicks.orm;
+
+import com.hicks.SystemInfo;
 
 import javax.persistence.Column;
 import javax.persistence.Id;
@@ -72,6 +74,7 @@ public class DBMap
                             dbMapField.columnName = column.name();
 
                             dbMapField.type = getTypeFromJavaType(f);
+                            dbMapField.clazz = getClassFromJavaType(f);
                             dbMapField.length = column.length();
                             dbMapField.precision = column.precision();
                             dbMapField.scale = column.scale();
@@ -99,6 +102,16 @@ public class DBMap
         if (f.getType().isAssignableFrom(Integer.class)){return DBMapField.INTEGER;}
         if (f.getType().isAssignableFrom(Long.class)){return DBMapField.LONG;}
         if (f.getType().isAssignableFrom(BigDecimal.class)){return DBMapField.DECIMAL;}
+        return null;
+    }
+
+    private static Class getClassFromJavaType(Field f)
+    {
+        if (f.getType().isAssignableFrom(String.class)){return String.class;}
+        if (f.getType().isAssignableFrom(Date.class)){return Date.class;}
+        if (f.getType().isAssignableFrom(Integer.class)){return Integer.class;}
+        if (f.getType().isAssignableFrom(Long.class)){return Long.class;}
+        if (f.getType().isAssignableFrom(BigDecimal.class)){return BigDecimal.class;}
         return null;
     }
 

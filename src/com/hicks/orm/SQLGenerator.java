@@ -1,4 +1,4 @@
-package com.hicks;
+package com.hicks.orm;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -46,7 +46,7 @@ public class SQLGenerator
     {
         DBMap dbMap = DBMap.getDBMapByClass(object.getClass());
         String objectWhereClause = getWhereClause(object);
-        T existing = EOI.executeQueryWithPSOneResult("select * from " + dbMap.tableName + objectWhereClause, new ArrayList<>());
+        T existing = EOI.executeQueryOneResult("select * from " + dbMap.tableName + objectWhereClause, new ArrayList<>());
         if (existing == null)
             return null;
 

@@ -22,6 +22,11 @@ public class Common
         return new java.sql.Date(cal.getTime().getTime()); // your sql date
     }
 
+    public static String capFirstLetter(String input)
+    {
+        return input.substring(0, 1).toUpperCase() + input.substring(1, input.length());
+    }
+
     public static Date stringToDate(String input)
     {
         Date result = null;

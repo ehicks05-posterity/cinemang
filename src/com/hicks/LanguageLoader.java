@@ -1,5 +1,7 @@
 package com.hicks;
 
+import com.hicks.orm.EOI;
+
 import java.util.ArrayList;
 import java.util.List;
 

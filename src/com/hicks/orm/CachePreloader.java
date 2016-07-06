@@ -1,4 +1,6 @@
-package com.hicks;
+package com.hicks.orm;
+
+import com.hicks.SystemInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,7 +11,7 @@ public class CachePreloader
     {
         int i = 0;
         int limit = 1000;
-        List result = EOI.executeQueryWithPSOneResult("select count(*) from films", new ArrayList<>());
+        List result = EOI.executeQueryOneResult("select count(*) from films", new ArrayList<>());
         long resultSize = (Long) result.get(0);
 
         while (SystemInfo.getFreeRamMb() > 100 && i*limit < resultSize)

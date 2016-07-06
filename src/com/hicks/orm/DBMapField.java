@@ -1,4 +1,6 @@
-package com.hicks;
+package com.hicks.orm;
+
+import com.hicks.Common;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -7,7 +9,7 @@ public class DBMapField
 {
     public static final String STRING = "STRING";           // varchar2
     public static final String INTEGER = "INTEGER";         // integer
-    public static final String LONG = "LONG";         // bigint
+    public static final String LONG = "LONG";               // bigint
     public static final String DECIMAL = "DECIMAL";         // decimal
     public static final String TIMESTAMP = "TIMESTAMP";     // timestamp
 
@@ -16,6 +18,7 @@ public class DBMapField
     public String fieldName = "";
     public String columnName = "";
     public String type = "";
+    public Class clazz;
     public int length;
     public int precision;
     public int scale;
@@ -67,7 +70,20 @@ public class DBMapField
     {
         try
         {
-            return dbMap.clazz.getDeclaredMethod("get" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1, fieldName.length()));
+            return dbMap.clazz.getDeclaredMethod("get" + Common.capFirstLetter(fieldName));
+        }
+        catch (NoSuchMethodException e)
+        {
+            System.out.println(e.getMessage());
+        }
+        return null;
+    }
+
+    public Method getSetter()
+    {
+        try
+        {
+            return dbMap.clazz.getDeclaredMethod("set" + Common.capFirstLetter(fieldName), clazz);
         }
         catch (NoSuchMethodException e)
         {
@@ -78,20 +94,10 @@ public class DBMapField
 
     public Object getValue(Object object)
     {
-        Method getter = getGetter();
         try
         {
-            Object value = getter.invoke(object);
-            if (type.equals(DBMapField.STRING))
-                return value;
-            if (type.equals(DBMapField.INTEGER))
-                return value;
-            if (type.equals(DBMapField.LONG))
-                return value;
-            if (type.equals(DBMapField.DECIMAL))
-                return value;
-            if (type.equals(DBMapField.TIMESTAMP))
-                return value;
+            Method getter = getGetter();
+            return getter.invoke(object);
         }
         catch (InvocationTargetException | IllegalAccessException e)
         {

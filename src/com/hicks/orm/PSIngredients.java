@@ -1,4 +1,4 @@
-package com.hicks;
+package com.hicks.orm;
 
 import java.util.List;
 

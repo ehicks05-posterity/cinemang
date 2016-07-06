@@ -1,5 +1,9 @@
 package com.hicks;
 
+import com.hicks.orm.DBMap;
+import com.hicks.orm.EOI;
+import com.hicks.orm.SQLGenerator;
+
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -24,6 +28,7 @@ public class Controller extends HttpServlet
     public void init() throws ServletException
     {
         long controllerStart = System.currentTimeMillis();
+        System.out.println("Max Memory: " + new DecimalFormat("#,###").format(Runtime.getRuntime().maxMemory()));
 
         EOI.init();
         SystemInfo.setServletContext(getServletContext());
@@ -45,22 +50,21 @@ public class Controller extends HttpServlet
         for (DBMap dbMap : DBMap.dbMaps)
             if (!EOI.isTableExists(dbMap))
             {
+                System.out.println("Creating table " + dbMap.tableName + "...");
                 String createTableStatement = SQLGenerator.getCreateTableStatement(dbMap);
                 EOI.executeUpdate(createTableStatement);
             }
-        System.out.println("Made sure all tables exist (recreating if necessary) in " + (System.currentTimeMillis() - subTaskStart) + "ms");
+        System.out.println("Made sure all tables exist (creating if necessary) in " + (System.currentTimeMillis() - subTaskStart) + "ms");
 
         if (DEBUG)
             for (String argument : ManagementFactory.getRuntimeMXBean().getInputArguments())
                 System.out.println(argument);
 
-        System.out.println("Max Memory: " + new DecimalFormat("#,###").format(Runtime.getRuntime().maxMemory()));
-
         loadProperties();
 
         FilmLoader.initFilms();
         long startupTime = System.currentTimeMillis() - controllerStart;
-        System.out.println("Controller.init ran in " + startupTime + " ms");
+        System.out.println("Controller.init finished in " + startupTime + " ms");
     }
 
     private void loadProperties()

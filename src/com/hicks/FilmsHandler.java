@@ -1,6 +1,8 @@
 package com.hicks;
 
 import com.hicks.beans.Film;
+import com.hicks.orm.EOI;
+import com.hicks.orm.SQLGenerator;
 import org.apache.commons.lang3.StringEscapeUtils;
 
 import javax.imageio.ImageIO;
@@ -251,10 +253,10 @@ public class FilmsHandler
             SQLQuery filmQuery = buildFilmSQLQuery(filmsForm, minimumVotes, fromDate, toDate, minimumRating, maximumRating, sortColumn, sortDirection, page);
             String countVersionOfQuery = SQLGenerator.getCountVersionOfQuery(filmQuery.queryString);
 
-            List result = EOI.executeQueryWithPSOneResult(countVersionOfQuery, filmQuery.args);
+            List result = EOI.executeQueryOneResult(countVersionOfQuery, filmQuery.args);
             long resultSize = (Long) result.get(0);
             // build count(*) query
-            filteredFilms = EOI.executeQueryWithPS(filmQuery.queryString, filmQuery.args);
+            filteredFilms = EOI.executeQuery(filmQuery.queryString, filmQuery.args);
             return new FilmSearchResult(page, filteredFilms, sortColumn, sortDirection, resultSize);
         }
 

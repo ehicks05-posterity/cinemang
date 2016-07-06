@@ -15,13 +15,13 @@ public class ContextListener implements ServletContextListener
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent)
     {
-        System.out.println("Starting up!");
+        System.out.println("ContextListener Starting up!");
     }
 
     @Override
     public void contextDestroyed(ServletContextEvent servletContextEvent)
     {
-        System.out.println("Shutting down!");
+        System.out.println("ContextListener Shutting down!");
 
         // This manually deregisters JDBC driver, which prevents Tomcat 7 from complaining about memory leaks wrt this class
         Enumeration<Driver> drivers = DriverManager.getDrivers();
