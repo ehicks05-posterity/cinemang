@@ -25,6 +25,20 @@ public class FilmsForm
         this.genre = genre;
     }
 
+    public String toString()
+    {
+        return
+        "\r\nFilmsForm: " +
+        "\r\nminimumVotesParam: " + minimumVotesParam +
+        "\r\ntitleParam: " + titleParam +
+        "\r\nratingParam: " + ratingParam +
+        "\r\nfromReleaseDate: " + fromReleaseDate +
+        "\r\ntoReleaseDate: " + toReleaseDate +
+        "\r\nlanguage: " + language +
+        "\r\ngenre: " + genre +
+        "\r\n";
+    }
+
     // Getter / Setter
     public String getMinimumVotesParam()
     {
