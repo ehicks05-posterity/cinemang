@@ -184,6 +184,42 @@ public class FilmsHandler
         response.getOutputStream().print(jsonArray.toString());
     }
 
+    public static void ajaxGetTitles(HttpServletRequest request, HttpServletResponse response) throws IOException, ParseException
+    {
+        String term = request.getParameter("term");
+
+        FilmsForm filmsForm = (FilmsForm) request.getSession().getAttribute("filmsForm");
+        String previousTitle = filmsForm.getTitleParam();
+        String previousPage = filmsForm.getPage();
+        String previousSortColumn = filmsForm.getSortColumn();
+        String previousSortDirection = filmsForm.getSortDirection();
+
+        filmsForm.setTitleParam("*" + term + "*");
+        filmsForm.setPage("0");
+        filmsForm.setSortColumn("imdb_votes");
+        filmsForm.setSortDirection("desc");
+
+        FilmSearchResult filmSearchResult = performSearch(request, filmsForm);
+
+        filmsForm.setTitleParam(previousTitle);
+        filmsForm.setPage(previousPage);
+        filmsForm.setSortColumn(previousSortColumn);
+        filmsForm.setSortDirection(previousSortDirection);
+
+        List<Film> result = filmSearchResult.getSearchResults();
+        if (result.size() > 10)
+            result = result.subList(0, 10);
+
+        JsonArrayBuilder jsonArrayBuilder = Json.createArrayBuilder();
+        for (Film film : result)
+        {
+            jsonArrayBuilder.add(film.getTitle());
+        }
+
+        JsonArray jsonArray = jsonArrayBuilder.build();
+        response.getOutputStream().print(jsonArray.toString());
+    }
+
     private static String escapeHtml(String input)
     {
         return StringEscapeUtils.escapeHtml4((input));
@@ -362,9 +398,13 @@ public class FilmsHandler
             orderByClause += " order by " + sortColumn + " " + sortDirection + ", imdb_id nulls last " ;
         }
 
-        String limit = "100";
-        String offset = String.valueOf((Integer.valueOf(page) - 1) * 100);
-        String paginationClause = " limit " + limit + " offset " + offset;
+        String paginationClause = "";
+        if (page.length() > 0)
+        {
+            String limit = "100";
+            String offset = String.valueOf((Integer.valueOf(page) - 1) * 100);
+            paginationClause = " limit " + limit + " offset " + offset;
+        }
 
         String completeQuery = selectClause + whereClause + orderByClause + paginationClause;
         return new SQLQuery(completeQuery, args);

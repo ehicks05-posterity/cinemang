@@ -55,6 +55,19 @@ public class EOI
         }
     }
 
+    public static void execute(String queryString)
+    {
+        try (Connection connection = getConnection();
+             Statement statement = connection.createStatement();)
+        {
+            statement.execute(queryString);
+        }
+        catch (Exception e)
+        {
+            System.out.println(e.getMessage());
+        }
+    }
+
     // -------- Object-Based Methods -------- //
 
     public static void insert(Object object)
@@ -226,9 +239,11 @@ public class EOI
             DatabaseMetaData databaseMetaData = connection.getMetaData();
             try (ResultSet resultSet = databaseMetaData.getTables(connection.getCatalog(), null, null, null);)
             {
+                List<String> tableNamesFromDb = new ArrayList<>();
                 while (resultSet.next())
                 {
                     String tableName = resultSet.getString("TABLE_NAME").toUpperCase();
+                    tableNamesFromDb.add(tableName);
                     if (tableName.equals(dbMap.tableName.toUpperCase()))
                         return true;
                 }
@@ -237,6 +252,46 @@ public class EOI
             {
                 System.out.println(e.getMessage());
             }
+        }
+        catch (Exception e)
+        {
+            System.out.println(e.getMessage());
+        }
+        return false;
+    }
+
+    public static String getCurrentSchema()
+    {
+        try (Connection connection = getConnection();)
+        {
+            DatabaseMetaData databaseMetaData = connection.getMetaData();
+            try (ResultSet resultSet = databaseMetaData.getSchemas(connection.getCatalog(), "");)
+            {
+                List<String> schemaNames = new ArrayList<>();
+                while (resultSet.next())
+                {
+                    String schemaName = resultSet.getString("TABLE_SCHEM").toUpperCase();
+                    System.out.println(schemaName);
+                    schemaNames.add(schemaName);
+                }
+            }
+            catch (Exception e)
+            {
+                System.out.println(e.getMessage());
+            }
+        }
+        catch (Exception e)
+        {
+            System.out.println(e.getMessage());
+        }
+        return null;
+    }
+
+    public static boolean setSchema(String schemaName)
+    {
+        try (Connection connection = getConnection();)
+        {
+            connection.setSchema(schemaName);
         }
         catch (Exception e)
         {

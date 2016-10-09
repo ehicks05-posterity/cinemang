@@ -118,6 +118,13 @@ public class Controller extends HttpServlet
                 System.out.println((System.currentTimeMillis() - ajaxStart) + " ms for ajaxGetNewPage()");
                 return;
             }
+            if (action.equals("ajaxGetTitles"))
+            {
+                long ajaxStart = System.currentTimeMillis();
+                FilmsHandler.ajaxGetTitles(request, response);
+                System.out.println((System.currentTimeMillis() - ajaxStart) + " ms for ajaxGetTitles()");
+                return;
+            }
             if (action.equals("getPoster"))
             {
                 FilmsHandler.getPoster(request, response);

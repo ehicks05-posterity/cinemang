@@ -22,7 +22,18 @@
     <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
     <link rel="stylesheet" type="text/css" href="../../styles/cinemang.css" media="screen" />
 
-    <style>#ratingSlider { margin: 10px; }	</style>
+    <style>
+        #ratingSlider { margin: 10px; }
+
+        .ui-autocomplete-loading {
+            background: white url("../../images/rolling.gif") right center no-repeat;
+        }
+
+        .ui-autocomplete {
+            font-family: 'Open Sans', sans-serif;
+            font-size: 10pt;
+        }
+    </style>
     <script>
         var page = ${filmSearchResult.page};
         var pages = ${filmSearchResult.pages};
@@ -272,6 +283,17 @@
             }
         }
 
+        $( function() {
+            var ajaxTitlesUrl = '${pageContext.request.contextPath}/view?tab1=home&action=ajaxGetTitles';
+
+            $( "#title" ).autocomplete({
+                source: ajaxTitlesUrl,
+                minLength: 2
+//                select: function( event, ui ) {
+//                    log( "Selected: " + ui.item.value + " aka " + ui.item.id );
+//                }
+            });
+        } );
     </script>
 
 </head>
