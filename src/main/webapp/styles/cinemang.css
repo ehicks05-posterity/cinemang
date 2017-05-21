@@ -1,0 +1,79 @@
+body {font-family: 'Open Sans', sans-serif; background: linear-gradient(to top right, #2f6080, #2f7f5d); margin: 0;}
+
+/* Tables */
+.alignleft {text-align: left}
+.aligncenter {text-align: center}
+.alignright {text-align: right}
+
+.list {border-collapse: collapse; border: 1px solid lightgray; background-color: #ffffff}
+.list td {border: 1px solid #e5e5e5; padding: 2px 6px}
+.listheading {background-color: lightgray; font-weight: bold}
+.listheading td {white-space: nowrap}
+.listrowodd { background-color: white}
+.listroweven {background-color: lavender}
+
+.notecard td {border: none;}
+
+/* JQuery */
+.ui-datepicker {z-index: 4 !important;}
+div.ui-datepicker{
+    font-size:10px;
+}
+
+.ui-dialog {font-size: 11pt;}
+
+.sortableHeader {cursor: pointer; color: navy}
+.sortableHeaderSelected {cursor: pointer; color: white;}
+
+/* Media */
+@media (min-width: 1175px)
+{
+}
+@media (min-width: 900px) and (max-width: 1174px)
+{
+    .lowPriority {display:none;}
+}
+@media (min-width: 700px) and (max-width: 899px)
+{
+    .mediumPriority {display:none;}
+    .lowPriority {display:none;}
+}
+@media (max-width: 699px)
+{
+    .mediumPriority {display:none;}
+    .lowPriority {display:none;}
+}
+
+.btn
+{
+    display: inline-block;
+    padding: 6px 12px;
+    margin-bottom: 0;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.42857143;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    cursor: pointer;
+    border: 1px solid transparent;
+    border-radius: 4px;
+}
+
+.btn-primary {
+    color: #fff;
+    background-color: #337ab7;
+    border-color: #2e6da4;
+}
+.btn-primary:hover {
+    color: #fff;
+    background-color: #286090;
+    border-color: #204d74;
+}
+
+.btn-xs {
+    padding: 1px 5px;
+    font-size: 12px;
+    line-height: 1.5;
+    border-radius: 3px;
+}
