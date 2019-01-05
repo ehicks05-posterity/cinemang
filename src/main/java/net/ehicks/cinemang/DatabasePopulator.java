@@ -23,9 +23,8 @@ public class DatabasePopulator
     {
         long start = System.currentTimeMillis();
 
-        String omdbFilename = SystemInfo.getProperties().getProperty("omdbZipFileName");
-
-        ZipFile zipFile = new ZipFile("C:" + File.separator + "temp" + File.separator + omdbFilename);
+        String omdbZipPath = SystemInfo.getProperties().getProperty("omdbZipPath");
+        ZipFile zipFile = new ZipFile(omdbZipPath);
 
         ZipEntry e = zipFile.getEntry("omdbMovies.txt");
         readZipEntry(zipFile, e);

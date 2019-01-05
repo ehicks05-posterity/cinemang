@@ -19,6 +19,7 @@ repositories {
 }
 
 dependencies {
+    compile 'com.github.ehicks05:common:-SNAPSHOT'
     compile 'org.hibernate.javax.persistence:hibernate-jpa-2.0-api:1.0.1.Final'
     compile 'org.apache.commons:commons-lang3:3.5'
 

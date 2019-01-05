@@ -3,6 +3,7 @@ package net.ehicks.cinemang;
 import net.ehicks.cinemang.beans.Film;
 import net.ehicks.cinemang.orm.EOI;
 import net.ehicks.cinemang.orm.SQLGenerator;
+import net.ehicks.common.NetUtil;
 import org.apache.commons.lang3.StringEscapeUtils;
 
 import javax.imageio.ImageIO;
@@ -55,7 +56,7 @@ public class FilmsHandler
 
         try
         {
-            imageResponse = IOUtil.getBytesFromUrlConnection(url);
+            imageResponse = NetUtil.getBytesFromUrlConnection(url);
             boolean transparent = Common.getSafeString(request.getParameter("transparent")).equals("true");
             if (transparent)
                 imageResponse = getTransparentPoster(imageResponse);
