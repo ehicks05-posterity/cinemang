@@ -15,11 +15,6 @@ body {font-family: 'Open Sans', sans-serif; background: linear-gradient(to top r
 .notecard td {border: none;}
 
 /* JQuery */
-.ui-datepicker {z-index: 4 !important;}
-div.ui-datepicker{
-    font-size:10px;
-}
-
 .ui-dialog {font-size: 11pt;}
 
 .sortableHeader {cursor: pointer; color: navy}

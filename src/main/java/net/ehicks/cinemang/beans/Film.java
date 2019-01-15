@@ -1,111 +1,75 @@
 package net.ehicks.cinemang.beans;
 
 import net.ehicks.cinemang.Common;
-import net.ehicks.cinemang.orm.EOI;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
 
 @Entity
 @Table(name = "films")
 public class Film implements Serializable
 {
-//    @Version
-//    @Column(name = "version")
-//    private Long version;
-
     @Id
-    @Column(name = "imdb_ID", updatable = false, nullable = false)
-    private String imdbID = "";
+    @Column(updatable = false, nullable = false)
+    private String imdbId = "";
 
-    @Column(name = "title", length = 2000)
     private String title = "";
-    @Column(name = "year")
     private String year = "";
-    @Column(name = "rated")
     private String rated = "";
-    @Column(name = "runtime")
     private String runtime = "";
-    @Column(name = "genre")
     private String genre = "";
-    @Column(name = "released")
     @Temporal(TemporalType.DATE)
     private Date released;
 
-    @Column(name = "director", length = 2000)
+    @Type(type="org.hibernate.type.TextType")
     private String director = "";
 
-    @Column(name = "writer", length = 2000)
+    @Type(type="org.hibernate.type.TextType")
     private String writer = "";
 
-    @Column(name = "actors", length = 2000)
+    @Type(type="org.hibernate.type.TextType")
     private String actors = "";
-    @Column(name = "metascore")
     private Integer metascore;
-    @Column(name = "imdb_Rating")
     private BigDecimal imdbRating;
-    @Column(name = "imdb_Votes")
     private Integer imdbVotes;
-    @Column(name = "poster")
     private String poster = "";
 
-    @Column(name = "cinemang_Rating")
-    private Integer cinemangRating;
+    private Integer cinemangRating = 0;
 
-    @Column(name = "plot", length = 2000)
+    @Type(type="org.hibernate.type.TextType")
     private String plot = "";
 
-    @Column(name = "full_Plot", columnDefinition = "varchar2(32000 CHAR)")
+    @Type(type="org.hibernate.type.TextType")
     private String fullPlot = "";
-    @Column(name = "language")
     private String language = "";
-    @Column(name = "country")
     private String country = "";
-    @Column(name = "awards")
     private String awards = "";
-    @Column(name = "last_Updated")
     private String lastUpdated = "";
 
-    @Column(name = "tomato_Image")
     private String tomatoImage = "";
-    @Column(name = "tomato_Rating")
     private BigDecimal tomatoRating;
-    @Column(name = "tomato_Meter")
     private Integer tomatoMeter;
-    @Column(name = "tomato_Reviews")
     private Integer tomatoReviews;
-    @Column(name = "tomato_Fresh")
     private Integer tomatoFresh;
-    @Column(name = "tomato_Rotten")
     private Integer tomatoRotten;
 
-    @Column(name = "tomato_Consensus", length = 2000)
+    @Type(type="org.hibernate.type.TextType")
     private String tomatoConsensus = "";
-    @Column(name = "tomato_User_Meter")
     private Integer tomatoUserMeter;
-    @Column(name = "tomato_User_Rating")
     private BigDecimal tomatoUserRating;
-    @Column(name = "tomato_User_Reviews")
     private Integer tomatoUserReviews;
 
-    @Column(name = "dvd")
     @Temporal(TemporalType.DATE)
     private Date dvd;
-    @Column(name = "box_Office")
     private String boxOffice = "";
-    @Column(name = "production")
     private String production = "";
-    @Column(name = "website")
     private String website = "";
-    @Column(name = "rotten_Data_Last_Updated")
     private String rottenDataLastUpdated = "";
 
-    @Column(name = "type")
     private String type = "";
 
     @Override
@@ -113,18 +77,18 @@ public class Film implements Serializable
     {
         if (!(obj instanceof Film)) return false;
         Film that = (Film) obj;
-        return this.imdbID.equals(that.getImdbID());
+        return this.imdbId.equals(that.getImdbId());
     }
 
     @Override
     public int hashCode()
     {
-        return 17 * 37 * Integer.valueOf(imdbID);
+        return 17 * 37 * Integer.valueOf(imdbId);
     }
 
     public String toString()
     {
-        return "Film " + imdbID;
+        return "Film " + imdbId;
     }
 
     // --------
@@ -170,36 +134,16 @@ public class Film implements Serializable
         return plot;
     }
 
-    public static List<Film> getAllFilms()
-    {
-        return EOI.executeQuery("select * from films");
-    }
-
-    public static Film getByImdbId(String imdbId)
-    {
-        return EOI.executeQueryOneResult("select * from films where imdb_id=?", Arrays.asList(imdbId));
-    }
-
     // -------- Getters / Setters ----------
 
-//    public Long getVersion()
-//    {
-//        return version;
-//    }
-
-//    public void setVersion(Long version)
-//    {
-//        this.version = version;
-//    }
-
-    public String getImdbID()
+    public String getImdbId()
     {
-        return imdbID;
+        return imdbId;
     }
 
-    public void setImdbID(String imdbID)
+    public void setImdbId(String imdbId)
     {
-        this.imdbID = imdbID;
+        this.imdbId = imdbId;
     }
 
     public String getTitle()

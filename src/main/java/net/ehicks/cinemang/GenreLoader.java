@@ -1,105 +1,73 @@
 package net.ehicks.cinemang;
 
-import net.ehicks.cinemang.orm.EOI;
+import net.ehicks.cinemang.beans.Film;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Configuration;
 
+import javax.persistence.EntityManager;
+import javax.persistence.Tuple;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
+@Configuration
 public class GenreLoader
 {
-    private static List<String> uniqueGenres = new ArrayList<>();
+    private static final Logger log = LoggerFactory.getLogger(GenreLoader.class);
+    private EntityManager em;
 
-    public static List<String> getUniqueGenres()
+    public GenreLoader(EntityManager em)
+    {
+        this.em = em;
+    }
+
+    private List<String> uniqueGenres = new ArrayList<>();
+
+    public List<String> getUniqueGenres()
     {
         if (uniqueGenres.size() == 0)
         {
+            long start = System.currentTimeMillis();
             uniqueGenres = identifyUniqueGenres();
-            System.out.println("Identified " + uniqueGenres.size() + " distinct genres");
+            log.info("Identified " + uniqueGenres.size() + " distinct genres in " + (System.currentTimeMillis() - start) + "ms");
         }
         return uniqueGenres;
     }
 
-    private static List<String> identifyUniqueGenres()
+    private List<String> identifyUniqueGenres()
     {
-        Map<String, Genre> genreMap = new HashMap<>();
-//        List<Object[]> results = Hibernate.executeQuery("select count(f.genre), genre from Film f where f.genre is not null group by f.genre");
-        List<List<Object>> results = EOI.executeQuery("select count(genre), genre from films where genre is not null group by genre");
-        String[] genreTokens;
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Tuple> query = cb.createTupleQuery();
+        Root<Film> filmRoot = query.from(Film.class);
 
-        for (List<Object> row : results)
-        {
-            Long count = (Long)row.get(0);
-            String genreField = (String) row.get(1);
+        query.multiselect(filmRoot.get("genre"), cb.count(filmRoot))
+                .where(cb.greaterThan(cb.length(filmRoot.get("genre")), 0))
+                .groupBy(filmRoot.get("genre"))
+                .orderBy(cb.desc(cb.count(filmRoot)));
 
-            if (genreField.length() == 0) continue;
+        TypedQuery<Tuple> typedQuery = em.createQuery(query);
+        List<Tuple> results = typedQuery.getResultList();
 
-            if (genreField.contains(","))
-                genreTokens = genreField.split(",");
-            else
-                genreTokens = new String[]{genreField};
+        Map<String, Integer> genreMap = new HashMap<>();
+        results.forEach(result -> {
+            String[] genres = ((String) result.get(0)).split(",");
+            Long count = (Long) result.get(1);
 
-            for (String genre : genreTokens)
+            for (String genre : genres)
             {
                 genre = genre.trim();
-                if (genreMap.get(genre) == null)
-                    genreMap.put(genre, new Genre(genre, count));
-                else
-                {
-                    Genre filmGenre = genreMap.get(genre);
-                    filmGenre.setOccurrences(filmGenre.getOccurrences() + count);
-                }
-            }
-        }
-
-        List<Genre> genres = new ArrayList<>(genreMap.values());
-        genres.sort(new Comparator<Genre>()
-        {
-            @Override
-            public int compare(Genre o1, Genre o2)
-            {
-                Long o1Occurrences = o1.getOccurrences();
-                Long o2Occurrences = o2.getOccurrences();
-                return o1Occurrences.compareTo(o2Occurrences);
+                if (!genreMap.containsKey(genre))
+                    genreMap.put(genre, 0);
+                genreMap.put(genre, genreMap.get(genre) + count.intValue());
             }
         });
-        Collections.reverse(genres);
 
-        List<String> genreNames = new ArrayList<>();
-        for (Genre genre : genres)
-            genreNames.add(genre.getName());
-
-        return genreNames;
+        return genreMap.entrySet()
+                .stream()
+                .sorted(Comparator.comparing(Map.Entry::getValue))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
     }
-
-    private static class Genre
-    {
-        private String name = "";
-        private long occurrences;
-
-        public Genre(String name, long occurrences)
-        {
-            this.name = name;
-            this.occurrences = occurrences;
-        }
-
-        public String toString()
-        {
-            return name + " " + occurrences;
-        }
-
-        public String getName()
-        {
-            return name;
-        }
-
-        public long getOccurrences()
-        {
-            return occurrences;
-        }
-
-        public void setOccurrences(long occurrences)
-        {
-            this.occurrences = occurrences;
-        }
-    }
-
 }

@@ -9,18 +9,18 @@ public class FilmSearchResult
 {
     private List<Film> searchResults;
     private long size;
-    private String page;
+    private int page;
     private String sortColumn;
     private String sortDirection;
 
-    public FilmSearchResult(String pageParam, List<Film> searchResults, String sortColumn, String sortDirection)
+    public FilmSearchResult(int page, List<Film> searchResults, String sortColumn, String sortDirection)
     {
-        this(pageParam, searchResults, sortColumn, sortDirection, 0);
+        this(page, searchResults, sortColumn, sortDirection, 0);
     }
 
-    public FilmSearchResult(String pageParam, List<Film> searchResults, String sortColumn, String sortDirection, long size)
+    public FilmSearchResult(int page, List<Film> searchResults, String sortColumn, String sortDirection, long size)
     {
-        this.page = pageParam;
+        this.page = page;
         this.searchResults = searchResults;
         this.sortColumn = sortColumn;
         this.sortDirection = sortDirection;
@@ -30,43 +30,12 @@ public class FilmSearchResult
     // Derived values
     public List<Film> getPageOfResults()
     {
-        if (SystemInfo.isLoadDbToRam())
-        {
-            if (page == null || Integer.valueOf(page) > getPages())
-                page = "1";
-
-            int from = (Integer.valueOf(page) - 1) * 100;
-            int to = from + 100;
-            if (to > getSearchResultsSize())
-                to = (int) getSearchResultsSize();
-
-            return searchResults.subList(from, to);
-        }
-        else
-        {
-            return searchResults;
-        }
-    }
-
-    public long getSearchResultsSize()
-    {
-        if (SystemInfo.isLoadDbToRam())
-            return searchResults.size();
-        else
-            return size;
-    }
-
-    public String getPrettySearchResultsSize()
-    {
-        if (SystemInfo.isLoadDbToRam())
-            return new DecimalFormat("#,###").format(searchResults.size());
-        else
-            return new DecimalFormat("#,###").format(size);
+        return searchResults;
     }
 
     public long getPages()
     {
-        return 1 + ((getSearchResultsSize() - 1) / 100);
+        return 1 + ((getSize() - 1) / 100);
     }
 
     public boolean isHasNext()
@@ -100,12 +69,12 @@ public class FilmSearchResult
         this.size = size;
     }
 
-    public String getPage()
+    public int getPage()
     {
         return page;
     }
 
-    public void setPage(String page)
+    public void setPage(int page)
     {
         this.page = page;
     }

@@ -1,17 +1,21 @@
 package net.ehicks.cinemang;
 
 import net.ehicks.cinemang.beans.Film;
-import net.ehicks.cinemang.orm.EOI;
+import org.springframework.stereotype.Component;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.text.DecimalFormat;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+@Component
 public class DatabasePopulator
 {
-    private static final boolean LOAD_SUB_1000_VOTE_MOVIES = false;
+    private static final int MIN_VOTES_TO_IMPORT = 1000;
 
     private static int filmsInsertedFromMoviesFile = 0;
     private static int filmsUpdatedFromTomatoesFile = 0;
@@ -19,11 +23,24 @@ public class DatabasePopulator
     private static int filmsSkipped = 0;
     private static int unreadableRows = 0;
 
-    public static void populateDatabase() throws IOException
+    private FilmRepository filmRepo;
+
+    public DatabasePopulator(FilmRepository filmRepo)
+    {
+        this.filmRepo = filmRepo;
+    }
+
+    public void populateDatabase() throws IOException
     {
         long start = System.currentTimeMillis();
 
-        String omdbZipPath = SystemInfo.getProperties().getProperty("omdbZipPath");
+        long filmCount = filmRepo.count();
+
+        System.out.println("DB holds " + new DecimalFormat("#,###").format(filmCount) + " films.");
+        if (filmCount > 0)
+            return;
+
+        String omdbZipPath = SystemInfo.getZipPath();
         ZipFile zipFile = new ZipFile(omdbZipPath);
 
         ZipEntry e = zipFile.getEntry("omdbMovies.txt");
@@ -42,7 +59,7 @@ public class DatabasePopulator
         System.out.println("Parsed data files and Films persisted in " + (System.currentTimeMillis() - start) + "ms");
     }
 
-    private static void readZipEntry(ZipFile zipFile, ZipEntry e) throws IOException
+    private void readZipEntry(ZipFile zipFile, ZipEntry e) throws IOException
     {
         String zipEntryName = e.getName();
         String entryMBs = " (" + (e.getSize() / (1024 * 1024)) + "MB)";
@@ -55,7 +72,7 @@ public class DatabasePopulator
         while ((line = br.readLine()) != null)
         {
             index++;
-            if (index % 10_000 == 0)
+            if (index % 100_000 == 0)
                 System.out.println("read " + index + " rows...");
 
             Film newFilm = null;
@@ -70,9 +87,9 @@ public class DatabasePopulator
             {
                 if (zipEntryName.equals("omdbMovies.txt"))
                 {
-                    if (LOAD_SUB_1000_VOTE_MOVIES || newFilm.getImdbVotes() >= 1000)
+                    if (newFilm.getImdbVotes() >= MIN_VOTES_TO_IMPORT)
                     {
-                        EOI.insert(newFilm);
+                        filmRepo.save(newFilm);
                         films++;
                         filmsInsertedFromMoviesFile++;
                     }
@@ -81,12 +98,12 @@ public class DatabasePopulator
                 }
                 if (zipEntryName.equals("tomatoes.txt"))
                 {
-                    Film existing = Film.getByImdbId(newFilm.getImdbID());
-                    if (existing != null)
+                    Optional<Film> existing = filmRepo.findById(newFilm.getImdbId());
+                    if (existing.isPresent())
                     {
-                        Film mergedFilm = mergeRottenDataIntoFilmData(existing, newFilm);
+                        Film mergedFilm = mergeRottenDataIntoFilmData(existing.get(), newFilm);
                         mergedFilm.setCinemangRating(mergedFilm.calculateCinemangRating());
-                        EOI.update(mergedFilm);
+                        filmRepo.save(mergedFilm);
                         filmsUpdatedFromTomatoesFile++;
                     }
                 }
@@ -100,7 +117,7 @@ public class DatabasePopulator
         Film rottenData = f1.getLastUpdated().length() > 0 ? f2 : f1;
 
         Film mergedData = new Film();
-        mergedData.setImdbID(movieData.getImdbID());
+        mergedData.setImdbId(movieData.getImdbId());
         mergedData.setTitle(movieData.getTitle());
         mergedData.setYear(movieData.getYear());
         mergedData.setRated(movieData.getRated());
@@ -148,7 +165,7 @@ public class DatabasePopulator
             Film film = new Film();
 
             int i = 1;
-            film.setImdbID(tokens[i++]);
+            film.setImdbId(tokens[i++]);
             film.setTitle(tokens[i++]);
             film.setYear(tokens[i++]);
             film.setRated(tokens[i++]);
@@ -192,7 +209,7 @@ public class DatabasePopulator
             Film film = new Film();
 
             int i = 0;
-            film.setImdbID(Film.convertIdToImdbId(tokens[i++]));
+            film.setImdbId(Film.convertIdToImdbId(tokens[i++]));
             film.setTomatoImage(tokens[i++]);
             film.setTomatoRating(Common.stringToBigDecimal(tokens[i++]));
             film.setTomatoMeter(Common.stringToInt(tokens[i++]));

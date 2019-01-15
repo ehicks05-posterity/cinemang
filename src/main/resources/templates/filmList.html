@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head></head>
+
+<body>
+<div th:fragment="filmList" id="results-block">
+    <table id="filmTable" style="margin: 0 auto" class="list">
+        <thead>
+        <tr><td colspan="100" style="text-align: center"><span th:text="${#numbers.formatInteger(filmSearchResult.size, 0, 'COMMA') + ' Results'}"></span></td></tr>
+        <tr>
+            <td colspan="100" style="text-align: center;">
+                <input class="firstButton" type="button" value="First" onclick="goToPage('first')" th:disabled="${!filmSearchResult.hasPrevious}" />
+                <input class="previousButton" type="button" value="Previous" onclick="goToPage('previous')" th:disabled="${!filmSearchResult.hasPrevious}" />
+
+                <span class="currentPageSpan" th:text="${#numbers.formatInteger(filmSearchResult.page, 0)}"></span>
+                of
+                <span th:text="${#numbers.formatInteger(filmSearchResult.pages, 0)}"></span>
+
+                <input class="nextButton" type="button" value="Next" onclick="goToPage('next')" th:disabled="${!filmSearchResult.hasNext}" />
+                <input class="lastButton" type="button" value="Last" onclick="goToPage('last')" th:disabled="${!filmSearchResult.hasNext}" />
+            </td>
+        </tr>
+        <tr class="listheading">
+            <td></td>
+            <td class="sortableHeader" onclick="sortFilms(this, 'title')">Title
+                <span th:if="${filmSearchResult.sortColumn eq 'title' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</span>
+                <span th:if="${filmSearchResult.sortColumn eq 'title' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</span>
+            </td>
+            <td class="sortableHeader alignright" onclick="sortFilms(this, 'cinemangRating')">
+                <img th:src="@{/img/spaceCat.png}"
+                     title="Cinemang Rating - Combines imdb Rating, Tomato Meter, and Tomato User Meter" style="height:24px;vertical-align: middle"/>
+                <span th:if="${filmSearchResult.sortColumn eq 'cinemangRating' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</span>
+                <span th:if="${filmSearchResult.sortColumn eq 'cinemangRating' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</span>
+            </td>
+            <td class="sortableHeader mediumPriority alignright" onclick="sortFilms(this, 'tomatoMeter')">
+                <img th:src="@{/img/rottenTomatoes_logo.png}" title="Tomato Meter" style="height:24px;vertical-align: middle"/>
+                <span th:if="${filmSearchResult.sortColumn eq 'tomatoMeter' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</span>
+                <span th:if="${filmSearchResult.sortColumn eq 'tomatoMeter' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</span>
+            </td>
+            <td class="sortableHeader mediumPriority alignright" onclick="sortFilms(this, 'tomatoUserMeter')">
+                <img th:src="@{/img/rottenTomatoes_user_logo.png}" title="Tomato User Meter" style="height:24px;vertical-align: middle"/>
+                <span th:if="${filmSearchResult.sortColumn eq 'tomatoUserMeter' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</span>
+                <span th:if="${filmSearchResult.sortColumn eq 'tomatoUserMeter' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</span>
+            </td>
+            <td class="sortableHeader mediumPriority alignright" onclick="sortFilms(this, 'imdbRating')">
+                <img th:src="@{/img/imdb_logo.png}" title="IMDb Rating" style="height:24px;vertical-align: middle"/>
+                <span th:if="${filmSearchResult.sortColumn eq 'imdbRating' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</span>
+                <span th:if="${filmSearchResult.sortColumn eq 'imdbRating' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</span>
+            </td>
+            <td class="sortableHeader alignright" onclick="sortFilms(this, 'released')">Year
+                <span th:if="${filmSearchResult.sortColumn eq 'released' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</span>
+                <span th:if="${filmSearchResult.sortColumn eq 'released' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</span>
+            </td>
+            <td class="sortableHeader lowPriority alignright" onclick="sortFilms(this, 'imdbVotes')">IMDb Votes
+                <span th:if="${filmSearchResult.sortColumn eq 'imdbVotes' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</span>
+                <span th:if="${filmSearchResult.sortColumn eq 'imdbVotes' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</span>
+            </td>
+            <td class="sortableHeader lowPriority" onclick="sortFilms(this, 'language')">Language
+                <span th:if="${filmSearchResult.sortColumn eq 'language' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</span>
+                <span th:if="${filmSearchResult.sortColumn eq 'language' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</span>
+            </td>
+            <td class="lowPriority">Genres</td>
+        </tr>
+        </thead>
+
+        <tbody id="myTBody">
+            <th:block th:each="film,loop : ${filmSearchResult.pageOfResults}">
+                <tr th:class="${loop.index % 2 == 0 ? 'listrowodd' : 'listroweven'}">
+                    <td class="alignright" th:text="${loop.count + ((filmSearchResult.page - 1) * 100)}"></td>
+                    <td>
+                    <span th:text="${film.title}"
+                          th:data-1="${film.imdbId}"
+                          th:onclick="toggleRow(this.getAttribute('data-1'))"
+                          style="color: blue; text-decoration: underline; cursor: pointer">
+                        <img th:if="${film.tomatoImage == 'fresh'}" th:src="@{/img/certified_logo.png}" style="vertical-align: middle" height="16px"/>
+                    </span>
+                    </td>
+                    <td class="alignright"                th:text="${film.cinemangRating}"></td>
+                    <td class="mediumPriority alignright" th:text="${film.tomatoMeter}"></td>
+                    <td class="mediumPriority alignright" th:text="${film.tomatoUserMeter}"></td>
+                    <td class="mediumPriority alignright" th:text="${film.imdbRating}"
+                        th:data-1="${film.imdbId}"
+                        th:onclick="window.open('http://www.imdb.com/title/' + this.getAttribute('data-1'), '_blank')"
+                        style="cursor: pointer; color: blue; text-decoration: underline;"
+                    >
+                    </td>
+                    <td class="alignright" th:text="${film.released}"></td>
+                    <td class="alignright lowPriority" th:text="${#numbers.formatInteger(film.imdbVotes, 0, 'COMMA')}"></td>
+                    <td class="lowPriority" th:text="${film.language}"></td>
+                    <td class="lowPriority" th:text="${film.genre}"></td>
+                </tr>
+
+                <tr th:id="${film.imdbId + '_secondRow'}" style="display: none">
+                    <td colspan="100" class="aligncenter" style="height: 200px; padding: 1px 3px;">
+                        <div th:id="${film.imdbId + '_animatedDiv'}" style="display: none; max-width: 700px; margin: 0 auto;">
+                            <div style="float: left; padding-right: 10pt">
+                                <img th:id="${film.imdbId + '_poster'}"
+                                     th:data-url="${film.poster}"
+                                     src="" style="margin: 0 auto;"/>
+                            </div>
+                            <div style="width: 100%; text-align: left;">
+                                <div><b>Running Time: </b></div>
+                                <div th:text="${film.runtime}"></div>
+                                <div><b>Director: </b></div>
+                                <div th:text="${film.director}"></div>
+                                <div><b>Actors: </b></div>
+                                <div th:text="${film.actors}"></div>
+                                <div><b>Tomato Critic Consensus: </b></div>
+                                <div th:text="${film.tomatoConsensus}"></div>
+                                <div><b>Plot: </b></div>
+                                <div th:text="${film.plot}"></div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </th:block>
+
+            <tr th:if="${filmSearchResult.searchResults.isEmpty()}">
+                <td colspan="100">-</td>
+            </tr>
+        </tbody>
+
+        <tfoot>
+            <tr>
+                <td colspan="100" style="text-align: center;">
+                    <input class="firstButton" type="button" value="First" onclick="goToPage('first')" th:disabled="${!filmSearchResult.hasPrevious}" />
+                    <input class="previousButton" type="button" value="Previous" onclick="goToPage('previous')" th:disabled="${!filmSearchResult.hasPrevious}" />
+
+                    <span class="currentPageSpan" th:text="${#numbers.formatInteger(filmSearchResult.page, 0)}"></span>
+                    of
+                    <span th:text="${#numbers.formatInteger(filmSearchResult.pages, 0)}"></span>
+
+                    <input class="nextButton" type="button" value="Next" onclick="goToPage('next')" th:disabled="${!filmSearchResult.hasNext}" />
+                    <input class="lastButton" type="button" value="Last" onclick="goToPage('last')" th:disabled="${!filmSearchResult.hasNext}" />
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+</body>
+</html>

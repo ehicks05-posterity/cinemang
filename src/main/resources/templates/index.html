@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Cinemang</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8"/>
+
+    <link rel="shortcut icon" th:href="@{/img/spaceCat.png}">
+    <link rel="stylesheet"    th:href="@{/styles/cinemang.css}" media="screen" type="text/css"  >
+
+    <script th:src="@{/js/auto-complete.min.js}"></script>
+    <link rel="stylesheet" th:href="@{/js/auto-complete.css}">
+
+    <!--<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css" media="screen" type="text/css" >-->
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        var page = [[${filmSearchResult.page}]];
+        var pages = [[${filmSearchResult.pages}]];
+        var sortColumn = [[${filmSearchResult.sortColumn}]];
+        var sortDirection = [[${filmSearchResult.sortDirection}]];
+        var context = /*[[@{/}]]*/ 'test';
+
+        function sortFilms(element, column)
+        {
+            var previousColumn = sortColumn;
+            var previousDirection = sortDirection;
+            var direction = 'desc';
+            if (column === previousColumn)
+            {
+                if (previousDirection === 'asc') direction = 'desc';
+                if (previousDirection === 'desc') direction = 'asc';
+            }
+            document.getElementById('sortColumn').value = column;
+            document.getElementById('sortDirection').value = direction;
+            sortColumn = column;
+            sortDirection = direction;
+
+            ajaxFilms('', column, direction);
+        }
+
+        function goToPage(pageNumber)
+        {
+            var parsedPage = '';
+            if (pageNumber === 'first') parsedPage = 1;
+            if (pageNumber === 'last') parsedPage = pages;
+            if (pageNumber === 'next') parsedPage = (page + 1);
+            if (pageNumber === 'previous') parsedPage = (page - 1);
+
+            page = parsedPage;
+            document.getElementById('page').value = parsedPage;
+
+            document.querySelector('.currentPageSpan').textContent = parsedPage;
+
+            if (parsedPage == 1)
+            {
+                document.querySelector('.firstButton').disabled = true;
+                document.querySelector('.previousButton').disabled = true;
+            } else
+            {
+                document.querySelector('.firstButton').disabled = false;
+                document.querySelector('.previousButton').disabled = false;
+            }
+            if (parsedPage == [[${filmSearchResult.pages}]])
+            {
+                document.querySelector('.nextButton').disabled = true;
+                document.querySelector('.lastButton').disabled = true;
+            } else
+            {
+                document.querySelector('.nextButton').disabled = false;
+                document.querySelector('.lastButton').disabled = false;
+            }
+
+            ajaxFilms(parsedPage, '', '');
+        }
+
+        function resetPagination()
+        {
+            document.getElementById('resetPage').value = 'yes';
+        }
+
+        // function loadPoster(imdbID, elementId)
+        // {
+        //     var winW = $(window).width() - 20;
+        //     var minimumWidth = 400;
+        //
+        //     var myUrl = '${pageContext.request.contextPath}/view?tab1=home&action=getPoster';
+        //     if (winW < minimumWidth)
+        //         myUrl = '${pageContext.request.contextPath}/view?tab1=home&action=getPoster&transparent=true';
+        //
+        //     if (winW < minimumWidth)
+        //     {
+        //         $("#" + imdbID + "_animatedDiv").css('background-image', 'url(' + responseTxt + ')').css('background-repeat', 'no-repeat');
+        //         $("#" + elementId).attr('src', '');
+        //     } else
+        //     {
+        //         $("#" + elementId).attr('src', responseTxt);
+        //         $("#" + imdbID + "_animatedDiv").css('background', 'white');
+        //     }
+        // }
+
+        function ajaxFilms(newPage, newSortColumn, newSortDirection)
+        {
+            var params = {};
+            if (newPage) params.page = newPage;
+            if (newSortColumn) params.sortColumn = newSortColumn;
+            if (newSortDirection) params.sortDirection = newSortDirection;
+
+            var paramString = '';
+            for (var key in params)
+            {
+                // skip loop if the property is from prototype
+                if (!params.hasOwnProperty(key)) continue;
+
+                var value = params[key];
+                if (paramString.length > 0)
+                    paramString += '&';
+                paramString += key + '=' + value;
+            }
+
+            fetch(context + 'films?' + paramString)
+                .then(function (response) {
+                    console.log('page received');
+                    return response.text();
+                }).then(function (text) {
+                document.getElementById('tableContainer').innerHTML = text;
+            });
+        }
+
+        function toggleRow(imdbId)
+        {
+            var secondRow = document.getElementById(imdbId + '_secondRow');
+            var animatedDiv = document.getElementById(imdbId + '_animatedDiv');
+            var poster = document.getElementById(imdbId + '_poster');
+
+            // make visible
+            if (secondRow.style.display === 'none')
+            {
+                secondRow.style.display = 'table-row';
+                animatedDiv.style.display = 'block';
+                var url = poster.getAttribute('data-url');
+                poster.setAttribute('src', url);
+            }
+            // make hidden
+            else
+            {
+                animatedDiv.style.display = 'none';
+                secondRow.style.display = 'none';
+            }
+        }
+
+        // initialize autocomplete
+        document.addEventListener('DOMContentLoaded', function() {
+            var my_autoComplete = new autoComplete(
+                {
+                    selector: '#title',
+                    source: function (term, suggest) {
+                        term = term.toLowerCase();
+
+                        fetch(context + 'films/titles' + '?term=' + term)
+                            .then(function (response) {
+                                console.log('page received');
+                                return response.json();
+                            }).then(function (json) {
+                            suggest(json);
+                        });
+
+                    },
+                    renderItem: function (item, search){
+                        search = search.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                        var re = new RegExp("(" + search.split(' ').join('|') + ")", "gi");
+                        return '<div title="' + item + '" class="autocomplete-suggestion" data-val="' + item + '">' + item.replace(re, "<b>$1</b>") + '</div>';
+                    }
+                });
+        }, false);
+
+        /*]]>*/
+    </script>
+
+</head>
+<body>
+
+<table style="margin: 0 auto; width: 100%; max-width: 1000px" class="list">
+    <tr>
+        <td style="width: 100%;">
+            <h1 style="text-align: center;margin: 0;padding: 0;">CINEMANG
+                <img th:src="@{/img/spaceCat.png}" style="height: 30px;vertical-align: middle"></h1>
+        </td>
+    </tr>
+</table>
+<br>
+
+<form name="frmFilter" id="frmFilter" method="post" th:action="@{/films/search}">
+    <input type="hidden" name="sortColumn" id="sortColumn" th:value="${filmSearchResult.sortColumn}"/>
+    <input type="hidden" name="sortDirection" id="sortDirection" th:value="${filmSearchResult.sortDirection}"/>
+    <input type="hidden" name="page" id="page" th:value="${filmSearchResult.page}"/>
+    <input type="hidden" name="resetPage" id="resetPage" th:value="false"/>
+
+    <table style="margin: 0 auto" class="list">
+        <tr>
+            <td colspan="4">
+                <h2 style="text-align: center;margin: 0;">Search for Films</h2>
+            </td>
+        </tr>
+        <tr>
+            <td class="alignright"><label for="title">Title:</label></td>
+            <td colspan="3">
+                <input id="title" name="title" type="text" size="32" maxlength="32" th:value="${filmSearchForm.title}">
+            </td>
+        </tr>
+        <tr>
+            <td class="alignright"><label for="fromReleaseDate">Release Date:</label></td>
+            <td>
+                <table style="border: none;">
+                    <tr>
+                        <td style="border: none;text-align: right">
+                            From:
+                        </td>
+                        <td style="border: none;">
+                            <input type="date" id="fromReleaseDate" name="fromReleaseDate" th:value="${#dates.format(filmSearchForm.fromReleaseDate, 'yyyy-MM-dd')}">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="border: none;text-align: right">
+                            <label for="toReleaseDate">To:</label>
+                        </td>
+                        <td style="border: none;">
+                            <input type="date" id="toReleaseDate" name="toReleaseDate" th:value="${#dates.format(filmSearchForm.toReleaseDate, 'yyyy-MM-dd')}">
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td class="alignright"><label for="minimumVotes">Minimum Votes:</label></td>
+            <td colspan="3">
+                <input id="minimumVotes" name="minimumVotes" type="number" size="7" maxlength="7" th:value="${filmSearchForm.minVotes}">
+            </td>
+        </tr>
+        <tr>
+            <td class="alignright">Cinemang Rating:</td>
+            <td colspan="3">
+                <div id="ratingSlider" style="width: 80%;margin-left: auto;margin-right: auto"></div>
+                <table style="border: none;">
+                    <tr>
+                        <td style="border: none;text-align: right">
+                            <label for="fromRating">From:</label>
+                        </td>
+                        <td style="border: none;">
+                            <input type="number" id="fromRating" name="fromRating" min="0" max="99" th:value="${filmSearchForm.fromRating}">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="border: none;text-align: right">
+                            <label for="toRating">To:</label>
+                        </td>
+                        <td style="border: none;">
+                            <input type="number" id="toRating" name="toRating" min="1" max="100" th:value="${filmSearchForm.toRating}">
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td class="alignright"><label for="language">Language:</label></td>
+            <td colspan="3">
+                <select id="language" name="language">
+                    <option value="" th:selected="${filmSearchForm.language == ''}">Any</option>
+                    <option th:each="language : ${uniqueLanguages}" th:value="${language}" th:text="${language}" th:selected="${filmSearchForm.language == language}">
+
+                    </option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td class="alignright"><label for="genre">Genre:</label></td>
+            <td colspan="3">
+                <select id="genre" name="genre">
+                    <option value="" th:selected="${filmSearchForm.genre == ''}">Any</option>
+                    <option th:each="genre : ${uniqueGenres}" th:value="${genre}" th:text="${genre}" th:selected="${filmSearchForm.genre == genre}"></option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="4" style="text-align: center">
+                <input type="submit" value="Search" class="btn btn-primary" onclick="resetPagination();"/></td>
+        </tr>
+    </table>
+</form>
+<br>
+
+<div id="tableContainer">
+    <div th:replace="filmList"></div>
+</div>
+
+</body>
+</html>
