@@ -10,6 +10,11 @@ buildscript {
     }
 }
 
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.3.11'
+    id "com.gorylenko.gradle-git-properties" version "2.0.0"
+}
+
 configurations {
     developmentOnly
     runtimeClasspath {
@@ -18,6 +23,7 @@ configurations {
 }
 dependencies {
     developmentOnly("org.springframework.boot:spring-boot-devtools")
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 }
 
 apply plugin: 'java'
@@ -45,7 +51,10 @@ dependencies {
     implementation('org.springframework.boot:spring-boot-starter-data-jpa')
     implementation('org.springframework.boot:spring-boot-starter-thymeleaf')
     implementation('org.springframework.boot:spring-boot-starter-web')
-    implementation('de.codecentric:spring-boot-admin-starter-client')
+
+    implementation 'de.codecentric:spring-boot-admin-starter-client'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    
     runtimeOnly('org.springframework.boot:spring-boot-devtools')
     runtimeOnly('com.h2database:h2')
     runtimeOnly('org.postgresql:postgresql')
@@ -62,4 +71,19 @@ configurations.all {
     resolutionStrategy {
         cacheChangingModulesFor 0, 'seconds'
     }
+}
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+compileTestKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+
+springBoot {
+    buildInfo()
 }

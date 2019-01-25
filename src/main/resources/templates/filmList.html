@@ -24,41 +24,41 @@
         <tr class="listheading">
             <td></td>
             <td class="sortableHeader" onclick="sortFilms(this, 'title')">Title
-                <span th:if="${filmSearchResult.sortColumn eq 'title' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</span>
-                <span th:if="${filmSearchResult.sortColumn eq 'title' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</span>
+                <span th:if="${filmSearchForm.sortColumn eq 'title' and filmSearchForm.sortDirection eq 'asc'}">&#9650;</span>
+                <span th:if="${filmSearchForm.sortColumn eq 'title' and filmSearchForm.sortDirection eq 'desc'}">&#9660;</span>
             </td>
             <td class="sortableHeader alignright" onclick="sortFilms(this, 'cinemangRating')">
                 <img th:src="@{/img/spaceCat.png}"
                      title="Cinemang Rating - Combines imdb Rating, Tomato Meter, and Tomato User Meter" style="height:24px;vertical-align: middle"/>
-                <span th:if="${filmSearchResult.sortColumn eq 'cinemangRating' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</span>
-                <span th:if="${filmSearchResult.sortColumn eq 'cinemangRating' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</span>
+                <span th:if="${filmSearchForm.sortColumn eq 'cinemangRating' and filmSearchForm.sortDirection eq 'asc'}">&#9650;</span>
+                <span th:if="${filmSearchForm.sortColumn eq 'cinemangRating' and filmSearchForm.sortDirection eq 'desc'}">&#9660;</span>
             </td>
             <td class="sortableHeader mediumPriority alignright" onclick="sortFilms(this, 'tomatoMeter')">
                 <img th:src="@{/img/rottenTomatoes_logo.png}" title="Tomato Meter" style="height:24px;vertical-align: middle"/>
-                <span th:if="${filmSearchResult.sortColumn eq 'tomatoMeter' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</span>
-                <span th:if="${filmSearchResult.sortColumn eq 'tomatoMeter' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</span>
+                <span th:if="${filmSearchForm.sortColumn eq 'tomatoMeter' and filmSearchForm.sortDirection eq 'asc'}">&#9650;</span>
+                <span th:if="${filmSearchForm.sortColumn eq 'tomatoMeter' and filmSearchForm.sortDirection eq 'desc'}">&#9660;</span>
             </td>
             <td class="sortableHeader mediumPriority alignright" onclick="sortFilms(this, 'tomatoUserMeter')">
                 <img th:src="@{/img/rottenTomatoes_user_logo.png}" title="Tomato User Meter" style="height:24px;vertical-align: middle"/>
-                <span th:if="${filmSearchResult.sortColumn eq 'tomatoUserMeter' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</span>
-                <span th:if="${filmSearchResult.sortColumn eq 'tomatoUserMeter' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</span>
+                <span th:if="${filmSearchForm.sortColumn eq 'tomatoUserMeter' and filmSearchForm.sortDirection eq 'asc'}">&#9650;</span>
+                <span th:if="${filmSearchForm.sortColumn eq 'tomatoUserMeter' and filmSearchForm.sortDirection eq 'desc'}">&#9660;</span>
             </td>
             <td class="sortableHeader mediumPriority alignright" onclick="sortFilms(this, 'imdbRating')">
                 <img th:src="@{/img/imdb_logo.png}" title="IMDb Rating" style="height:24px;vertical-align: middle"/>
-                <span th:if="${filmSearchResult.sortColumn eq 'imdbRating' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</span>
-                <span th:if="${filmSearchResult.sortColumn eq 'imdbRating' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</span>
+                <span th:if="${filmSearchForm.sortColumn eq 'imdbRating' and filmSearchForm.sortDirection eq 'asc'}">&#9650;</span>
+                <span th:if="${filmSearchForm.sortColumn eq 'imdbRating' and filmSearchForm.sortDirection eq 'desc'}">&#9660;</span>
             </td>
             <td class="sortableHeader alignright" onclick="sortFilms(this, 'released')">Year
-                <span th:if="${filmSearchResult.sortColumn eq 'released' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</span>
-                <span th:if="${filmSearchResult.sortColumn eq 'released' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</span>
+                <span th:if="${filmSearchForm.sortColumn eq 'released' and filmSearchForm.sortDirection eq 'asc'}">&#9650;</span>
+                <span th:if="${filmSearchForm.sortColumn eq 'released' and filmSearchForm.sortDirection eq 'desc'}">&#9660;</span>
             </td>
             <td class="sortableHeader lowPriority alignright" onclick="sortFilms(this, 'imdbVotes')">IMDb Votes
-                <span th:if="${filmSearchResult.sortColumn eq 'imdbVotes' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</span>
-                <span th:if="${filmSearchResult.sortColumn eq 'imdbVotes' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</span>
+                <span th:if="${filmSearchForm.sortColumn eq 'imdbVotes' and filmSearchForm.sortDirection eq 'asc'}">&#9650;</span>
+                <span th:if="${filmSearchForm.sortColumn eq 'imdbVotes' and filmSearchForm.sortDirection eq 'desc'}">&#9660;</span>
             </td>
             <td class="sortableHeader lowPriority" onclick="sortFilms(this, 'language')">Language
-                <span th:if="${filmSearchResult.sortColumn eq 'language' and filmSearchResult.sortDirection eq 'asc'}">&#9650;</span>
-                <span th:if="${filmSearchResult.sortColumn eq 'language' and filmSearchResult.sortDirection eq 'desc'}">&#9660;</span>
+                <span th:if="${filmSearchForm.sortColumn eq 'language' and filmSearchForm.sortDirection eq 'asc'}">&#9650;</span>
+                <span th:if="${filmSearchForm.sortColumn eq 'language' and filmSearchForm.sortDirection eq 'desc'}">&#9660;</span>
             </td>
             <td class="lowPriority">Genres</td>
         </tr>

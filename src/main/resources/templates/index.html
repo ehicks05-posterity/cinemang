@@ -17,8 +17,8 @@
         /*<![CDATA[*/
         var page = [[${filmSearchResult.page}]];
         var pages = [[${filmSearchResult.pages}]];
-        var sortColumn = [[${filmSearchResult.sortColumn}]];
-        var sortDirection = [[${filmSearchResult.sortDirection}]];
+        var sortColumn = [[${filmSearchForm.sortColumn}]];
+        var sortDirection = [[${filmSearchForm.sortDirection}]];
         var context = /*[[@{/}]]*/ 'test';
 
         function sortFilms(element, column)
@@ -191,8 +191,8 @@
 <br>
 
 <form name="frmFilter" id="frmFilter" method="post" th:action="@{/films/search}">
-    <input type="hidden" name="sortColumn" id="sortColumn" th:value="${filmSearchResult.sortColumn}"/>
-    <input type="hidden" name="sortDirection" id="sortDirection" th:value="${filmSearchResult.sortDirection}"/>
+    <input type="hidden" name="sortColumn" id="sortColumn" th:value="${filmSearchForm.sortColumn}"/>
+    <input type="hidden" name="sortDirection" id="sortDirection" th:value="${filmSearchForm.sortDirection}"/>
     <input type="hidden" name="page" id="page" th:value="${filmSearchResult.page}"/>
     <input type="hidden" name="resetPage" id="resetPage" th:value="false"/>
 

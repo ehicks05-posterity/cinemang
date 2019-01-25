@@ -1,6 +1,7 @@
 package net.ehicks.cinemang;
 
 import net.ehicks.cinemang.beans.Film;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
@@ -15,6 +16,9 @@ import java.util.zip.ZipFile;
 @Component
 public class DatabasePopulator
 {
+    @Value("${omdbZipFilePath}")
+    private String omdbZipFilePath;
+
     private static final int MIN_VOTES_TO_IMPORT = 1000;
 
     private static int filmsInsertedFromMoviesFile = 0;
@@ -40,7 +44,7 @@ public class DatabasePopulator
         if (filmCount > 0)
             return;
 
-        String omdbZipPath = SystemInfo.getZipPath();
+        String omdbZipPath = omdbZipFilePath;
         ZipFile zipFile = new ZipFile(omdbZipPath);
 
         ZipEntry e = zipFile.getEntry("omdbMovies.txt");

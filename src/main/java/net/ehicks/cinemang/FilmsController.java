@@ -63,7 +63,7 @@ public class FilmsController
     @ModelAttribute("filmSearchResult")
     public FilmSearchResult filmSearchResult()
     {
-        return new FilmSearchResult(1, new ArrayList<>(), "cinemangRating", "desc");
+        return new FilmSearchResult();
     }
 
     @GetMapping("/")
@@ -242,6 +242,6 @@ public class FilmsController
         TypedQuery<Long> typedCountQuery = em.createQuery(countQuery);
         long size = typedCountQuery.getSingleResult();
 
-        return new FilmSearchResult(page, results, sortColumn, sortDirection, size);
+        return new FilmSearchResult(page, results, size);
     }
 }
