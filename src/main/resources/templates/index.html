@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset="utf-8"/>
 
-    <link rel="shortcut icon" th:href="@{/img/spaceCat.png}">
     <link rel="stylesheet"    th:href="@{/styles/cinemang.css}" media="screen" type="text/css"  >
 
     <script th:src="@{/js/auto-complete.min.js}"></script>
@@ -346,6 +345,24 @@
                         </div>
 
                         <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label">Show Results As</label>
+                            </div>
+                            <div class="field-body">
+                                <div class="field is-narrow">
+                                    <div class="control">
+                                        <div class="select is-normal is-fullwidth">
+                                            <select th:field="*{resultView}">
+                                                <option th:value="'filmList'" th:text="'Table'"></option>
+                                                <option th:value="'filmMediaItems'" th:text="'Media Items'"></option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field is-horizontal">
                             <div class="field-label">
                                 <!-- Left empty for spacing -->
                             </div>
@@ -374,10 +391,10 @@
             <div class="column is-two-thirds">
                 <div class="box">
                     <div id="tableContainer">
-                        <th:block th:if="${resultView eq 'filmList'}">
+                        <th:block th:if="${filmSearchForm.resultView eq 'filmList'}">
                             <div th:replace="filmList"></div>
                         </th:block>
-                        <th:block th:if="${resultView eq 'filmMediaItems'}">
+                        <th:block th:if="${filmSearchForm.resultView eq 'filmMediaItems'}">
                             <div th:replace="filmMediaItems"></div>
                         </th:block>
                     </div>

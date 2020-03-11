@@ -5,71 +5,89 @@
 
 <body>
 <div th:fragment="filmList" id="results-block">
-
     <th:block th:each="film,loop : ${filmSearchResult.pageOfResults}">
-        <tr>
-            <td>
-                <article class="media" th:title="${loop.count + ((filmSearchResult.page - 1) * filmSearchResult.pageSize)}">
-                    <figure class="media-left">
-                        <p class="image">
-                            <img th:src="@{https://image.tmdb.org/t/p/w92} + ${film.posterPath}" alt="poster"/>
-                        </p>
-                    </figure>
-                    <div class="media-content">
-                        <div class="content">
+<!--        th:title="${loop.count + ((filmSearchResult.page - 1) * filmSearchResult.pageSize)}-->
+        <article class="media">
+            <figure class="media-left">
+                <p class="image">
+                    <img th:src="@{https://image.tmdb.org/t/p/w92} + ${film.posterPath}" alt="poster"/>
+                </p>
+            </figure>
+            <div class="media-content">
+                <div class="content">
+                    <div>
+                        <strong th:text="${film.title}"></strong> <span th:text="${'(' + film.released.year + ')'}"></span>
+                        <small th:text="${film.runtimeString}"></small>
+                        <br>
+                        <div>
+                            <strong>Cast:</strong>
+                            <span th:text="${film.actors}"></span>
+                        </div>
+                        <div>
+                            <strong>Director:</strong>
+                            <span th:text="${film.director}"></span>
+                        </div>
+                        <div style="cursor:pointer;" th:attr="data-text=${film.overview}" th:text="${#strings.abbreviate(film.overview,100)}"
+                             onclick="const temp = this.innerText; this.innerText = this.dataset.text; this.dataset.text=temp;"></div>
+                    </div>
+                    <nav class="level is-mobile is-hidden-desktop">
+                        <div class="level-item has-text-centered">
                             <div>
-                                <strong th:text="${film.title}"></strong> <span th:text="${'(' + film.released.year + ')'}"></span>
-                                <small th:text="${film.runtimeString}"></small>
-                                <br>
-                                <div>
-                                    <strong>Cast:</strong>
-                                    <span th:text="${film.actors}"></span>
-                                </div>
-                                <div>
-                                    <strong>Director:</strong>
-                                    <span th:text="${film.director}"></span>
-                                </div>
-                                <div style="cursor:pointer;" th:attr="data-text=${film.overview}" th:text="${#strings.abbreviate(film.overview,100)}"
-                                     onclick="const temp = this.innerText; this.innerText = this.dataset.text; this.dataset.text=temp;"></div>
+                                <div class="icon is-small has-text-danger"><i class="fas fa-heart"></i></div>
+                                <div><span class="tag"><span th:text="${film.userVoteAverage}"></span></span></div>
                             </div>
                         </div>
+                        <div class="level-item has-text-centered">
+                            <div>
+                                <div class="icon is-small has-text-warning"><i class="fas fa-star"></i></div>
+                                <div><span class="tag"><span th:text="${film.userVoteCountString}"></span></span></div>
+                            </div>
+                        </div>
+                        <div class="level-item has-text-centered">
+                            <div>
+                                <div class="icon is-small has-text-success"><i class="fas fa-language"></i></div>
+                                <div><span class="tag"><span th:text="${film.language.name}"></span></span></div>
+                            </div>
+                        </div>
+                        <div class="level-item has-text-centered">
+                            <div>
+                                <div class="icon is-small has-text-link"><i class="fas fa-theater-masks"></i></div>
+                                <div><span class="tag"><span th:text="${film.primaryGenre}"></span></span></div>
+                            </div>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+            <div class="media-right is-hidden-touch">
+                <div class="has-text-right">
+                    <div>
+                        <span class="tag">
+                            <span th:text="${film.userVoteAverage}"></span>
+                            <span class="icon is-small has-text-danger"><i class="fas fa-heart"></i></span>
+                        </span>
+                    </div>
+                    <div>
+                        <span class="tag">
+                            <span th:text="${film.userVoteCountString}"></span>
+                            <span class="icon is-small has-text-warning"><i class="fas fa-star"></i></span>
+                        </span>
+                    </div>
+                    <div>
+                        <span class="tag">
+                            <span th:text="${film.language.name}"></span>
+                            <span class="icon is-small has-text-success"><i class="fas fa-language"></i></span>
+                        </span>
+                    </div>
+                    <div>
+                        <span class="tag">
+                            <span th:text="${film.genreString}"></span>
+                            <span class="icon is-small has-text-link"><i class="fas fa-theater-masks"></i></span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </article>
 
-                    </div>
-                </article>
-                <nav class="level is-mobile" style="margin-top: .5rem;">
-                    <div class="level-item has-text-centered">
-                        <div>
-                            <p></p>
-                            <p></p>
-                        </div>
-                    </div>
-                    <div class="level-item has-text-centered">
-                        <div>
-                            <p class="icon is-small has-text-danger"><i class="fas fa-heart"></i></p>
-                            <p th:text="${film.userVoteAverage}"></p>
-                        </div>
-                    </div>
-                    <div class="level-item has-text-centered">
-                        <div>
-                            <p class="icon is-small has-text-warning"><i class="fas fa-star"></i></p>
-                            <p th:text="${#numbers.formatInteger(film.userVoteCount, 0, 'COMMA')}"></p>
-                        </div>
-                    </div>
-                    <div class="level-item has-text-centered">
-                        <div>
-                            <p class="icon is-small has-text-success"><i class="fas fa-language"></i></p>
-                            <p th:text="${film.language.name}"></p>
-                        </div>
-                    </div>
-                    <div class="level-item has-text-centered">
-                        <div>
-                            <p class="icon is-small has-text-link"><i class="fas fa-theater-masks"></i></p>
-                            <p th:text="${film.genreString}"></p>
-                        </div>
-                    </div>
-                </nav>
-            </td>
-        </tr>
     </th:block>
 
     <div th:if="${filmSearchResult.searchResults.isEmpty()}">

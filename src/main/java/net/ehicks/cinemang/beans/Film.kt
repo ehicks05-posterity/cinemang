@@ -48,10 +48,24 @@ data class Film @JvmOverloads constructor(
             genres.map { it.name }.reduce { acc, s -> "$acc, $s" }
     }
 
+    fun getPrimaryGenre(): String {
+        return if (genres.isEmpty())
+            ""
+        else
+            genres.first().name
+    }
+
     fun getRuntimeString(): String {
         val hours = runtime / 60
         val mins = runtime - (hours * 60)
         return "${hours}h ${mins}min"
+    }
+
+    fun getUserVoteCountString(): String {
+        return if (userVoteCount < 1000)
+            userVoteCount.toString()
+        else
+            (userVoteCount / 1000).toString() + "k"
     }
 }
 

@@ -17,4 +17,5 @@ class FilmSearchForm @JvmOverloads constructor(
         , var sortDirection: String = "desc"
         , var page: Int = 1
         , var pageSize: Int = 20
+        , var resultView: String = "filmMediaItems"
 )
