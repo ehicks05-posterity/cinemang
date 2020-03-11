@@ -14,9 +14,6 @@ body {font-family: 'Open Sans', sans-serif !important; background: linear-gradie
 .sortableHeaderSelected {cursor: pointer; color: white;}
 
 /* Media */
-@media (min-width: 1175px)
-{
-}
 @media (min-width: 900px) and (max-width: 1174px)
 {
     .lowPriority {display:none;}
