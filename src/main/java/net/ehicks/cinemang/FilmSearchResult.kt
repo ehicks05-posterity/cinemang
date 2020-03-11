@@ -4,13 +4,14 @@ import net.ehicks.cinemang.beans.Film
 
 data class FilmSearchResult @JvmOverloads constructor(var page: Int = 1,
                                                       var searchResults: List<Film> = listOf(),
-                                                      var size: Long = 0) {
+                                                      var size: Long = 0,
+                                                      var pageSize: Int = 20) {
     // Derived values
     var pageOfResults: List<Film>? = null
         private set
 
     val pages: Long
-        get() = 1 + (size - 1) / 100
+        get() = 1 + (size - 1) / pageSize
 
     val isHasNext: Boolean
         get() = pages > Integer.valueOf(page)

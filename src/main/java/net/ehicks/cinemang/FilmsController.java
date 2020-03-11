@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-import net.ehicks.cinemang.beans.Film;
+import net.ehicks.cinemang.beans.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.propertyeditors.CustomDateEditor;
@@ -22,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -33,15 +34,16 @@ public class FilmsController
 {
     private static final Logger log = LoggerFactory.getLogger(FilmsController.class);
     private FilmRepository filmRepo;
-    private GenreLoader genreLoader;
-    private LanguageLoader languageLoader;
+    private GenreRepository genreRepository;
+    private LanguageRepository languageRepository;
     private EntityManager em;
 
-    public FilmsController(FilmRepository filmRepo, GenreLoader genreLoader, LanguageLoader languageLoader, EntityManager em)
+    public FilmsController(FilmRepository filmRepo, GenreRepository genreRepository,
+                           LanguageRepository languageRepository, EntityManager em)
     {
         this.filmRepo = filmRepo;
-        this.genreLoader = genreLoader;
-        this.languageLoader = languageLoader;
+        this.genreRepository = genreRepository;
+        this.languageRepository = languageRepository;
         this.em = em;
     }
 
@@ -78,39 +80,20 @@ public class FilmsController
             mav.addObject("filmSearchResult", filmSearchResult);
         }
 
-        mav.addObject("uniqueLanguages", languageLoader.getUniqueLanguages());
-        mav.addObject("uniqueGenres", genreLoader.getUniqueGenres());
+        mav.addObject("filmSearchForm", filmSearchForm);
+        mav.addObject("languages", languageRepository.findAll());
+        mav.addObject("genres", genreRepository.findAll());
 
         return mav;
     }
 
     @PostMapping("/films/search")
-    public ModelAndView handleSearch(
-            Model model,
-            @RequestParam String title,
-            @RequestParam Date fromReleaseDate,
-            @RequestParam Date toReleaseDate,
-            @RequestParam Integer minimumVotes,
-            @RequestParam Double fromRating,
-            @RequestParam Double toRating,
-            @RequestParam String language,
-            @RequestParam String genre,
-            @RequestParam String sortColumn,
-            @RequestParam String sortDirection,
-            @RequestParam Integer page,
-            @RequestParam Boolean resetPage
-    )
+    public ModelAndView handleSearch(Model model,
+                                     @ModelAttribute("filmSearchForm") FilmSearchForm filmSearchForm,
+                                     @ModelAttribute("filmSearchResult") FilmSearchResult filmSearchResult)
     {
-        if (resetPage)
-            page = 1;
-
-        FilmSearchForm filmSearchForm = new FilmSearchForm(minimumVotes, title, fromRating, toRating, fromReleaseDate,
-                toReleaseDate, language, genre, sortColumn, sortDirection, page);
-        FilmSearchResult filmSearchResult = performSearch(filmSearchForm);
-
         model.addAttribute("filmSearchForm", filmSearchForm);
-        model.addAttribute("filmSearchResult", filmSearchResult);
-
+        model.addAttribute("filmSearchResult", performSearch(filmSearchForm));
         return new ModelAndView("redirect:/");
     }
 
@@ -139,7 +122,7 @@ public class FilmsController
     {
         FilmSearchForm filmSearchForm = new FilmSearchForm();
         filmSearchForm.setTitle(term);
-        filmSearchForm.setSortColumn("imdbVotes");
+        filmSearchForm.setSortColumn("userVoteCount");
 
         FilmSearchResult filmSearchResult = performSearch(filmSearchForm);
 
@@ -183,14 +166,10 @@ public class FilmsController
 
     private FilmSearchResult performSearch(FilmSearchForm filmSearchForm)
     {
-        return criteriaBuilder(filmSearchForm.getTitle(), filmSearchForm.getLanguage(),
-                filmSearchForm.getGenre(), filmSearchForm.getMinVotes(), filmSearchForm.getFromRating(), filmSearchForm.getToRating(),
-                filmSearchForm.getFromReleaseDate(), filmSearchForm.getToReleaseDate(), filmSearchForm.getSortColumn(),
-                filmSearchForm.getSortDirection(), filmSearchForm.getPage());
+        return criteriaBuilder(filmSearchForm);
     }
 
-    private FilmSearchResult criteriaBuilder(String title, String language, String genre, Integer minVotes, Double minRating,
-                                             Double maxRating, Date fromDate, Date toDate, String sortColumn, String sortDirection, Integer page)
+    private FilmSearchResult criteriaBuilder(FilmSearchForm form)
     {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Film> query = cb.createQuery(Film.class);
@@ -198,29 +177,31 @@ public class FilmsController
 
         List<Predicate> predicates = new ArrayList<>();
 
-        if (title.length() > 0)
-            predicates.add(cb.like(cb.lower(filmRoot.get("title")), "%" + title.toLowerCase() + "%"));
-        if (language.length() > 0)
-            predicates.add(cb.equal(filmRoot.get("language"), language));
-        if (genre.length() > 0)
-            predicates.add(cb.like(cb.lower(filmRoot.get("genre")), "%" + genre.toLowerCase() + "%"));
-        if (minVotes != null && minVotes > 0)
-            predicates.add(cb.greaterThanOrEqualTo(filmRoot.get("imdbVotes"), minVotes));
-        if (fromDate != null)
-            predicates.add(cb.greaterThanOrEqualTo(filmRoot.get("released"), fromDate));
-        if (toDate != null)
-            predicates.add(cb.lessThanOrEqualTo(filmRoot.get("released"), toDate));
-        if (minRating != null && minRating > 0)
-            predicates.add(cb.greaterThanOrEqualTo(filmRoot.get("cinemangRating"), minRating));
-        if (maxRating != null && maxRating < 100)
-            predicates.add(cb.lessThanOrEqualTo(filmRoot.get("cinemangRating"), maxRating));
+        if (form.getTitle().length() > 0)
+            predicates.add(cb.like(cb.lower(filmRoot.get("title")), "%" + form.getTitle().toLowerCase() + "%"));
+        if (form.getLanguage() != null)
+            predicates.add(cb.equal(filmRoot.get("language"), form.getLanguage()));
+        if (form.getGenre() != null)
+        {
+            predicates.add(cb.isMember(form.getGenre(), filmRoot.get("genres")));
+        }
+        if (form.getMinVotes() != null && form.getMinVotes() > 0)
+            predicates.add(cb.greaterThanOrEqualTo(filmRoot.get("userVoteCount"), form.getMinVotes()));
+        if (form.getFromReleaseDate() != null)
+            predicates.add(cb.greaterThanOrEqualTo(filmRoot.get("released"), form.getFromReleaseDate()));
+        if (form.getToReleaseDate() != null)
+            predicates.add(cb.lessThanOrEqualTo(filmRoot.get("released"), form.getToReleaseDate()));
+        if (form.getFromRating() != null && form.getFromRating() > 0)
+            predicates.add(cb.greaterThanOrEqualTo(filmRoot.get("userVoteAverage"), form.getFromRating()));
+        if (form.getToRating() != null && form.getToRating() < 10)
+            predicates.add(cb.lessThanOrEqualTo(filmRoot.get("userVoteAverage"), form.getToRating()));
 
         List<Order> orderList = new ArrayList<>();
 
-        if (sortDirection.equals("asc"))
-            orderList.add(cb.asc(filmRoot.get(sortColumn)));
+        if (form.getSortDirection().equals("asc"))
+            orderList.add(cb.asc(filmRoot.get(form.getSortColumn())));
         else
-            orderList.add(cb.desc(filmRoot.get(sortColumn)));
+            orderList.add(cb.desc(filmRoot.get(form.getSortColumn())));
 
         query.select(filmRoot)
                 .where(predicates.toArray(new Predicate[]{}))
@@ -229,8 +210,8 @@ public class FilmsController
         TypedQuery<Film> typedQuery = em.createQuery(query);
         long start = System.currentTimeMillis();
         List<Film> results = typedQuery
-                .setFirstResult((page - 1) * 100)
-                .setMaxResults(100)
+                .setFirstResult((form.getPage() - 1) * form.getPageSize())
+                .setMaxResults(form.getPageSize())
                 .getResultList();
         log.info("query time: " + (System.currentTimeMillis() - start));
 
@@ -242,6 +223,6 @@ public class FilmsController
         TypedQuery<Long> typedCountQuery = em.createQuery(countQuery);
         long size = typedCountQuery.getSingleResult();
 
-        return new FilmSearchResult(page, results, size);
+        return new FilmSearchResult(form.getPage(), results, size, form.getPageSize());
     }
 }

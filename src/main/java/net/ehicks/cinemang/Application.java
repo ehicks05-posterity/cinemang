@@ -22,16 +22,12 @@ public class Application
 {
     private static final Logger log = LoggerFactory.getLogger(Application.class);
 
-    private DatabasePopulator databasePopulator;
-    private GenreLoader genreLoader;
-    private LanguageLoader languageLoader;
+    private Seeder seeder;
 
     @Autowired
-    public Application(DatabasePopulator databasePopulator, GenreLoader genreLoader, LanguageLoader languageLoader)
+    public Application(Seeder seeder)
     {
-        this.databasePopulator = databasePopulator;
-        this.genreLoader = genreLoader;
-        this.languageLoader = languageLoader;
+        this.seeder = seeder;
     }
 
     public static void main(String[] args)
@@ -45,9 +41,9 @@ public class Application
         return args -> {
             try
             {
-                databasePopulator.populateDatabase();
-                genreLoader.getUniqueGenres();
-                languageLoader.getUniqueLanguages();
+                seeder.getGenres();
+                seeder.getLanguages();
+                seeder.getFilms();
             }
             catch (Exception e)
             {

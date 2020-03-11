@@ -1,17 +1,20 @@
 package net.ehicks.cinemang
 
-import java.util.Date
+import net.ehicks.cinemang.beans.Genre
+import net.ehicks.cinemang.beans.Language
+import java.time.LocalDate
 
-class FilmSearchForm(
-        var minVotes: Int? = 1000
+class FilmSearchForm @JvmOverloads constructor(
+        var minVotes: Int? = 100
         , var title: String = ""
         , var fromRating: Double? = 0.0
-        , var toRating: Double? = 100.0
-        , var fromReleaseDate: Date? = null
-        , var toReleaseDate: Date? = null
-        , var language: String = ""
-        , var genre: String = ""
-        , var sortColumn: String = "cinemangRating"
+        , var toRating: Double? = 10.0
+        , var fromReleaseDate: LocalDate? = null
+        , var toReleaseDate: LocalDate? = null
+        , var language: Language? = null
+        , var genre: Genre? = null
+        , var sortColumn: String = "userVoteAverage"
         , var sortDirection: String = "desc"
-        , var page: Int? = 1
+        , var page: Int = 1
+        , var pageSize: Int = 20
 )
