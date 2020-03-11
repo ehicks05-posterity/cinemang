@@ -7,7 +7,7 @@
 <div th:fragment="filmList" id="results-block">
     <table id="filmTable" style="margin: 0 auto" class="table is-narrow is-hoverable">
         <thead>
-        <tr>
+        <tr style="white-space: nowrap;">
             <th></th>
             <th class="sortableHeader" onclick="sortFilms(this, 'title')">Title
                 <span th:if="${filmSearchForm.sortColumn eq 'title' and filmSearchForm.sortDirection eq 'asc'}">&#9650;</span>

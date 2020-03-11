@@ -198,8 +198,6 @@
                     </div>
 
                     <form name="frmFilter" id="frmFilter" method="post" th:action="@{/films/search}" th:object="${filmSearchForm}">
-                        <input type="hidden" name="sortColumn" id="sortColumn" th:value="${filmSearchForm.sortColumn}"/>
-                        <input type="hidden" name="sortDirection" id="sortDirection" th:value="${filmSearchForm.sortDirection}"/>
                         <input type="hidden" name="page" id="page" th:value="${filmSearchResult.page}"/>
                         <input type="hidden" name="resetPage" id="resetPage" th:value="false"/>
 
@@ -239,16 +237,16 @@
                                     <p class="control is-expanded has-icons-left">
                                         <input class="input is-normal" type="date" id="fromReleaseDate" name="fromReleaseDate" th:value="${filmSearchForm.fromReleaseDate}">
                                         <span class="icon is-normal is-left">
-                                    <i class="fas fa-calendar"></i>
-                                </span>
+                                            <i class="fas fa-calendar"></i>
+                                        </span>
                                     </p>
                                 </div>
                                 <div class="field">
                                     <p class="control is-expanded has-icons-left has-icons-right">
                                         <input class="input is-normal" type="date" id="toReleaseDate" name="toReleaseDate" th:value="${filmSearchForm.toReleaseDate}">
                                         <span class="icon is-normal is-left">
-                                    <i class="fas fa-calendar"></i>
-                                </span>
+                                            <i class="fas fa-calendar"></i>
+                                        </span>
                                     </p>
                                 </div>
                             </div>
@@ -263,16 +261,16 @@
                                     <p class="control is-expanded has-icons-left">
                                         <input class="input is-normal" type="number" id="fromRating" name="fromRating" min="0" max="9.9" step=".1" th:value="${filmSearchForm.fromRating}">
                                         <span class="icon is-normal is-left">
-                                    <i class="far fa-star"></i>
-                                </span>
+                                            <i class="far fa-star"></i>
+                                        </span>
                                     </p>
                                 </div>
                                 <div class="field">
                                     <p class="control is-expanded has-icons-left has-icons-right">
                                         <input class="input is-normal" type="number" id="toRating" name="toRating" min="0.1" max="10" step=".1" th:value="${filmSearchForm.toRating}">
                                         <span class="icon is-normal is-left">
-                                    <i class="fas fa-star"></i>
-                                </span>
+                                            <i class="fas fa-star"></i>
+                                        </span>
                                     </p>
                                 </div>
                             </div>
@@ -317,6 +315,37 @@
                         </div>
 
                         <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label">Sort By</label>
+                            </div>
+                            <div class="field-body">
+                                <div class="field is-narrow">
+                                    <div class="control">
+                                        <div class="select is-normal is-fullwidth">
+                                            <select th:field="*{sortColumn}">
+                                                <option th:value="'title'" th:text="'Title'"></option>
+                                                <option th:value="'released'" th:text="'Year'"></option>
+                                                <option th:value="'userVoteAverage'" th:text="'Rating'"></option>
+                                                <option th:value="'userVoteCount'" th:text="'Vote Count'"></option>
+                                                <option th:value="'language'" th:text="'Language'"></option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="field is-narrow">
+                                    <div class="control">
+                                        <div class="select is-normal is-fullwidth">
+                                            <select th:field="*{sortDirection}">
+                                                <option th:value="'asc'" th:text="'Asc'"></option>
+                                                <option th:value="'desc'" th:text="'Desc'"></option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field is-horizontal">
                             <div class="field-label">
                                 <!-- Left empty for spacing -->
                             </div>
@@ -341,11 +370,16 @@
 
 <section class="">
     <div class="container">
-        <div class="columns is-centered">
-            <div class="column is-narrow">
+        <div class="columns is-gapless is-centered">
+            <div class="column is-two-thirds">
                 <div class="box">
                     <div id="tableContainer">
-                        <div th:replace="filmList"></div>
+                        <th:block th:if="${resultView eq 'filmList'}">
+                            <div th:replace="filmList"></div>
+                        </th:block>
+                        <th:block th:if="${resultView eq 'filmMediaItems'}">
+                            <div th:replace="filmMediaItems"></div>
+                        </th:block>
                     </div>
                 </div>
             </div>

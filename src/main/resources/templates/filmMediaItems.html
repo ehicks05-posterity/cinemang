@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head></head>
+
+<body>
+<div th:fragment="filmList" id="results-block">
+
+    <th:block th:each="film,loop : ${filmSearchResult.pageOfResults}">
+        <tr>
+            <td>
+                <article class="media" th:title="${loop.count + ((filmSearchResult.page - 1) * filmSearchResult.pageSize)}">
+                    <figure class="media-left">
+                        <p class="image">
+                            <img th:src="@{https://image.tmdb.org/t/p/w92} + ${film.posterPath}" alt="poster"/>
+                        </p>
+                    </figure>
+                    <div class="media-content">
+                        <div class="content">
+                            <div>
+                                <strong th:text="${film.title}"></strong> <span th:text="${'(' + film.released.year + ')'}"></span>
+                                <small th:text="${film.runtimeString}"></small>
+                                <br>
+                                <div>
+                                    <strong>Cast:</strong>
+                                    <span th:text="${film.actors}"></span>
+                                </div>
+                                <div>
+                                    <strong>Director:</strong>
+                                    <span th:text="${film.director}"></span>
+                                </div>
+                                <div style="cursor:pointer;" th:attr="data-text=${film.overview}" th:text="${#strings.abbreviate(film.overview,100)}"
+                                     onclick="const temp = this.innerText; this.innerText = this.dataset.text; this.dataset.text=temp;"></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </article>
+                <nav class="level is-mobile" style="margin-top: .5rem;">
+                    <div class="level-item has-text-centered">
+                        <div>
+                            <p></p>
+                            <p></p>
+                        </div>
+                    </div>
+                    <div class="level-item has-text-centered">
+                        <div>
+                            <p class="icon is-small has-text-danger"><i class="fas fa-heart"></i></p>
+                            <p th:text="${film.userVoteAverage}"></p>
+                        </div>
+                    </div>
+                    <div class="level-item has-text-centered">
+                        <div>
+                            <p class="icon is-small has-text-warning"><i class="fas fa-star"></i></p>
+                            <p th:text="${#numbers.formatInteger(film.userVoteCount, 0, 'COMMA')}"></p>
+                        </div>
+                    </div>
+                    <div class="level-item has-text-centered">
+                        <div>
+                            <p class="icon is-small has-text-success"><i class="fas fa-language"></i></p>
+                            <p th:text="${film.language.name}"></p>
+                        </div>
+                    </div>
+                    <div class="level-item has-text-centered">
+                        <div>
+                            <p class="icon is-small has-text-link"><i class="fas fa-theater-masks"></i></p>
+                            <p th:text="${film.genreString}"></p>
+                        </div>
+                    </div>
+                </nav>
+            </td>
+        </tr>
+    </th:block>
+
+    <div th:if="${filmSearchResult.searchResults.isEmpty()}">
+        No films found...
+    </div>
+
+    <br/>
+    <div style="text-align: center;">
+        <input class="button is-small firstButton" type="button" value="First" onclick="goToPage('first')" th:disabled="${!filmSearchResult.hasPrevious}" />
+        <input class="button is-small previousButton" type="button" value="Previous" onclick="goToPage('previous')" th:disabled="${!filmSearchResult.hasPrevious}" />
+
+        <button class="button is-small is-light" th:title="${#numbers.formatInteger(filmSearchResult.size, 0, 'COMMA') + ' Results'}">
+            <span class="currentPageSpan" th:text="${#numbers.formatInteger(filmSearchResult.page, 0)}"></span>
+            /
+            <span th:text="${#numbers.formatInteger(filmSearchResult.pages, 0)}"></span>
+        </button>
+
+        <input class="button is-small nextButton" type="button" value="Next" onclick="goToPage('next')" th:disabled="${!filmSearchResult.hasNext}" />
+        <input class="button is-small lastButton" type="button" value="Last" onclick="goToPage('last')" th:disabled="${!filmSearchResult.hasNext}" />
+    </div>
+</div>
+</body>
+</html>

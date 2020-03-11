@@ -47,6 +47,12 @@ data class Film @JvmOverloads constructor(
         else
             genres.map { it.name }.reduce { acc, s -> "$acc, $s" }
     }
+
+    fun getRuntimeString(): String {
+        val hours = runtime / 60
+        val mins = runtime - (hours * 60)
+        return "${hours}h ${mins}min"
+    }
 }
 
 @Repository

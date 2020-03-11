@@ -83,6 +83,7 @@ public class FilmsController
         mav.addObject("filmSearchForm", filmSearchForm);
         mav.addObject("languages", languageRepository.findAll());
         mav.addObject("genres", genreRepository.findAll());
+        mav.addObject("resultView", "filmMediaItems");
 
         return mav;
     }
