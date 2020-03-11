@@ -152,7 +152,7 @@
                     renderItem: function (item, search){
                         search = search.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
                         var re = new RegExp("(" + search.split(' ').join('|') + ")", "gi");
-                        return '<div title="' + item + '" class="autocomplete-suggestion" data-val="' + item + '">' + item.replace(re, "<b>$1</b>") + '</div>';
+                        return '<div title="' + item + '" class="autocomplete-suggestion" data-val="' + item + '">' + item.replace(re, "<strong>$1</strong>") + '</div>';
                     }
                 });
         }, false);
