@@ -131,6 +131,13 @@
             }
         }
 
+        function toggleSecondaryFields()
+        {
+            document.querySelector('#secondaryFields').classList.toggle('is-hidden');
+            const button = document.querySelector('#toggleSecondaryFieldsButton');
+            button.innerText = button.innerText === 'More...' ? 'Less...' : 'More...';
+        }
+
         // initialize autocomplete
         document.addEventListener('DOMContentLoaded', function() {
             var my_autoComplete = new autoComplete(
@@ -213,6 +220,7 @@
                             </div>
                         </div>
 
+                        <span id="secondaryFields" class="is-hidden">
                         <div class="field is-horizontal">
                             <div class="field-label is-normal">
                                 <label class="label">Minimum Votes</label>
@@ -361,6 +369,22 @@
                                 </div>
                             </div>
                         </div>
+                        </span>
+
+                        <div class="field is-horizontal">
+                            <div class="field-label">
+                                <!-- Left empty for spacing -->
+                            </div>
+                            <div class="field-body">
+                                <div class="field">
+                                    <div class="control">
+                                        <span id="toggleSecondaryFieldsButton" class="button is-small" onclick="toggleSecondaryFields();">
+                                            More...
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
                         <div class="field is-horizontal">
                             <div class="field-label">
@@ -408,8 +432,8 @@
 <br />
 <footer class="footer">
     <div class="content has-text-centered">
-        <a href="https://github.com/ehicks05/puffin"><strong>Cinemang</strong></a>
-        by <a href="https://ehicks.net">Eric Hicks</a>
+        <a href="https://github.com/ehicks05/puffin"><strong>CineMang</strong></a>
+        by <a href="https://ehicks.net">Eric Hicks</a> with <span th:text="${#numbers.formatInteger(filmCount, 0, 'COMMA')}"></span> films
         <br />
         <figure class="image is-128x128" style="display: inline-block;">
             <img alt="tmdbLogo" src="https://www.themoviedb.org/assets/2/v4/logos/powered-by-rectangle-green-dcada16968ed648d5eb3b36bbcfdd8cdf804f723dcca775c8f2bf4cea025aad6.svg"/>
