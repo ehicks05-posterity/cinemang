@@ -112,6 +112,7 @@ public class Seeder
 
     public void getFilms()
     {
+        log.info("Getting films...");
         Path dailyIdFile = getDailyIdFile();
         int linesRead = 0;
         int filmsTooFreshToRequest = 0;
@@ -120,19 +121,18 @@ public class Seeder
         
         if (dailyIdFile != null)
         {
-            try (InputStream fileStream = new FileInputStream(dailyIdFile.toFile());
-                 InputStream gzipStream = new GZIPInputStream(fileStream);
-                 Reader decoder = new InputStreamReader(gzipStream, Charset.defaultCharset());
-                 BufferedReader buffered = new BufferedReader(decoder);)
+            try
             {
                 TmdbMovies movies = new TmdbApi(apiKey).getMovies();
-                ObjectMapper mapper = new ObjectMapper();
-                String line;
-                List<Integer> tmdbIds = new ArrayList<>();
-                while ((line = buffered.readLine()) != null)
+                List<Integer> tmdbIdBatch = new ArrayList<>();
+
+                List<Integer> tmdbIds = Files.readAllLines(dailyIdFile)
+                        .stream().map(Integer::parseInt).collect(Collectors.toList());
+
+                for (Integer id : tmdbIds)
                 {
                     linesRead++;
-                    if (linesRead % 1000 == 0)
+                    if (linesRead % 100_000 == 0)
                     {
                         log.info("linesRead: " + linesRead +
                                 ", filmsTooFreshToRequest: " + filmsTooFreshToRequest +
@@ -140,14 +140,12 @@ public class Seeder
                                 ", filmsSaved: " + filmsSaved);
                     }
 
-                    int id = mapper.readTree(line).get("id").asInt();
-
-                    tmdbIds.add(id);
-                    if (tmdbIds.size() >= 1000)
+                    tmdbIdBatch.add(id);
+                    if (tmdbIdBatch.size() >= 25_000)
                     {
-                        List<Film> films = filmRepo.findAllById(tmdbIds);
+                        List<Film> films = filmRepo.findAllById(tmdbIdBatch);
                         Map<Integer, Film> filmMap = films.stream().collect(Collectors.toMap(Film::getTmdbId, film -> film));
-                        for (int tmdbId : tmdbIds)
+                        for (int tmdbId : tmdbIdBatch)
                         {
                             int[] results = processTmdbId(movies, filmMap, tmdbId);
                             filmsTooFreshToRequest += results[0];
@@ -155,14 +153,14 @@ public class Seeder
                             filmsSaved += results[2];
                         }
 
-                        tmdbIds.clear();
+                        tmdbIdBatch.clear();
                     }
                 }
 
                 // deal with leftovers
-                List<Film> films = filmRepo.findAllById(tmdbIds);
+                List<Film> films = filmRepo.findAllById(tmdbIdBatch);
                 Map<Integer, Film> filmMap = films.stream().collect(Collectors.toMap(Film::getTmdbId, film -> film));
-                for (int tmdbId : tmdbIds)
+                for (int tmdbId : tmdbIdBatch)
                 {
                     int[] results = processTmdbId(movies, filmMap, tmdbId);
                     filmsTooFreshToRequest += results[0];
@@ -170,7 +168,7 @@ public class Seeder
                     filmsSaved += results[2];
                 }
 
-                tmdbIds.clear();
+                tmdbIdBatch.clear();
             }
             catch (Exception e)
             {
@@ -204,7 +202,7 @@ public class Seeder
         return results;
     }
 
-    private Path getDailyIdFile()
+    private String getDailyFilename()
     {
         LocalDateTime localDateTime = LocalDateTime.now(ZoneId.of("Z"));
         if (localDateTime.getHour() < 9)
@@ -214,24 +212,75 @@ public class Seeder
         String dd = localDateTime.format(DateTimeFormatter.ofPattern("dd"));
         String YYYY = localDateTime.format(DateTimeFormatter.ofPattern("YYYY"));
 
+        return "movie_ids_" + MM + "_" + dd + "_" + YYYY + ".json.gz";
+    }
+
+    private Path getDailyFilePath()
+    {
         String tmpDir = System.getProperty("java.io.tmpdir");
-        String dailyFilename = MM + "-" + dd + "-" + YYYY + ".json.gz";
-        Path dailyIdFile = Paths.get(tmpDir, dailyFilename);
-        if (!dailyIdFile.toFile().exists())
+        return Paths.get(tmpDir, getDailyFilename());
+    }
+
+    private Path getDailyFileUnzippedPath()
+    {
+        String tmpDir = System.getProperty("java.io.tmpdir");
+        return Paths.get(tmpDir, getDailyFilename().replace(".json.gz", ".txt"));
+    }
+
+    private Path getDailyIdFile()
+    {
+        Path dailyIdFileUnzipped = getDailyFileUnzippedPath();
+        if (dailyIdFileUnzipped.toFile().exists())
+            return dailyIdFileUnzipped;
+
+        Path dailyIdFile = downloadDailyIdFile();
+        if (dailyIdFile == null)
+            return null;
+
+        return convertDailyIdFileToTextFile(dailyIdFile);
+    }
+
+    private Path downloadDailyIdFile()
+    {
+        try (InputStream in = new URL("http://files.tmdb.org/p/exports/" + getDailyFilename()).openStream();)
         {
-            try (InputStream in = new URL("http://files.tmdb.org/p/exports/movie_ids_" + MM + "_" + dd + "_" + YYYY + ".json.gz").openStream();)
+            Path temp = Files.createFile(getDailyFilePath());
+            Files.copy(in, temp, StandardCopyOption.REPLACE_EXISTING);
+            return temp;
+        }
+        catch (Exception e)
+        {
+            log.error(e.getLocalizedMessage(), e);
+        }
+        return null;
+    }
+
+    private Path convertDailyIdFileToTextFile(Path dailyIdFile)
+    {
+        Path unzipped = Paths.get(dailyIdFile.toString().replace(".json.gz", ".txt"));
+        try (InputStream fileStream = new FileInputStream(dailyIdFile.toFile());
+             InputStream gzipStream = new GZIPInputStream(fileStream);
+             Reader decoder = new InputStreamReader(gzipStream, Charset.defaultCharset());
+             BufferedReader buffered = new BufferedReader(decoder);
+             FileWriter fileWriter = new FileWriter(unzipped.toFile());
+             PrintWriter printWriter = new PrintWriter(fileWriter))
+        {
+            ObjectMapper mapper = new ObjectMapper();
+
+            String line;
+            while ((line = buffered.readLine()) != null)
             {
-                Path temp = Files.createFile(dailyIdFile);
-                Files.copy(in, temp, StandardCopyOption.REPLACE_EXISTING);
-            }
-            catch (Exception e)
-            {
-                log.error(e.getLocalizedMessage(), e);
-                return null;
+                int id = mapper.readTree(line).get("id").asInt();
+                printWriter.println(id);
             }
         }
+        catch (Exception e)
+        {
+            log.error(e.getLocalizedMessage());
+            return null;
+        }
 
-        return dailyIdFile;
+        return unzipped;
     }
 
     private Film getFilm(TmdbMovies movies, int tmdbId)
@@ -243,12 +292,7 @@ public class Seeder
         }
         catch (Exception e)
         {
-            log.error(e.getLocalizedMessage(), e);
-        }
-
-        if (movie == null)
-        {
-            log.error("tmdb returned null movie");
+            log.error("tmdbId: " + tmdbId + "... Error Message: " + e.getLocalizedMessage());
             return null;
         }
 
