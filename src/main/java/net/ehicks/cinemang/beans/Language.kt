@@ -10,7 +10,8 @@ import javax.persistence.Id
 data class Language @JvmOverloads constructor(
         @Id
         var id: String = "",
-        var name: String = ""
+        var name: String = "",
+        var count: Long = 0
 ) : Serializable {
     override fun toString(): String {
         return "Language $name"
@@ -18,4 +19,6 @@ data class Language @JvmOverloads constructor(
 }
 
 @Repository
-interface LanguageRepository : JpaRepository<Language, String>
+interface LanguageRepository : JpaRepository<Language, String> {
+    fun findByOrderByCountDesc(): List<Language>
+}

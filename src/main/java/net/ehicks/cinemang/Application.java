@@ -44,6 +44,7 @@ public class Application
                 seeder.getGenres();
                 seeder.getLanguages();
                 seeder.getFilms();
+                seeder.getLanguageCounts();
             }
             catch (Exception e)
             {

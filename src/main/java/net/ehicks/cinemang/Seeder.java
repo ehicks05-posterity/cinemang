@@ -29,9 +29,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
@@ -59,17 +57,20 @@ public class Seeder
     @Scheduled(cron = "${cinemang.seeder.cron}")
     public void runTask()
     {
+        log.info("Starting Seeder.runTask...");
         long start = System.currentTimeMillis();
 
         getGenres();
         getLanguages();
         getFilms();
+        getLanguageCounts();
 
         log.info("Seeder.runTask finished in " + (System.currentTimeMillis() - start) + "ms");
     }
 
     public void getGenres()
     {
+        log.info("Getting genres...");
         if (genreRepo.count() != 0)
             return;
 
@@ -80,6 +81,7 @@ public class Seeder
 
     public void getLanguages()
     {
+        log.info("Getting languages...");
         if (languageRepo.count() != 0)
             return;
 
@@ -99,9 +101,23 @@ public class Seeder
         }
     }
 
+    public void getLanguageCounts()
+    {
+        log.info("Getting language counts...");
+        languageRepo.findAll().forEach(language -> {
+            language.setCount(filmRepo.countByLanguage(language));
+            languageRepo.save(language);
+        });
+    }
+
     public void getFilms()
     {
         Path dailyIdFile = getDailyIdFile();
+        int linesRead = 0;
+        int filmsTooFreshToRequest = 0;
+        int filmsRequested = 0;
+        int filmsSaved = 0;
+        
         if (dailyIdFile != null)
         {
             try (InputStream fileStream = new FileInputStream(dailyIdFile.toFile());
@@ -112,26 +128,80 @@ public class Seeder
                 TmdbMovies movies = new TmdbApi(apiKey).getMovies();
                 ObjectMapper mapper = new ObjectMapper();
                 String line;
+                List<Integer> tmdbIds = new ArrayList<>();
                 while ((line = buffered.readLine()) != null)
                 {
-                    JsonNode actualObj = mapper.readTree(line);
-                    int tmdbId = actualObj.get("id").asInt();
-
-                    Film film = filmRepo.findById(tmdbId).orElse(null);
-
-                    if (film == null || film.getLastUpdated().isBefore(LocalDateTime.now().minusDays(7)))
+                    linesRead++;
+                    if (linesRead % 1000 == 0)
                     {
-                        film = getFilm(movies, tmdbId);
-                        if (film != null)
-                            filmRepo.save(film);
+                        log.info("linesRead: " + linesRead +
+                                ", filmsTooFreshToRequest: " + filmsTooFreshToRequest +
+                                ", filmsRequested: " + filmsRequested +
+                                ", filmsSaved: " + filmsSaved);
+                    }
+
+                    int id = mapper.readTree(line).get("id").asInt();
+
+                    tmdbIds.add(id);
+                    if (tmdbIds.size() >= 1000)
+                    {
+                        List<Film> films = filmRepo.findAllById(tmdbIds);
+                        Map<Integer, Film> filmMap = films.stream().collect(Collectors.toMap(Film::getTmdbId, film -> film));
+                        for (int tmdbId : tmdbIds)
+                        {
+                            int[] results = processTmdbId(movies, filmMap, tmdbId);
+                            filmsTooFreshToRequest += results[0];
+                            filmsRequested += results[1];
+                            filmsSaved += results[2];
+                        }
+
+                        tmdbIds.clear();
                     }
                 }
+
+                // deal with leftovers
+                List<Film> films = filmRepo.findAllById(tmdbIds);
+                Map<Integer, Film> filmMap = films.stream().collect(Collectors.toMap(Film::getTmdbId, film -> film));
+                for (int tmdbId : tmdbIds)
+                {
+                    int[] results = processTmdbId(movies, filmMap, tmdbId);
+                    filmsTooFreshToRequest += results[0];
+                    filmsRequested += results[1];
+                    filmsSaved += results[2];
+                }
+
+                tmdbIds.clear();
             }
             catch (Exception e)
             {
                 log.error(e.getLocalizedMessage(), e);
             }
         }
+    }
+
+    private int[] processTmdbId(TmdbMovies movies, Map<Integer, Film> filmMap, int tmdbId)
+    {
+        int[] results = new int[3];
+        Film film = filmMap.get(tmdbId);
+
+        if (film != null && film.getLastUpdated().isAfter(LocalDateTime.now().minusDays(7)))
+        {
+            results[0] = 1;
+            return results;
+        }
+
+        if (film == null)
+        {
+            film = getFilm(movies, tmdbId);
+            results[1] = 1;
+            if (film != null)
+            {
+                filmRepo.save(film);
+                results[2] = 1;
+            }
+        }
+
+        return results;
     }
 
     private Path getDailyIdFile()
@@ -177,7 +247,10 @@ public class Seeder
         }
 
         if (movie == null)
+        {
+            log.error("tmdb returned null movie");
             return null;
+        }
 
         String director = movie.getCrew().stream()
                 .filter(crew -> crew.getJob().equals("Director"))
@@ -193,28 +266,40 @@ public class Seeder
                 .map(PersonCast::getName)
                 .reduce((s, s2) -> s + ", " + s2).orElse("");
 
-        List<ReleaseDate> usReleaseDates = movie.getReleases().stream()
+        // look for oldest theatrical USA release
+        ReleaseDate releaseDate = movie.getReleases().stream()
                 .filter(releaseInfo -> releaseInfo.getCountry().equals("US"))
-                .findFirst()
-                .map(ReleaseInfo::getReleaseDates).orElse(null);
+                .flatMap(releaseInfo -> releaseInfo.getReleaseDates().stream())
+                .filter(releaseDate1 -> releaseDate1.getType().equals("3"))
+                .min(Comparator.comparing(ReleaseDate::getReleaseDate))
+                .orElse(null);
 
         String certification = "";
-        String released = "";
-        if (usReleaseDates != null)
-        {
-            ReleaseDate theatrical = usReleaseDates.stream()
-                    .filter(releaseDate -> releaseDate.getType().equals("3"))
-                    .findFirst().orElse(null);
+        if (releaseDate != null)
+            certification = releaseDate.getCertification();
 
-            if (theatrical != null)
-            {
-                certification = theatrical.getCertification();
-                released = theatrical.getReleaseDate();
-            }
+        // if not found, relax the country requirement...
+        if (releaseDate == null)
+        {
+            releaseDate = movie.getReleases().stream()
+                    .flatMap(releaseInfo -> releaseInfo.getReleaseDates().stream())
+                    .filter(releaseDate1 -> releaseDate1.getType().equals("3"))
+                    .min(Comparator.comparing(ReleaseDate::getReleaseDate))
+                    .orElse(null);
         }
 
-        if (released.isEmpty())
-            return null;
+        // if not found, relax the release type requirement...
+        if (releaseDate == null)
+        {
+            releaseDate = movie.getReleases().stream()
+                    .flatMap(releaseInfo -> releaseInfo.getReleaseDates().stream())
+                    .min(Comparator.comparing(ReleaseDate::getReleaseDate))
+                    .orElse(null);
+        }
+
+        LocalDate released = releaseDate != null
+                ? LocalDate.parse(releaseDate.getReleaseDate(), DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+                : null;
 
         Set<Genre> genres = movie.getGenres().stream()
                 .map(genre -> new Genre(genre.getId(), genre.getName()))
@@ -222,7 +307,10 @@ public class Seeder
 
         Language language = languageRepo.findById(movie.getOriginalLanguage()).orElse(null);
         if (language == null)
+        {
+            log.error(movie + " missing original language");
             return null;
+        }
 
         Film film = new Film();
         film.setTmdbId(movie.getId());
@@ -232,7 +320,7 @@ public class Seeder
         film.setRated(certification);
         film.setRuntime(movie.getRuntime());
         film.setGenres(genres);
-        film.setReleased(LocalDate.parse(released, DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+        film.setReleased(released);
         film.setDirector(director);
         film.setWriter(writer);
         film.setActors(cast);

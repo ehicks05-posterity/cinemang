@@ -81,8 +81,9 @@ public class FilmsController
         }
 
         mav.addObject("filmSearchForm", filmSearchForm);
-        mav.addObject("languages", languageRepository.findAll());
+        mav.addObject("languages", languageRepository.findByOrderByCountDesc());
         mav.addObject("genres", genreRepository.findAll());
+        mav.addObject("filmCount", filmRepo.count());
 
         return mav;
     }
@@ -176,6 +177,10 @@ public class FilmsController
         Root<Film> filmRoot = query.from(Film.class);
 
         List<Predicate> predicates = new ArrayList<>();
+
+        predicates.add(cb.isNotNull(filmRoot.get("released")));
+        predicates.add(cb.isNotNull(filmRoot.get("imdbId")));
+        predicates.add(cb.le(cb.length(filmRoot.get("title")), 255));
 
         if (form.getTitle().length() > 0)
             predicates.add(cb.like(cb.lower(filmRoot.get("title")), "%" + form.getTitle().toLowerCase() + "%"));

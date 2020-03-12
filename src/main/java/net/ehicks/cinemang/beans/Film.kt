@@ -11,7 +11,8 @@ import javax.persistence.*
 data class Film @JvmOverloads constructor(
         @Id
         var tmdbId: Int = 0,
-        var imdbId: String = "",
+        var imdbId: String? = null,
+        @Column(length = 4000)
         var title: String = "",
         var year: String = "",
 
@@ -32,7 +33,7 @@ data class Film @JvmOverloads constructor(
         var runtime: Int = 0,
         var rated: String = "",
         var revenue: Long = 0L,
-        var released: LocalDate = LocalDate.now(),
+        var released: LocalDate? = null,
         var userVoteAverage: Float = 0f,
         var userVoteCount: Int = 0,
         var lastUpdated: LocalDateTime = LocalDateTime.now()
@@ -70,4 +71,6 @@ data class Film @JvmOverloads constructor(
 }
 
 @Repository
-interface FilmRepository : JpaRepository<Film, Int>
+interface FilmRepository : JpaRepository<Film, Int> {
+    fun countByLanguage(language: Language): Long
+}
