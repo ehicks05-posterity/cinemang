@@ -11,7 +11,7 @@ class FilmSearchForm @JvmOverloads constructor(
         , var toRating: Double? = 10.0
         , var fromReleaseDate: LocalDate? = null
         , var toReleaseDate: LocalDate? = null
-        , var language: Language? = null
+        , var language: String? = "en"
         , var genre: Genre? = null
         , var sortColumn: String = "userVoteAverage"
         , var sortDirection: String = "desc"

@@ -185,7 +185,7 @@ public class FilmsController
         if (form.getTitle().length() > 0)
             predicates.add(cb.like(cb.lower(filmRoot.get("title")), "%" + form.getTitle().toLowerCase() + "%"));
         if (form.getLanguage() != null)
-            predicates.add(cb.equal(filmRoot.get("language"), form.getLanguage()));
+            predicates.add(cb.equal(filmRoot.get("language").get("id"), form.getLanguage()));
         if (form.getGenre() != null)
         {
             predicates.add(cb.isMember(form.getGenre(), filmRoot.get("genres")));

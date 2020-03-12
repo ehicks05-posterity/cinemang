@@ -294,7 +294,7 @@
                                             <select id="language" name="language">
                                                 <option value="" th:selected="${filmSearchForm.language == ''}">Any</option>
                                                 <option th:each="language : ${languages}" th:value="${language.getId()}" th:text="${language.getName()}"
-                                                        th:selected="${filmSearchForm.language == language}"></option>
+                                                        th:selected="${filmSearchForm.language == language.id}"></option>
                                             </select>
                                         </div>
                                     </div>
