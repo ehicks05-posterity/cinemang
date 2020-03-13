@@ -207,6 +207,8 @@ public class FilmsController
             orderList.add(cb.asc(filmRoot.get(form.getSortColumn())));
         else
             orderList.add(cb.desc(filmRoot.get(form.getSortColumn())));
+        
+        orderList.add(cb.asc(filmRoot.get("tmdbId")));
 
         query.select(filmRoot)
                 .where(predicates.toArray(new Predicate[]{}))
