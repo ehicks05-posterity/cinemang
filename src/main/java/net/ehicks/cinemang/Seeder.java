@@ -6,7 +6,6 @@ import info.movito.themoviedbapi.TmdbApi;
 import info.movito.themoviedbapi.TmdbMovies;
 import info.movito.themoviedbapi.model.MovieDb;
 import info.movito.themoviedbapi.model.ReleaseDate;
-import info.movito.themoviedbapi.model.ReleaseInfo;
 import info.movito.themoviedbapi.model.people.PersonCast;
 import info.movito.themoviedbapi.model.people.PersonCrew;
 import info.movito.themoviedbapi.tools.ApiUrl;
@@ -39,6 +38,8 @@ import static info.movito.themoviedbapi.TmdbMovies.MovieMethod;
 public class Seeder
 {
     private static final Logger log = LoggerFactory.getLogger(Seeder.class);
+
+    private static final int DAYS_BETWEEN_UPDATES = 7;
 
     private FilmRepository filmRepo;
     private GenreRepository genreRepo;
@@ -118,79 +119,60 @@ public class Seeder
         int filmsTooFreshToRequest = 0;
         int filmsRequested = 0;
         int filmsSaved = 0;
-        
+
         if (dailyIdFile != null)
         {
             try
             {
                 TmdbMovies movies = new TmdbApi(apiKey).getMovies();
-                List<Integer> tmdbIdBatch = new ArrayList<>();
 
                 List<Integer> tmdbIds = Files.readAllLines(dailyIdFile)
                         .stream().map(Integer::parseInt).collect(Collectors.toList());
 
-                for (Integer id : tmdbIds)
+                Map<Integer, LocalDateTime> filmMap = filmRepo.findAllBy()
+                        .stream().collect(Collectors.toMap(FilmIdAndLastUpdated::getTmdbId, FilmIdAndLastUpdated::getLastUpdated));
+
+                for (Integer tmdbId : tmdbIds)
                 {
-                    linesRead++;
-                    if (linesRead % 100_000 == 0)
+                    if (filmsSaved > tmdbIds.size() / DAYS_BETWEEN_UPDATES)
                     {
-                        log.info("linesRead: " + linesRead +
-                                ", filmsTooFreshToRequest: " + filmsTooFreshToRequest +
-                                ", filmsRequested: " + filmsRequested +
-                                ", filmsSaved: " + filmsSaved);
+                        log.info("1/" + DAYS_BETWEEN_UPDATES + " movies from tmdb have been saved. Stopping now.");
+                        break;
                     }
 
-                    tmdbIdBatch.add(id);
-                    if (tmdbIdBatch.size() >= 25_000)
-                    {
-                        List<Film> films = filmRepo.findAllById(tmdbIdBatch);
-                        Map<Integer, Film> filmMap = films.stream().collect(Collectors.toMap(Film::getTmdbId, film -> film));
-                        for (int tmdbId : tmdbIdBatch)
-                        {
-                            int[] results = processTmdbId(movies, filmMap, tmdbId);
-                            filmsTooFreshToRequest += results[0];
-                            filmsRequested += results[1];
-                            filmsSaved += results[2];
-                        }
-
-                        tmdbIdBatch.clear();
-                    }
-                }
-
-                // deal with leftovers
-                List<Film> films = filmRepo.findAllById(tmdbIdBatch);
-                Map<Integer, Film> filmMap = films.stream().collect(Collectors.toMap(Film::getTmdbId, film -> film));
-                for (int tmdbId : tmdbIdBatch)
-                {
                     int[] results = processTmdbId(movies, filmMap, tmdbId);
                     filmsTooFreshToRequest += results[0];
                     filmsRequested += results[1];
                     filmsSaved += results[2];
+                    linesRead++;
                 }
-
-                tmdbIdBatch.clear();
             }
             catch (Exception e)
             {
                 log.error(e.getLocalizedMessage(), e);
             }
+
+            log.info("linesRead: " + linesRead +
+                    ", filmsTooFreshToRequest: " + filmsTooFreshToRequest +
+                    ", filmsRequested: " + filmsRequested +
+                    ", filmsSaved: " + filmsSaved);
         }
     }
 
-    private int[] processTmdbId(TmdbMovies movies, Map<Integer, Film> filmMap, int tmdbId)
+    private int[] processTmdbId(TmdbMovies movies, Map<Integer, LocalDateTime> filmMap, int tmdbId)
     {
         int[] results = new int[3];
-        Film film = filmMap.get(tmdbId);
+        LocalDateTime filmLastUpdated = filmMap.get(tmdbId);
 
-        if (film != null && film.getLastUpdated().isAfter(LocalDateTime.now().minusDays(7)))
+        if (filmLastUpdated != null && filmLastUpdated.isAfter(LocalDateTime.now().minusDays(DAYS_BETWEEN_UPDATES)))
         {
             results[0] = 1;
             return results;
         }
 
-        if (film == null)
+        if (filmLastUpdated == null)
         {
-            film = getFilm(movies, tmdbId);
+            Film film = getFilm(movies, tmdbId);
             results[1] = 1;
             if (film != null)
             {
@@ -292,7 +274,7 @@ public class Seeder
         }
         catch (Exception e)
         {
-            log.error("tmdbId: " + tmdbId + "... Error Message: " + e.getLocalizedMessage());
+            log.debug("tmdbId: " + tmdbId + "... Error Message: " + e.getLocalizedMessage());
             return null;
         }
 

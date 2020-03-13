@@ -22,7 +22,7 @@ data class Film @JvmOverloads constructor(
                 inverseJoinColumns = [JoinColumn(name = "genre_id")])
         var genres: Set<Genre> = HashSet(),
 
-        @ManyToOne(fetch = FetchType.LAZY)
+        @ManyToOne(fetch = FetchType.EAGER)
         var language: Language = Language("TEMP", "TEMP"),
         var director: String = "",
         var writer: String = "",
@@ -73,4 +73,10 @@ data class Film @JvmOverloads constructor(
 @Repository
 interface FilmRepository : JpaRepository<Film, Int> {
     fun countByLanguage(language: Language): Long
+    fun findAllBy(): List<FilmIdAndLastUpdated>
+}
+
+interface FilmIdAndLastUpdated {
+    val tmdbId: Int
+    val lastUpdated: LocalDateTime
 }
