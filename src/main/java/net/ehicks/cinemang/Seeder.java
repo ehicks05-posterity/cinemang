@@ -40,6 +40,7 @@ public class Seeder
     private static final Logger log = LoggerFactory.getLogger(Seeder.class);
 
     private static final int DAYS_BETWEEN_UPDATES = 7;
+    private static final int DAYS_TO_DELETE_MISSING_ID = 14; // keep higher than DAYS_BETWEEN_UPDATES
 
     private FilmRepository filmRepo;
     private GenreRepository genreRepo;
@@ -119,6 +120,8 @@ public class Seeder
         int filmsTooFreshToRequest = 0;
         int filmsRequested = 0;
         int filmsSaved = 0;
+        int filmsMissing = 0;
+        int filmsDeleted = 0;
 
         if (dailyIdFile != null)
         {
@@ -146,6 +149,10 @@ public class Seeder
                     filmsSaved += results[2];
                     linesRead++;
                 }
+
+                List<Film> filmsMissingFromIdFile = getFilmsMissingFromIdFile(tmdbIds, filmMap);
+                filmsMissing = filmsMissingFromIdFile.size();
+                filmsDeleted = deleteFilmsMissingFromIdFile(filmsMissingFromIdFile);
             }
             catch (Exception e)
             {
@@ -153,10 +160,39 @@ public class Seeder
             }
 
             log.info("linesRead: " + linesRead +
-                    ", filmsTooFreshToRequest: " + filmsTooFreshToRequest +
-                    ", filmsRequested: " + filmsRequested +
-                    ", filmsSaved: " + filmsSaved);
+                    ", tooFreshToRequest: " + filmsTooFreshToRequest +
+                    ", requested: " + filmsRequested +
+                    ", saved: " + filmsSaved +
+                    ", missing: " + filmsMissing +
+                    ", deleted: " + filmsDeleted);
         }
+    }
+
+    private List<Film> getFilmsMissingFromIdFile(List<Integer> validTmdbIds, Map<Integer, LocalDateTime> filmMap)
+    {
+        Map<Integer, Integer> tmdbIdMap = validTmdbIds.stream()
+                .collect(Collectors.toMap(integer -> integer, integer -> integer));
+
+        return filmMap.keySet().stream()
+                .filter(key -> !tmdbIdMap.containsKey(key))
+                .map(key -> filmRepo.findById(key).orElse(null))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    private int deleteFilmsMissingFromIdFile(List<Film> films)
+    {
+        List<Film> oldEnoughToDelete = films.stream()
+                .filter(film -> film.getLastUpdated().isBefore(LocalDateTime.now().minusDays(DAYS_TO_DELETE_MISSING_ID)))
+                .collect(Collectors.toList());
+
+        oldEnoughToDelete.forEach(film -> {
+            log.info("Deleting film missing from Daily ID File and not updated for " +
+                    DAYS_TO_DELETE_MISSING_ID + " days: " + film.toString());
+            filmRepo.delete(film);
+        });
+
+        return oldEnoughToDelete.size();
     }
 
     private int[] processTmdbId(TmdbMovies movies, Map<Integer, LocalDateTime> filmMap, int tmdbId)
