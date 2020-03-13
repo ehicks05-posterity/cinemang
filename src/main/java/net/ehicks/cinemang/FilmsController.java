@@ -110,7 +110,7 @@ public class FilmsController
         if (sortDirection != null) filmSearchForm.setSortDirection(sortDirection);
         FilmSearchResult filmSearchResult = performSearch(filmSearchForm);
 
-        ModelAndView mav = new ModelAndView("filmList :: filmList");
+        ModelAndView mav = filmSearchForm.getResultView().equals("filmList") ? new ModelAndView("filmList :: filmList") : new ModelAndView("filmMediaItems :: filmMediaItems");
         mav.addObject("filmSearchForm", filmSearchForm);
         mav.addObject("filmSearchResult", filmSearchResult);
 

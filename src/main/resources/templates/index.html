@@ -78,7 +78,7 @@
 
         function resetPagination()
         {
-            document.getElementById('resetPage').value = 'yes';
+            document.getElementById('page').value = '1';
         }
 
         function ajaxFilms(newPage, newSortColumn, newSortDirection)
@@ -133,7 +133,7 @@
 
         function toggleSecondaryFields()
         {
-            document.querySelector('#secondaryFields').classList.toggle('is-hidden');
+            document.querySelectorAll('.secondaryFields').forEach(el => el.classList.toggle('is-hidden'));
             const button = document.querySelector('#toggleSecondaryFieldsButton');
             button.innerText = button.innerText === 'More...' ? 'Less...' : 'More...';
         }
@@ -190,7 +190,7 @@
         <div class="columns is-centered">
             <div class="column is-narrow">
                 <div class="box">
-                    <div class="field is-horizontal">
+                    <div class="field is-horizontal secondaryFields is-hidden">
                         <div class="field-label is-normal">
                             <label class="label"></label>
                         </div>
@@ -208,19 +208,19 @@
                         <input type="hidden" name="resetPage" id="resetPage" th:value="false"/>
 
                         <div class="field is-horizontal">
-                            <div class="field-label is-normal">
-                                <label class="label">Title</label>
+                            <div class="field-label is-normal secondaryFields is-hidden">
+                                <label class="label ">Title</label>
                             </div>
                             <div class="field-body">
                                 <div class="field">
                                     <div class="control">
-                                        <input class="input is-normal" id="title" name="title" type="text" th:value="${filmSearchForm.title}">
+                                        <input class="input is-normal" id="title" name="title" type="text" placeholder="Title" th:value="${filmSearchForm.title}">
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <span id="secondaryFields" class="is-hidden">
+                        <span class="secondaryFields is-hidden">
                         <div class="field is-horizontal">
                             <div class="field-label is-normal">
                                 <label class="label">Minimum Votes</label>
@@ -372,7 +372,7 @@
                         </span>
 
                         <div class="field is-horizontal">
-                            <div class="field-label">
+                            <div class="field-label secondaryFields is-hidden">
                                 <!-- Left empty for spacing -->
                             </div>
                             <div class="field-body">
@@ -387,7 +387,7 @@
                         </div>
 
                         <div class="field is-horizontal">
-                            <div class="field-label">
+                            <div class="field-label secondaryFields is-hidden">
                                 <!-- Left empty for spacing -->
                             </div>
                             <div class="field-body">

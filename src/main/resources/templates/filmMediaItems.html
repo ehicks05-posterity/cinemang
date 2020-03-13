@@ -4,7 +4,7 @@
 <head></head>
 
 <body>
-<div th:fragment="filmList" id="results-block">
+<div th:fragment="filmMediaItems" id="results-block">
     <th:block th:each="film,loop : ${filmSearchResult.pageOfResults}">
 <!--        th:title="${loop.count + ((filmSearchResult.page - 1) * filmSearchResult.pageSize)}-->
         <article class="media">
