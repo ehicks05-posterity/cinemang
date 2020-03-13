@@ -8,6 +8,14 @@ import java.time.LocalDateTime
 import javax.persistence.*
 
 @Entity
+@Table(indexes = [
+    Index(name = "IDX_FILM_TITLE", columnList = "title"),
+    Index(name = "IDX_FILM_LANGUAGE", columnList = "language_id"),
+    Index(name = "IDX_FILM_RELEASED", columnList = "released"),
+    Index(name = "IDX_FILM_RELEASED", columnList = "released"),
+    Index(name = "IDX_FILM_USER_VOTE_AVERAGE", columnList = "userVoteAverage"),
+    Index(name = "IDX_FILM_USER_VOTE_COUNT", columnList = "userVoteCount")
+])
 data class Film @JvmOverloads constructor(
         @Id
         var tmdbId: Int = 0,
@@ -39,7 +47,7 @@ data class Film @JvmOverloads constructor(
         var lastUpdated: LocalDateTime = LocalDateTime.now()
 ) : Serializable {
     override fun toString(): String {
-        return "Film $title"
+        return "Film $title ($year)"
     }
 
     fun getGenreString(): String {
