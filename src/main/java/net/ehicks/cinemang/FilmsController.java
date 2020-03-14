@@ -190,8 +190,10 @@ public class FilmsController
         {
             predicates.add(cb.isMember(form.getGenre(), filmRoot.get("genres")));
         }
-        if (form.getMinVotes() != null && form.getMinVotes() > 0)
-            predicates.add(cb.greaterThanOrEqualTo(filmRoot.get("userVoteCount"), form.getMinVotes()));
+        if (form.getFromVotes() != null && form.getFromVotes() > 0)
+            predicates.add(cb.greaterThanOrEqualTo(filmRoot.get("userVoteCount"), form.getFromVotes()));
+        if (form.getToVotes() != null && form.getToVotes() > 0)
+            predicates.add(cb.lessThanOrEqualTo(filmRoot.get("userVoteCount"), form.getToVotes()));
         if (form.getFromReleaseDate() != null)
             predicates.add(cb.greaterThanOrEqualTo(filmRoot.get("released"), form.getFromReleaseDate()));
         if (form.getToReleaseDate() != null)

@@ -223,15 +223,24 @@
                         <span class="secondaryFields is-hidden">
                         <div class="field is-horizontal">
                             <div class="field-label is-normal">
-                                <label class="label">Minimum Votes</label>
+                                <label class="label">Votes</label>
                             </div>
                             <div class="field-body">
                                 <div class="field">
                                     <div class="control has-icons-left">
-                                        <input class="input is-normal" id="minVotes" name="minVotes" type="number"
-                                               th:value="${filmSearchForm.minVotes}">
+                                        <input class="input is-normal" id="fromVotes" name="fromVotes" type="number"
+                                               th:value="${filmSearchForm.fromVotes}">
                                         <span class="icon is-normal is-left">
                                             <i class="far fa-star has-text-warning"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <div class="control has-icons-left">
+                                        <input class="input is-normal" id="toVotes" name="toVotes" type="number"
+                                               th:value="${filmSearchForm.toVotes}">
+                                        <span class="icon is-normal is-left">
+                                            <i class="fas fa-star has-text-warning"></i>
                                         </span>
                                     </div>
                                 </div>
