@@ -16,7 +16,8 @@
             <div class="media-content">
                 <div class="content">
                     <div>
-                        <strong th:text="${film.title}"></strong> <span th:text="${'(' + film.released.year + ')'}"></span>
+                        <strong th:text="${film.title}"></strong>
+                        <small th:text="${'(' + film.released.year + ')'}"></small>
                         <small th:text="${film.runtimeString}"></small>
                         <br>
                         <div>

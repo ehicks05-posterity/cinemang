@@ -1,11 +1,10 @@
 package net.ehicks.cinemang
 
 import net.ehicks.cinemang.beans.Genre
-import net.ehicks.cinemang.beans.Language
 import java.time.LocalDate
 
 class FilmSearchForm @JvmOverloads constructor(
-        var minVotes: Int? = 100
+        var minVotes: Int? = 250
         , var title: String = ""
         , var fromRating: Double? = 0.0
         , var toRating: Double? = 10.0
