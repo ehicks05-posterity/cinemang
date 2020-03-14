@@ -13,6 +13,10 @@
     <link href="https://fonts.googleapis.com/css?family=Bellota|Bellota+Text|Montserrat|Open+Sans&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.8.0/css/bulma.min.css" media="screen" type="text/css" >
     <link rel="stylesheet" type="text/css" href="styles/bulma-prefers-dark.min.css" />
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma-calendar@6.0.7/dist/css/bulma-calendar.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bulma-calendar@6.0.7/dist/js/bulma-calendar.min.js"></script>
+
     <script src="https://kit.fontawesome.com/eb9542ee7f.js" crossorigin="anonymous"></script>
 
     <script th:inline="javascript">
@@ -163,9 +167,37 @@
                 });
         }, false);
 
+        // initialize datepickers
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize all input of type date
+            var calendars = bulmaCalendar.attach('[type="date"]', {});
+
+            // Loop on each calendar initialized
+            for(var i = 0; i < calendars.length; i++) {
+                // Add listener to date:selected event
+                calendars[i].on('select', date => {
+                    console.log(date);
+                });
+            }
+
+            // To access to bulmaCalendar instance of an element
+            var element = document.querySelector('#my-element');
+            if (element) {
+                // bulmaCalendar instance is available as element.bulmaCalendar
+                element.bulmaCalendar.on('select', function(datepicker) {
+                    console.log(datepicker.data.value());
+                });
+            }
+        }, false);
+
         /*]]>*/
     </script>
-
+    <style>
+        /* fix for bulma-calendar */
+        .datetimepicker {
+            z-index: 99;
+        }
+    </style>
 </head>
 <body>
 
@@ -253,19 +285,13 @@
                             </div>
                             <div class="field-body">
                                 <div class="field">
-                                    <p class="control is-expanded has-icons-left">
+                                    <p class="control is-expanded">
                                         <input class="input is-normal" type="date" id="fromReleaseDate" name="fromReleaseDate" th:value="${filmSearchForm.fromReleaseDate}">
-                                        <span class="icon is-normal is-left">
-                                            <i class="far fa-calendar has-text-info"></i>
-                                        </span>
                                     </p>
                                 </div>
                                 <div class="field">
-                                    <p class="control is-expanded has-icons-left has-icons-right">
+                                    <p class="control is-expanded">
                                         <input class="input is-normal" type="date" id="toReleaseDate" name="toReleaseDate" th:value="${filmSearchForm.toReleaseDate}">
-                                        <span class="icon is-normal is-left">
-                                            <i class="fas fa-calendar has-text-info"></i>
-                                        </span>
                                     </p>
                                 </div>
                             </div>
