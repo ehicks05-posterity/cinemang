@@ -41,10 +41,7 @@ public class Application
         return args -> {
             try
             {
-                seeder.getGenres();
-                seeder.getLanguages();
-                seeder.getFilms();
-                seeder.getLanguageCounts();
+                seeder.runTask();
             }
             catch (Exception e)
             {

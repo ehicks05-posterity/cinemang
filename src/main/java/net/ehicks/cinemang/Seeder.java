@@ -39,8 +39,8 @@ public class Seeder
 {
     private static final Logger log = LoggerFactory.getLogger(Seeder.class);
 
-    private static final int DAYS_BETWEEN_UPDATES = 7;
-    private static final int DAYS_TO_DELETE_MISSING_ID = 14; // keep higher than DAYS_BETWEEN_UPDATES
+    private static final int DAYS_BETWEEN_UPDATES = 14;
+    private static final int DAYS_TO_DELETE_MISSING_ID = 21; // keep higher than DAYS_BETWEEN_UPDATES
 
     private FilmRepository filmRepo;
     private GenreRepository genreRepo;
@@ -61,6 +61,12 @@ public class Seeder
     {
         log.info("Starting Seeder.runTask...");
         long start = System.currentTimeMillis();
+
+        if (apiKey == null || apiKey.isEmpty())
+        {
+            log.error("Seeder will not run. API key is missing.");
+            return;
+        }
 
         getGenres();
         getLanguages();
