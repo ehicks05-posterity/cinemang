@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.io.*;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -29,6 +30,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
@@ -39,8 +41,8 @@ public class Seeder
 {
     private static final Logger log = LoggerFactory.getLogger(Seeder.class);
 
-    private static final int DAYS_BETWEEN_UPDATES = 14;
-    private static final int DAYS_TO_DELETE_MISSING_ID = 21; // keep higher than DAYS_BETWEEN_UPDATES
+    private static final int DAYS_BETWEEN_UPDATES = 21;
+    private static final int DAYS_TO_DELETE_MISSING_ID = 28; // keep higher than DAYS_BETWEEN_UPDATES
 
     private FilmRepository filmRepo;
     private GenreRepository genreRepo;
@@ -56,8 +58,18 @@ public class Seeder
     @Value("${cinemang.tmdb.apikey}")
     private String apiKey;
 
+    @PostConstruct
+    public void onStartup() {
+        Executors.newFixedThreadPool(1).submit(Seeder.this::run);
+    }
+
     @Scheduled(cron = "${cinemang.seeder.cron}")
     public void runTask()
+    {
+        run();
+    }
+
+    private void run()
     {
         log.info("Starting Seeder.runTask...");
         long start = System.currentTimeMillis();
