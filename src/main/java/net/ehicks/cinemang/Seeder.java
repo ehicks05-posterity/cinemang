@@ -14,6 +14,10 @@ import net.ehicks.cinemang.beans.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -150,25 +154,36 @@ public class Seeder
                 List<Integer> tmdbIds = Files.readAllLines(dailyIdFile)
                         .stream().map(Integer::parseInt).collect(Collectors.toList());
 
-                Map<Integer, LocalDateTime> filmMap = filmRepo.findAllBy()
-                        .stream().collect(Collectors.toMap(FilmIdAndLastUpdated::getTmdbId, FilmIdAndLastUpdated::getLastUpdated));
-
-                for (Integer tmdbId : tmdbIds)
+                int chunkSize = 1000;
+                for (int chunk = 0; chunk * chunkSize < tmdbIds.size(); chunk++)
                 {
-                    if (filmsSaved > tmdbIds.size() / DAYS_BETWEEN_UPDATES)
-                    {
-                        log.info("1/" + DAYS_BETWEEN_UPDATES + " movies from tmdb have been saved. Stopping now.");
-                        break;
-                    }
+                    int from = chunk * chunkSize;
+                    int to = (chunk + 1) * chunkSize;
+                    if (to >= tmdbIds.size())
+                        to = tmdbIds.size() - 1;
 
-                    int[] results = processTmdbId(movies, filmMap, tmdbId);
-                    filmsTooFreshToRequest += results[0];
-                    filmsRequested += results[1];
-                    filmsSaved += results[2];
-                    linesRead++;
+                    List<Integer> idChunk = tmdbIds.subList(from, to);
+                    List<Film> filmChunk = filmRepo.findAllById(idChunk);
+
+                    for (Integer tmdbId : idChunk)
+                    {
+                        if (filmsSaved > tmdbIds.size() / DAYS_BETWEEN_UPDATES)
+                        {
+                            log.info("1/" + DAYS_BETWEEN_UPDATES + " movies from tmdb have been saved. Stopping now.");
+                            break;
+                        }
+
+                        Film film = filmChunk.stream().filter(film1 -> film1.getTmdbId() == tmdbId).findFirst().orElse(null);
+
+                        int[] results = processTmdbId(movies, tmdbId, film);
+                        filmsTooFreshToRequest += results[0];
+                        filmsRequested += results[1];
+                        filmsSaved += results[2];
+                        linesRead++;
+                    }
                 }
 
-                List<Film> filmsMissingFromIdFile = getFilmsMissingFromIdFile(tmdbIds, filmMap);
+                List<Film> filmsMissingFromIdFile = getFilmsMissingFromIdFile(tmdbIds);
                 filmsMissing = filmsMissingFromIdFile.size();
                 filmsDeleted = deleteFilmsMissingFromIdFile(filmsMissingFromIdFile);
             }
@@ -186,16 +201,28 @@ public class Seeder
         }
     }
 
-    private List<Film> getFilmsMissingFromIdFile(List<Integer> validTmdbIds, Map<Integer, LocalDateTime> filmMap)
+    private List<Film> getFilmsMissingFromIdFile(List<Integer> validTmdbIds)
     {
+        List<Film> results = new ArrayList<>();
         Map<Integer, Integer> tmdbIdMap = validTmdbIds.stream()
                 .collect(Collectors.toMap(integer -> integer, integer -> integer));
 
-        return filmMap.keySet().stream()
-                .filter(key -> !tmdbIdMap.containsKey(key))
-                .map(key -> filmRepo.findById(key).orElse(null))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+        Page<Film> page;
+        Pageable pageable = PageRequest.of(0, 1000, Sort.by("tmdbId").ascending());
+        while (true)
+        {
+            page = filmRepo.findAll(pageable);
+
+            List<Film> missingFromIdFile = page.stream()
+                    .filter(film -> tmdbIdMap.containsKey(film.getTmdbId())).collect(Collectors.toList());
+            results.addAll(missingFromIdFile);
+
+            if (page.hasNext())
+                break;
+            pageable = page.nextPageable();
+        }
+
+        return results;
     }
 
     private int deleteFilmsMissingFromIdFile(List<Film> films)
@@ -213,10 +240,10 @@ public class Seeder
         return oldEnoughToDelete.size();
     }
 
-    private int[] processTmdbId(TmdbMovies movies, Map<Integer, LocalDateTime> filmMap, int tmdbId)
+    private int[] processTmdbId(TmdbMovies movies, int tmdbId, Film film)
     {
         int[] results = new int[3];
-        LocalDateTime filmLastUpdated = filmMap.get(tmdbId);
+        LocalDateTime filmLastUpdated = film != null ? film.getLastUpdated() : null;
 
         if (filmLastUpdated != null && filmLastUpdated.isAfter(LocalDateTime.now().minusDays(DAYS_BETWEEN_UPDATES)))
         {
@@ -226,7 +253,7 @@ public class Seeder
 
         if (filmLastUpdated == null)
         {
-            Film film = getFilm(movies, tmdbId);
+            film = getFilm(movies, tmdbId);
             results[1] = 1;
             if (film != null)
             {

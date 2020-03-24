@@ -81,10 +81,4 @@ data class Film @JvmOverloads constructor(
 @Repository
 interface FilmRepository : JpaRepository<Film, Int> {
     fun countByLanguage(language: Language): Long
-    fun findAllBy(): List<FilmIdAndLastUpdated>
-}
-
-interface FilmIdAndLastUpdated {
-    val tmdbId: Int
-    val lastUpdated: LocalDateTime
 }
