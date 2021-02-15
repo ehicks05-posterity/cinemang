@@ -2,3 +2,6 @@
 /bin
 /logs
 .gradle
+.classpath
+.project
+.settings
