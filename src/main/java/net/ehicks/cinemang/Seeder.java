@@ -38,6 +38,8 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
+import net.ehicks.cinemang.DailyFile;
+
 import static info.movito.themoviedbapi.TmdbMovies.MovieMethod;
 
 @Component
@@ -137,7 +139,7 @@ public class Seeder
     public void getFilms()
     {
         log.info("Getting films...");
-        Path dailyIdFile = getDailyIdFile();
+        Path dailyIdFile = DailyFile.getDailyIdFile();
         int linesRead = 0;
         int filmsTooFreshToRequest = 0;
         int filmsRequested = 0;
@@ -263,87 +265,6 @@ public class Seeder
         }
 
         return results;
-    }
-
-    private String getDailyFilename()
-    {
-        LocalDateTime localDateTime = LocalDateTime.now(ZoneId.of("Z"));
-        if (localDateTime.getHour() < 9)
-            localDateTime = localDateTime.minusDays(1);
-
-        String MM = localDateTime.format(DateTimeFormatter.ofPattern("MM"));
-        String dd = localDateTime.format(DateTimeFormatter.ofPattern("dd"));
-        String YYYY = localDateTime.format(DateTimeFormatter.ofPattern("YYYY"));
-
-        return "movie_ids_" + MM + "_" + dd + "_" + YYYY + ".json.gz";
-    }
-
-    private Path getDailyFilePath()
-    {
-        String tmpDir = System.getProperty("java.io.tmpdir");
-        return Paths.get(tmpDir, getDailyFilename());
-    }
-
-    private Path getDailyFileUnzippedPath()
-    {
-        String tmpDir = System.getProperty("java.io.tmpdir");
-        return Paths.get(tmpDir, getDailyFilename().replace(".json.gz", ".txt"));
-    }
-
-    private Path getDailyIdFile()
-    {
-        Path dailyIdFileUnzipped = getDailyFileUnzippedPath();
-        if (dailyIdFileUnzipped.toFile().exists())
-            return dailyIdFileUnzipped;
-
-        Path dailyIdFile = downloadDailyIdFile();
-        if (dailyIdFile == null)
-            return null;
-
-        return convertDailyIdFileToTextFile(dailyIdFile);
-    }
-
-    private Path downloadDailyIdFile()
-    {
-        try (InputStream in = new URL("http://files.tmdb.org/p/exports/" + getDailyFilename()).openStream();)
-        {
-            Path temp = Files.createFile(getDailyFilePath());
-            Files.copy(in, temp, StandardCopyOption.REPLACE_EXISTING);
-            return temp;
-        }
-        catch (Exception e)
-        {
-            log.error(e.getLocalizedMessage(), e);
-        }
-        return null;
-    }
-
-    private Path convertDailyIdFileToTextFile(Path dailyIdFile)
-    {
-        Path unzipped = Paths.get(dailyIdFile.toString().replace(".json.gz", ".txt"));
-        try (InputStream fileStream = new FileInputStream(dailyIdFile.toFile());
-             InputStream gzipStream = new GZIPInputStream(fileStream);
-             Reader decoder = new InputStreamReader(gzipStream, Charset.defaultCharset());
-             BufferedReader buffered = new BufferedReader(decoder);
-             FileWriter fileWriter = new FileWriter(unzipped.toFile());
-             PrintWriter printWriter = new PrintWriter(fileWriter))
-        {
-            ObjectMapper mapper = new ObjectMapper();
-
-            String line;
-            while ((line = buffered.readLine()) != null)
-            {
-                int id = mapper.readTree(line).get("id").asInt();
-                printWriter.println(id);
-            }
-        }
-        catch (Exception e)
-        {
-            log.error(e.getLocalizedMessage());
-            return null;
-        }
-
-        return unzipped;
     }
 
     private Film getFilm(TmdbMovies movies, int tmdbId)
