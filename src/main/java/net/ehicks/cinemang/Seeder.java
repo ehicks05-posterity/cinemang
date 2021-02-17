@@ -216,10 +216,11 @@ public class Seeder
             page = filmRepo.findAll(pageable);
 
             List<Film> missingFromIdFile = page.stream()
-                    .filter(film -> tmdbIdMap.containsKey(film.getTmdbId())).collect(Collectors.toList());
+                    .filter(film -> !tmdbIdMap.containsKey(film.getTmdbId()))
+                    .collect(Collectors.toList());
             results.addAll(missingFromIdFile);
 
-            if (page.hasNext())
+            if (!page.hasNext())
                 break;
             pageable = page.nextPageable();
         }
