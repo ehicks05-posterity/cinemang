@@ -34,6 +34,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
@@ -47,7 +49,7 @@ public class Seeder
 {
     private static final Logger log = LoggerFactory.getLogger(Seeder.class);
 
-    private static final int DAYS_BETWEEN_UPDATES = 21;
+    private static final int DAYS_BETWEEN_UPDATES = 14;
 
     private FilmRepository filmRepo;
     private GenreRepository genreRepo;
@@ -151,13 +153,13 @@ public class Seeder
             try
             {
                 TmdbMovies movies = new TmdbApi(apiKey).getMovies();
+                ExecutorService executorService = Executors.newWorkStealingPool(32);
 
                 List<Integer> tmdbIds = Files.readAllLines(dailyIdFile)
                         .stream().map(Integer::parseInt).collect(Collectors.toList());
                 log.info("Found " + tmdbIds.size() + " ids in the daily id file...");
-                log.info("Will attempt to fetch 1/" + DAYS_BETWEEN_UPDATES + " (" + tmdbIds.size() / DAYS_BETWEEN_UPDATES + ") films...");
 
-                int chunkSize = 1000;
+                int chunkSize = 5000;
                 outer:
                 for (int chunk = 0; chunk * chunkSize < tmdbIds.size(); chunk++)
                 {
@@ -169,25 +171,25 @@ public class Seeder
                     List<Integer> idChunk = tmdbIds.subList(from, to);
                     List<Film> filmChunk = filmRepo.findAllById(idChunk);
 
-                    for (Integer tmdbId : idChunk)
-                    {
-                        if (saved > tmdbIds.size() / DAYS_BETWEEN_UPDATES) {
-                            log.info("1/" + DAYS_BETWEEN_UPDATES + " movies from tmdb have been saved. Stopping now.");
-                            break outer;
-                        }
-
+                    List<CompletableFuture<ProcessTmdbIdResult>> futures = idChunk.stream().map(tmdbId -> {
                         Film film = filmChunk.stream().filter(film1 -> film1.getTmdbId() == tmdbId).findFirst()
                                 .orElse(null);
 
-                        ProcessTmdbIdResult result = processTmdbId(movies, tmdbId, film);
-                        if (result.fresh) fresh++;
-                        if (result.stale) stale++;
-                        if (result.saved) saved++;
-                        linesRead++;
+                        return CompletableFuture.supplyAsync(() -> processTmdbId(movies, tmdbId, film), executorService);        
+                    }).collect(Collectors.toList());
+
+                    CompletableFuture<Void> combinedFuture = CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
+                    combinedFuture.get();
+
+                    for (CompletableFuture<ProcessTmdbIdResult> future : futures) {
+                        if (future.get().fresh) fresh++;
+                        if (future.get().stale) stale++;
+                        if (future.get().saved) saved++;
                     }
 
-                    log.info("checked " + ((chunk + 1) * chunkSize) + " ids. saved " + saved + " films. "
-                        + (saved / ((tmdbIds.size() / DAYS_BETWEEN_UPDATES) / 100))  + "% of today's target");
+                    int IdsScanned = ((chunk + 1) * chunkSize);
+                    int percent = IdsScanned / (tmdbIds.size() / 100);
+                    log.info("checked " + IdsScanned + " ids (" + percent + "%). saved " + saved + " films.");
                 }
 
                 List<Film> filmsMissingFromIdFile = getFilmsMissingFromIdFile(tmdbIds);
