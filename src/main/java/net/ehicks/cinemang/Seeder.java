@@ -159,7 +159,7 @@ public class Seeder
                         .stream().map(Integer::parseInt).collect(Collectors.toList());
                 log.info("Found " + tmdbIds.size() + " ids in the daily id file...");
 
-                int chunkSize = 5000;
+                int chunkSize = 10000;
                 outer:
                 for (int chunk = 0; chunk * chunkSize < tmdbIds.size(); chunk++)
                 {
@@ -286,6 +286,11 @@ public class Seeder
         catch (Exception e)
         {
             log.debug("tmdbId: " + tmdbId + "... Error Message: " + e.getLocalizedMessage());
+            return null;
+        }
+
+        if (movie.getCrew() == null || movie.getCast() == null || movie.getReleases() == null) {
+            log.debug("movie is missing required data");
             return null;
         }
 
