@@ -22,25 +22,15 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.io.*;
-import java.net.URL;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
-import java.util.zip.GZIPInputStream;
-
-import net.ehicks.cinemang.DailyFile;
 
 import static info.movito.themoviedbapi.TmdbMovies.MovieMethod;
 
@@ -48,8 +38,6 @@ import static info.movito.themoviedbapi.TmdbMovies.MovieMethod;
 public class Seeder
 {
     private static final Logger log = LoggerFactory.getLogger(Seeder.class);
-
-    private static final int DAYS_BETWEEN_UPDATES = 14;
 
     private FilmRepository filmRepo;
     private GenreRepository genreRepo;
@@ -140,75 +128,66 @@ public class Seeder
     public void getFilms()
     {
         log.info("Getting films...");
-        Path dailyIdFile = DailyFile.getDailyIdFile();
-        int linesRead = 0;
-        int fresh = 0;
-        int stale = 0;
-        int saved = 0;
-        int missing = 0;
-        int filmsDeleted = 0;
 
-        if (dailyIdFile != null)
+        try
         {
-            try
-            {
-                TmdbMovies movies = new TmdbApi(apiKey).getMovies();
-                ExecutorService executorService = Executors.newWorkStealingPool(32);
+            // full update when bootstrapping or on 1st of month
+            boolean full = filmRepo.count() == 0 || LocalDate.now().getDayOfMonth() == 1;
 
-                List<Integer> tmdbIds = Files.readAllLines(dailyIdFile)
+            List<Integer> tmdbIds;
+            if (full) {
+                Path dailyIdFile = DailyFile.getDailyIdFile();
+                if (dailyIdFile == null) return;
+
+                tmdbIds = Files.readAllLines(dailyIdFile)
                         .stream().map(Integer::parseInt).collect(Collectors.toList());
                 log.info("Found " + tmdbIds.size() + " ids in the daily id file...");
+            } else {
+                tmdbIds = Changes.getChanges(apiKey);
+                log.info("Found " + tmdbIds.size() + " ids in the changes endpoint response...");
+            }
 
-                int chunkSize = 10000;
-                outer:
-                for (int chunk = 0; chunk * chunkSize < tmdbIds.size(); chunk++)
-                {
-                    int from = chunk * chunkSize;
-                    int to = (chunk + 1) * chunkSize;
-                    if (to >= tmdbIds.size())
-                        to = tmdbIds.size() - 1;
+            TmdbMovies movies = new TmdbApi(apiKey).getMovies();
+            ExecutorService executorService = Executors.newWorkStealingPool(32);
 
-                    List<Integer> idChunk = tmdbIds.subList(from, to);
-                    List<Film> filmChunk = filmRepo.findAllById(idChunk);
+            int saved = 0;
+            int chunkSize = 10000;
+            for (int chunk = 0; chunk * chunkSize < tmdbIds.size(); chunk++)
+            {
+                int from = chunk * chunkSize;
+                int to = (chunk + 1) * chunkSize;
+                if (to > tmdbIds.size())
+                    to = tmdbIds.size();
 
-                    List<CompletableFuture<ProcessTmdbIdResult>> futures = idChunk.stream().map(tmdbId -> {
-                        Film film = filmChunk.stream().filter(film1 -> film1.getTmdbId() == tmdbId).findFirst()
-                                .orElse(null);
+                List<Integer> idChunk = tmdbIds.subList(from, to);
 
-                        return CompletableFuture.supplyAsync(() -> processTmdbId(movies, tmdbId, film), executorService);        
-                    }).collect(Collectors.toList());
+                List<CompletableFuture<Boolean>> futures = idChunk.stream()
+                        .map(tmdbId -> CompletableFuture.supplyAsync(() -> processTmdbId(movies, tmdbId), executorService))
+                        .collect(Collectors.toList());
 
-                    CompletableFuture<Void> combinedFuture = CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
-                    combinedFuture.get();
+                CompletableFuture<Void> combinedFuture = CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
+                combinedFuture.get();
 
-                    for (CompletableFuture<ProcessTmdbIdResult> future : futures) {
-                        if (future.get().fresh) fresh++;
-                        if (future.get().stale) stale++;
-                        if (future.get().saved) saved++;
-                    }
+                for (CompletableFuture<Boolean> future : futures)
+                    if (future.get()) saved++;
 
-                    int IdsScanned = ((chunk + 1) * chunkSize);
-                    int percent = IdsScanned / (tmdbIds.size() / 100);
-                    log.info("checked " + IdsScanned + " ids (" + percent + "%). saved " + saved + " films.");
-                }
+                int IdsProcessed = (chunk * chunkSize) + idChunk.size();
+                int percent = IdsProcessed / (tmdbIds.size() / 100);
+                log.info("processed " + IdsProcessed + " ids (" + percent + "%). saved " + saved + " films.");
+            }
 
+            if (full) {
                 List<Film> filmsMissingFromIdFile = getFilmsMissingFromIdFile(tmdbIds);
-                missing = filmsMissingFromIdFile.size();
                 deleteFilmsMissingFromIdFile(filmsMissingFromIdFile);
             }
-            catch (Exception e)
-            {
-                log.error(e.getLocalizedMessage(), e);
-            }
-
-            log.info("linesRead " + linesRead + // daily file id's scanned 
-                    ", fresh " + fresh +        // not updated             
-                    ", stale " + stale +        // tried to update         
-                    ", saved " + saved +        // successfully saved      
-                    ", missing " + missing);    // and removed             
+        }
+        catch (Exception e)
+        {
+            log.error(e.getLocalizedMessage(), e);
         }
     }
 
+    // todo return ids
     private List<Film> getFilmsMissingFromIdFile(List<Integer> validTmdbIds)
     {
         List<Film> results = new ArrayList<>();
@@ -234,51 +213,25 @@ public class Seeder
         return results;
     }
 
-    private int deleteFilmsMissingFromIdFile(List<Film> films)
+    // todo accept ids
+    private void deleteFilmsMissingFromIdFile(List<Film> films)
     {
-        films.forEach(film -> {
-            log.info("Deleting film missing from Daily ID File " + film.toString());
-            filmRepo.delete(film);
-        });
-
-        return films.size();
+        films.forEach(film -> filmRepo.delete(film));
+        log.info("Deleted " + films.size() + " films");
     }
 
-    private class ProcessTmdbIdResult
+    private boolean processTmdbId(TmdbMovies movies, int tmdbId)
     {
-        boolean fresh;
-        boolean stale;
-        boolean saved;
-    }
+        Film film = getFilm(movies, tmdbId);
+        if (film != null)
+            filmRepo.save(film);
 
-    private ProcessTmdbIdResult processTmdbId(TmdbMovies movies, int tmdbId, Film film)
-    {
-        ProcessTmdbIdResult result = new ProcessTmdbIdResult();
-        LocalDateTime filmLastUpdated = film != null ? film.getLastUpdated() : null;
-
-        if (filmLastUpdated != null && filmLastUpdated.isAfter(LocalDateTime.now().minusDays(DAYS_BETWEEN_UPDATES)))
-        {
-            result.fresh = true;
-            return result;
-        }
-
-        if (filmLastUpdated == null)
-        {
-            film = getFilm(movies, tmdbId);
-            result.stale = true;
-            if (film != null)
-            {
-                filmRepo.save(film);
-                result.saved = true;
-            }
-        }
-
-        return result;
+        return film != null;
     }
 
     private Film getFilm(TmdbMovies movies, int tmdbId)
     {
-        MovieDb movie = null;
+        MovieDb movie;
 
         try {
             movie = movies.getMovie(tmdbId, "en", MovieMethod.releases, MovieMethod.release_dates, MovieMethod.credits);
