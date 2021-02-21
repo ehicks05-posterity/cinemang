@@ -50,7 +50,7 @@ public class Seeder
         this.languageRepo = languageRepo;
     }
 
-    @Value("${cinemang.tmdb.apikey}")
+    @Value("${tmdb_api_key}")
     private String apiKey;
 
     @PostConstruct
