@@ -4,7 +4,7 @@ import net.ehicks.cinemang.beans.Genre
 import java.time.LocalDate
 
 class FilmSearchForm @JvmOverloads constructor(
-        var fromVotes: Int? = 250
+        var fromVotes: Int? = 2000
         , var toVotes: Int? = null
         , var title: String = ""
         , var fromRating: Double? = 0.0
