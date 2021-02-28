@@ -55,6 +55,7 @@ public class Seeder
 
     @PostConstruct
     public void onStartup() {
+        log.info("maxMemory: " + (Runtime.getRuntime().maxMemory() / 1024 / 1024) + "m");
         Executors.newFixedThreadPool(1).submit(Seeder.this::run);
     }
 
