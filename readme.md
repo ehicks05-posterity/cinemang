@@ -1,3 +1,7 @@
+# status
+
+2024-06-01: dokku deployment and dokku postgres instance deleted, cloudflare dns entry removed.
+
 # useful scripts
 
 ```
