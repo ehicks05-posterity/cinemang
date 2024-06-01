@@ -38,3 +38,7 @@ search results as a table:
 mobile (ok down to around 400px wide):
 
 ![image](https://github.com/ehicks05-posterity/cinemang/assets/666393/a3a9f1d9-e983-4213-9dab-c980c0f0be55)
+
+footer:
+
+![image](https://github.com/ehicks05-posterity/cinemang/assets/666393/0b43855d-a6e0-477e-a341-0bed2f67c101)
